@@ -6,6 +6,14 @@ The application consists of a Python backend that serves data from a database an
 
 ---
 
+## Features
+
+- Fetches and displays a list of recipes from the backend API.
+- Clean, responsive card-based layout.
+- Click on any recipe card to view detailed ingredients and instructions in a modal view.
+
+---
+
 ## Tech Stack
 
 ### Backend
