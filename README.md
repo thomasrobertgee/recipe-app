@@ -13,6 +13,7 @@ The application consists of a Python backend that serves data from a database an
 - Click on any recipe card to view detailed ingredients and instructions in a modal view.
 - Select and deselect recipes to build a dynamic shopping list.
 - Automatically consolidates ingredients from multiple recipes.
+- **User's recipe selections are saved in their browser, so their shopping list persists between sessions.**
 
 ---
 
