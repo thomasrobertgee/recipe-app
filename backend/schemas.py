@@ -27,3 +27,17 @@ class RecipeCreate(SQLModel):
     description: str
     instructions: str
     ingredients: List[IngredientCreate]
+
+# Add these new classes to the bottom of backend/schemas.py
+
+class SpecialBase(SQLModel):
+    ingredient_name: str
+    price: str
+    store: str
+
+class SpecialCreate(SpecialBase):
+    pass
+
+class SpecialRead(SpecialBase):
+    id: int
+    ingredient_id: int

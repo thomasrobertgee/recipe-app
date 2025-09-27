@@ -1,0 +1,18 @@
+/* Add these styles to the bottom of src/pages/SpecialsPage.css */
+
+.form-section select {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 1rem;
+  background-color: white; /* Ensures consistent background */
+}
+
+.price-group {
+  display: flex;
+  gap: 10px;
+}
+
+.price-group input {
+  flex: 1; /* Allows price input to take available space */
+}

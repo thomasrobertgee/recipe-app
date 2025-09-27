@@ -1,4 +1,4 @@
-# Recipe App MVP
+# R# Recipe App MVP
 
 This project is a full-stack Minimum Viable Product (MVP) of a recipe recommendation app. The goal is to help users save money by generating recipes based on supermarket specials.
 
@@ -13,7 +13,8 @@ The application consists of a Python backend that serves data from a database an
 - Click on any recipe card to view detailed ingredients and instructions in a modal view.
 - Select and deselect recipes to build a dynamic shopping list.
 - User's recipe selections are saved in their browser, so their shopping list persists between sessions.
-- **Intelligently consolidates ingredient quantities (e.g., "2 large" + "2 large" becomes "4 large").**
+- Intelligently consolidates ingredient quantities (e.g., "2 large" + "2 large" becomes "4 large").
+- **A dedicated page with a structured form for managing weekly specials, including price, unit, and store.**
 
 ---
 
