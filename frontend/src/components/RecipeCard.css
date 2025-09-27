@@ -1,28 +1,28 @@
-/* src/components/RecipeCard.css */
+/* Add these styles to the bottom of src/components/RecipeCard.css */
 
 .recipe-card {
-  background-color: #ffffff;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  padding: 16px;
-  margin: 10px;
-  width: 300px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s ease-in-out;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.recipe-card.selected {
+  border-color: #4caf50;
+  box-shadow: 0 4px 8px rgba(76, 175, 80, 0.2);
+}
+
+.recipe-card button {
+  background-color: #f0f0f0;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 8px 12px;
   cursor: pointer;
+  margin-top: 10px;
+  align-self: flex-end; /* Pushes the button to the bottom right */
 }
 
-.recipe-card:hover {
-  transform: translateY(-5px);
-}
-
-.recipe-card h2 {
-  margin-top: 0;
-  font-size: 1.25rem;
-  color: #333;
-}
-
-.recipe-card p {
-  font-size: 0.9rem;
-  color: #666;
+.recipe-card.selected button {
+  background-color: #4caf50;
+  color: white;
+  border-color: #4caf50;
 }

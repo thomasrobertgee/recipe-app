@@ -1,13 +1,30 @@
 /* src/App.css */
-
 .app-container {
-  text-align: center;
   padding: 20px;
 }
 
-.recipe-list {
+.app-container h1 {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.main-content {
+  display: flex;
+  flex-direction: row;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+.recipe-grid {
+  flex: 3; /* Takes up 3/4 of the space */
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   gap: 16px;
+}
+
+.shopping-list-section {
+  flex: 1; /* Takes up 1/4 of the space */
+  position: sticky;
+  top: 20px;
 }
