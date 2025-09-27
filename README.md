@@ -12,8 +12,8 @@ The application consists of a Python backend that serves data from a database an
 - Clean, responsive card-based layout for recipes.
 - Click on any recipe card to view detailed ingredients and instructions in a modal view.
 - Select and deselect recipes to build a dynamic shopping list.
-- Automatically consolidates ingredients from multiple recipes.
-- **User's recipe selections are saved in their browser, so their shopping list persists between sessions.**
+- User's recipe selections are saved in their browser, so their shopping list persists between sessions.
+- **Intelligently consolidates ingredient quantities (e.g., "2 large" + "2 large" becomes "4 large").**
 
 ---
 
@@ -22,7 +22,7 @@ The application consists of a Python backend that serves data from a database an
 ### Backend
 - **Language:** Python
 - **Framework:** FastAPI
-- **Database ORM:** SQLModel (combining SQLAlchemy and Pydantic)
+- **Database ORM:** SQLModel (combining SQLAlchemy and Pantic)
 - **Database:** SQLite
 
 ### Frontend

@@ -15,3 +15,15 @@ class RecipeResponse(SQLModel):
     description: str
     instructions: str
     ingredients: List[IngredientInRecipe]
+
+    # Add these to the bottom of backend/schemas.py
+
+class IngredientCreate(SQLModel):
+    name: str
+    quantity: str
+
+class RecipeCreate(SQLModel):
+    title: str
+    description: str
+    instructions: str
+    ingredients: List[IngredientCreate]
