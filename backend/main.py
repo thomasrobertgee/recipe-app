@@ -1,4 +1,4 @@
-# backend/main.py (Complete, final version)
+# backend/main.py
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -31,14 +31,12 @@ app.add_middleware(
 # --- HELPER FUNCTION to save a recipe ---
 def _save_recipe_to_db(recipe_data: RecipeCreate, session: Session) -> Recipe:
     new_recipe = Recipe(title=recipe_data.title, description=recipe_data.description, instructions=recipe_data.instructions)
-    
     for ing_data in recipe_data.ingredients:
         ingredient = session.exec(select(Ingredient).where(Ingredient.name == ing_data.name)).first()
         if not ingredient:
             ingredient = Ingredient(name=ing_data.name)
         link = RecipeIngredientLink(recipe=new_recipe, ingredient=ingredient, quantity=ing_data.quantity)
         session.add(link)
-    
     session.add(new_recipe)
     session.commit()
     session.refresh(new_recipe)
@@ -115,3 +113,13 @@ def get_recipes():
             response_ingredients = [IngredientInRecipe(name=link.ingredient.name, quantity=link.quantity) for link in recipe.links]
             response_recipes.append(RecipeResponse.from_orm(recipe, update={'ingredients': response_ingredients}))
         return response_recipes
+
+# --- NEW ENDPOINT TO CLEAR RECIPES ---
+@app.delete("/api/recipes")
+def delete_all_recipes():
+    with Session(engine) as session:
+        # We need to delete from the link table first due to foreign key constraints
+        session.query(RecipeIngredientLink).delete()
+        session.query(Recipe).delete()
+        session.commit()
+        return {"message": "All recipes have been cleared."}

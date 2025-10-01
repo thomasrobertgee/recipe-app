@@ -1,4 +1,4 @@
-// src/pages/HomePage.jsx
+// src/pages/HomePage.jsx (Corrected)
 
 import { useState, useEffect } from 'react';
 import axios from 'axios';
@@ -15,7 +15,8 @@ const HomePage = () => {
     return saved ? JSON.parse(saved) : [];
   });
 
-  useEffect(() => {
+  const fetchRecipes = () => {
+    setLoading(true);
     axios.get('http://127.0.0.1:8000/api/recipes')
       .then(response => {
         setRecipes(response.data);
@@ -25,6 +26,10 @@ const HomePage = () => {
         console.error("There was an error fetching the recipes!", error);
         setLoading(false);
       });
+  };
+
+  useEffect(() => {
+    fetchRecipes();
   }, []);
 
   useEffect(() => {
@@ -39,9 +44,23 @@ const HomePage = () => {
     }
   };
 
+  const handleClearRecipes = () => {
+    if (window.confirm("Are you sure you want to delete all recipes? This cannot be undone.")) {
+      axios.delete('http://127.0.0.1:8000/api/recipes')
+        .then(() => {
+          setRecipes([]);
+          setSelectedRecipes([]);
+        })
+        .catch(error => console.error("Error clearing recipes:", error));
+    }
+  };
+
   return (
     <div>
-      <h1>Weekly Recipes</h1>
+      <div className="page-header">
+        <h1>Weekly Recipes</h1>
+        <button onClick={handleClearRecipes} className="clear-all-btn">Clear All Recipes</button>
+      </div>
       <div className="main-content">
         <div className="recipe-grid">
           {loading ? (
@@ -69,6 +88,8 @@ const HomePage = () => {
 
       {selectedRecipe && (
         <RecipeDetail 
+          // --- THIS IS THE FIX ---
+          // It should be recipe={selectedRecipe}, not recipe={recipe}
           recipe={selectedRecipe} 
           onClose={() => setSelectedRecipe(null)} 
         />
