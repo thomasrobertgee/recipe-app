@@ -114,11 +114,22 @@ def get_recipes():
             response_recipes.append(RecipeResponse.from_orm(recipe, update={'ingredients': response_ingredients}))
         return response_recipes
 
-# --- NEW ENDPOINT TO CLEAR RECIPES ---
+# --- NEW: Endpoint to delete a single recipe ---
+@app.delete("/api/recipes/{recipe_id}")
+def delete_recipe(recipe_id: int):
+    with Session(engine) as session:
+        recipe = session.get(Recipe, recipe_id)
+        if not recipe:
+            raise HTTPException(status_code=404, detail="Recipe not found")
+
+        # The relationships we set up with 'back_populates' handle deleting the links automatically!
+        session.delete(recipe)
+        session.commit()
+        return {"message": "Recipe deleted successfully."}
+
 @app.delete("/api/recipes")
 def delete_all_recipes():
     with Session(engine) as session:
-        # We need to delete from the link table first due to foreign key constraints
         session.query(RecipeIngredientLink).delete()
         session.query(Recipe).delete()
         session.commit()

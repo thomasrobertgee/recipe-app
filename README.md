@@ -6,47 +6,18 @@ The application consists of a Python backend that serves data from a database an
 
 ---
 
-## Current Features
+## Features
 
 - **Automated Web Scraper** to fetch live weekly specials from Coles.
 - **AI-powered recipe generation** triggered by a button in the UI.
 - Fetches and displays a list of recipes from the backend API.
 - A dedicated page with a structured form for managing weekly specials.
+- **Full CRUD functionality for recipes:** Users can create (via AI), read, and delete recipes.
 - Clean, responsive card-based layout for recipes.
 - Click on any recipe card to view detailed ingredients and instructions in a modal view.
 - Select and deselect recipes to build a dynamic shopping list.
 - Intelligently consolidates ingredient quantities.
 - User's recipe selections are saved in their browser, so their shopping list persists between sessions.
-- Functionality to clear all recipes or all specials from the database.
-
----
-
-## Future Development Roadmap
-
-This section outlines the planned features to evolve the app from an MVP into a full-featured product.
-
-### User Accounts & Personalization
-- **User Authentication:** Users can sign up and log in to create an account.
-- **Preference Management:** A dedicated settings page for users to input and save:
-    - **Dietary Requirements:** (e.g., gluten-free, vegetarian, vegan)
-    - **Allergies:** (e.g., nuts, dairy, shellfish)
-    - **Likes & Dislikes:** Specific ingredients to include or avoid.
-    - **Household Size:** Number of people they are cooking for, to scale recipes.
-- **Budget Tracking:** Allow users to set a weekly or monthly budget.
-
-### Core App Enhancements
-- **Filtered Recipe View:** The main recipe page will filter recipes based on the user's saved preferences.
-- **Interactive Shopping List:**
-    - **Checklist Functionality:** Users can check off items as they shop.
-    - **Price Estimation:** Display individual and total estimated costs for the shopping list based on special prices.
-    - **Saved Lists:** Users can save and clear their shopping lists.
-- **Recipe Management:**
-    - **Saved Recipes:** Users can save their favorite recipes to a personal collection.
-    - **Recipe Ratings:** Allow users to rate recipes on a 1-5 star scale.
-- **Multi-Supermarket Support:** Expand the web scraper to include Woolworths and Aldi for comprehensive special comparisons.
-
-### Mobile Application
-- **Cross-Platform App:** Develop a mobile app (e.g., using React Native) that shares the same backend, providing a seamless experience on both web and mobile.
 
 ---
 

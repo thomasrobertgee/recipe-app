@@ -17,8 +17,6 @@ class Special(SQLModel, table=True):
     price: str
     store: str
 
-    # --- THIS IS THE FIX ---
-    # Add the relationship back to the Ingredient model
     ingredient: "Ingredient" = Relationship(back_populates="specials")
 
 class Ingredient(SQLModel, table=True):
@@ -26,8 +24,6 @@ class Ingredient(SQLModel, table=True):
     name: str = Field(index=True, unique=True)
 
     links: List[RecipeIngredientLink] = Relationship(back_populates="ingredient")
-
-    # This completes the other side of the relationship
     specials: List[Special] = Relationship(back_populates="ingredient")
 
 class Recipe(SQLModel, table=True):
@@ -36,4 +32,6 @@ class Recipe(SQLModel, table=True):
     description: str
     instructions: str
 
-    links: List[RecipeIngredientLink] = Relationship(back_populates="recipe")
+    # --- THIS IS THE FIX ---
+    # Changed 'cascade_deletes' to 'cascade_delete' (singular)
+    links: List[RecipeIngredientLink] = Relationship(back_populates="recipe", cascade_delete=True)

@@ -1,4 +1,4 @@
-// src/pages/HomePage.jsx (Corrected)
+// src/pages/HomePage.jsx (Complete)
 
 import { useState, useEffect } from 'react';
 import axios from 'axios';
@@ -55,6 +55,15 @@ const HomePage = () => {
     }
   };
 
+  const handleDeleteRecipe = (recipeId) => {
+    axios.delete(`http://127.0.0.1:8000/api/recipes/${recipeId}`)
+      .then(() => {
+        setRecipes(recipes.filter(r => r.id !== recipeId));
+        setSelectedRecipes(selectedRecipes.filter(r => r.id !== recipeId));
+      })
+      .catch(error => console.error("Error deleting recipe:", error));
+  };
+
   return (
     <div>
       <div className="page-header">
@@ -75,6 +84,7 @@ const HomePage = () => {
                   onClick={() => setSelectedRecipe(recipe)}
                   onSelect={handleSelectRecipe}
                   isSelected={isSelected}
+                  onDelete={handleDeleteRecipe}
                 />
               );
             })
@@ -88,8 +98,6 @@ const HomePage = () => {
 
       {selectedRecipe && (
         <RecipeDetail 
-          // --- THIS IS THE FIX ---
-          // It should be recipe={selectedRecipe}, not recipe={recipe}
           recipe={selectedRecipe} 
           onClose={() => setSelectedRecipe(null)} 
         />
