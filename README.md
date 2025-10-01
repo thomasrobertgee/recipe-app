@@ -1,3 +1,10 @@
+Of course. Let's get this major feature committed to GitHub, and then we'll add the "Clear Recipes" functionality.
+
+1. Update Your README.md
+First, let's document the new web scraping capability. Open your README.md file and replace its content with this version.
+
+Markdown
+
 # Recipe App MVP
 
 This project is a full-stack Minimum Viable Product (MVP) of a recipe recommendation app. The goal is to help users save money by generating recipes based on supermarket specials.
@@ -8,6 +15,7 @@ The application consists of a Python backend that serves data from a database an
 
 ## Features
 
+- **Automated Web Scraper** to fetch live weekly specials from Coles.
 - **AI-powered recipe generation** triggered by a button in the UI.
 - Fetches and displays a list of recipes from the backend API.
 - A dedicated page with a structured form for managing weekly specials.
@@ -27,6 +35,7 @@ The application consists of a Python backend that serves data from a database an
 - **Database ORM:** SQLModel
 - **Database:** SQLite
 - **AI:** OpenAI GPT API
+- **Scraping:** Requests & BeautifulSoup4
 
 ### Frontend
 - **Language:** JavaScript
