@@ -8,7 +8,7 @@ The application consists of a Python backend that serves data from a database an
 
 ## Features
 
-- **AI-powered recipe generation** based on the current list of weekly specials.
+- **AI-powered recipe generation** triggered by a button in the UI.
 - Fetches and displays a list of recipes from the backend API.
 - A dedicated page with a structured form for managing weekly specials.
 - Clean, responsive card-based layout for recipes.
@@ -24,7 +24,7 @@ The application consists of a Python backend that serves data from a database an
 ### Backend
 - **Language:** Python
 - **Framework:** FastAPI
-- **Database ORM:** SQLModel (combining SQLAlchemy and Pantic)
+- **Database ORM:** SQLModel
 - **Database:** SQLite
 - **AI:** OpenAI GPT API
 

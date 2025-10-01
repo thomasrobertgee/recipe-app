@@ -1,18 +1,31 @@
 /* Add these styles to the bottom of src/pages/SpecialsPage.css */
 
-.form-section select {
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  font-size: 1rem;
-  background-color: white; /* Ensures consistent background */
+.generate-section {
+  margin-top: 40px;
+  padding: 20px;
+  background-color: #e8f5e9; /* Light green background */
+  border: 1px solid #c8e6c9;
+  border-radius: 8px;
+  text-align: center;
 }
 
-.price-group {
-  display: flex;
-  gap: 10px;
+.generate-btn {
+  padding: 15px 30px;
+  border: none;
+  background-color: #66bb6a;
+  color: white;
+  font-size: 1.1rem;
+  font-weight: bold;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s;
 }
 
-.price-group input {
-  flex: 1; /* Allows price input to take available space */
+.generate-btn:hover {
+  background-color: #4caf50;
+}
+
+.generate-btn:disabled {
+  background-color: #a5d6a7;
+  cursor: not-allowed;
 }
