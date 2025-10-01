@@ -4,40 +4,51 @@ from sqlmodel import Session, select
 from database import engine, create_db_and_tables
 from models import Recipe, Ingredient, RecipeIngredientLink, Special
 
-# A list of 20 specials to populate the database
+# Extracted on 1 October 2025 from Coles HTML
 SPECIALS_DATA = [
-    {"ingredient_name": "Chicken Breast Fillet", "price": "$9.50 per kg", "store": "Coles"},
-    {"ingredient_name": "Beef Mince (Premium)", "price": "$14.00 per kg", "store": "Woolworths"},
-    {"ingredient_name": "Pork Sausages", "price": "$7.50 per pack", "store": "Aldi"},
-    {"ingredient_name": "Tasmanian Salmon Fillets", "price": "$28.00 per kg", "store": "Coles"},
-    {"ingredient_name": "Broccoli", "price": "$3.00 per kg", "store": "Woolworths"},
-    {"ingredient_name": "Carrots", "price": "$1.20 per kg", "store": "Aldi"},
-    {"ingredient_name": "Brown Onions", "price": "$2.50 per kg", "store": "Coles"},
-    {"ingredient_name": "Red Capsicum", "price": "$5.00 per kg", "store": "Woolworths"},
-    {"ingredient_name": "Washed Potatoes", "price": "$3.00 for 2kg bag", "store": "Aldi"},
-    {"ingredient_name": "Avocados", "price": "2 for $4.00", "store": "Coles"},
-    {"ingredient_name": "Bananas", "price": "$2.90 per kg", "store": "Woolworths"},
-    {"ingredient_name": "Strawberries", "price": "$3.50 per punnet", "store": "Aldi"},
-    {"ingredient_name": "Cheddar Cheese Block", "price": "$8.00 per 500g", "store": "Coles"},
-    {"ingredient_name": "Free Range Eggs", "price": "$4.80 per dozen", "store": "Woolworths"},
-    {"ingredient_name": "Milk (2L)", "price": "$3.10 each", "store": "Aldi"},
-    {"ingredient_name": "Sliced White Bread", "price": "$2.50 each", "store": "Coles"},
-    {"ingredient_name": "Pasta Sauce", "price": "$2.00 each", "store": "Woolworths"},
-    {"ingredient_name": "Mushrooms", "price": "$10.00 per kg", "store": "Aldi"},
-    {"ingredient_name": "Baby Spinach", "price": "$2.00 per 120g bag", "store": "Coles"},
-    {"ingredient_name": "Greek Yoghurt", "price": "$4.50 per 1kg tub", "store": "Woolworths"}
+    {"ingredient_name": "Coles Australian Lamb Loin Chops", "price": "$28.00 ($28.00 per 1kg)", "store": "Coles"},
+    {"ingredient_name": "Coles RSPCA Approved Australian Chicken Breast Fillets Large Pack", "price": "$11.00 ($11.00 per 1kg)", "store": "Coles"},
+    {"ingredient_name": "Coles Australian No Added Hormones Beef Rump Steak", "price": "$22.00 ($22.00 per 1kg)", "store": "Coles"},
+    {"ingredient_name": "Coles Made Easy Chicken Schnitzel", "price": "$12.50 ($20.83 per 1kg)", "store": "Coles"},
+    {"ingredient_name": "Coles RSPCA Approved Chicken Portions With BBQ Rub", "price": "$6.00 ($6.00 per 1kg)", "store": "Coles"},
+    {"ingredient_name": "Tassal Tasmanian Sliced Smoked Salmon", "price": "$13.00 ($65.00 per 1kg)", "store": "Coles"},
+    {"ingredient_name": "Coles Australian Pork Loin Chops", "price": "$14.00 ($14.00 per 1kg)", "store": "Coles"},
+    {"ingredient_name": "Coles Made Easy Slow Cooked Lamb Shanks In Red Wine & Rosemary", "price": "$15.00 ($17.65 per 1kg)", "store": "Coles"},
+    {"ingredient_name": "Coles Australian Pork Belly Bites", "price": "$10.00 ($20.00 per 1kg)", "store": "Coles"},
+    {"ingredient_name": "KB's Prawn Gyoza", "price": "$10.00 ($2.50 per 100g)", "store": "Coles"},
+    {"ingredient_name": "Coles Australian Lamb Leg Roast", "price": "$12.00 ($12.00 per 1kg)", "store": "Coles"},
+    {"ingredient_name": "Steggles Chicken Breast Goujons", "price": "$10.00 ($2.50 per 100g)", "store": "Coles"},
+    {"ingredient_name": "Don Melosi Leg Ham", "price": "$24.00 ($24.00 per 1kg)", "store": "Coles"},
+    {"ingredient_name": "Primo Short Cut Rindless Bacon", "price": "$11.50 ($23.00 per 1kg)", "store": "Coles"},
+    {"ingredient_name": "Moredough Kitchens Puff Pastry", "price": "$5.50 ($1.38 per 100g)", "store": "Coles"},
+    {"ingredient_name": "Coles Australian Green Banana Prawns Thawed", "price": "$22.00 ($22.00 per 1kg)", "store": "Coles"},
+    {"ingredient_name": "Hans Twiggy Sticks", "price": "$18.00 ($36.00 per 1kg)", "store": "Coles"},
+    {"ingredient_name": "Coles Australian Beef Sizzle Steak", "price": "$20.00 ($20.00 per 1kg)", "store": "Coles"},
+    {"ingredient_name": "Coles Australian Strawberries", "price": "$3.50 ($14.00 per 1kg)", "store": "Coles"},
+    {"ingredient_name": "Coles Australian White Seedless Grapes", "price": "$4.90 ($4.90 per 1kg)", "store": "Coles"},
+    {"ingredient_name": "Coles Australian Shepard Avocados", "price": "$1.50 ($1.50 each)", "store": "Coles"},
+    {"ingredient_name": "Coles Australian Blueberries", "price": "$3.50 ($28.00 per 1kg)", "store": "Coles"},
+    {"ingredient_name": "Coles Australian Mandarins", "price": "$2.90 ($2.90 per 1kg)", "store": "Coles"},
+    {"ingredient_name": "Coles Australian Washed Potatoes", "price": "$4.00 ($2.00 per 1kg)", "store": "Coles"},
+    {"ingredient_name": "Coles Australian Carrots", "price": "$2.00 ($2.00 per 1kg)", "store": "Coles"},
+    {"ingredient_name": "Coles Australian Zucchini", "price": "$3.90 ($3.90 per 1kg)", "store": "Coles"},
+    {"ingredient_name": "Coles Australian Red Onions", "price": "$3.00 ($3.00 per 1kg)", "store": "Coles"},
+    {"ingredient_name": "Coles Australian Green Beans", "price": "$2.50 ($10.00 per 1kg)", "store": "Coles"},
+    {"ingredient_name": "Coles Australian Cup Mushrooms", "price": "$4.50 ($18.00 per 1kg)", "store": "Coles"},
+    {"ingredient_name": "Coles Australian Iceberg Lettuce", "price": "$2.50 ($2.50 each)", "store": "Coles"},
+    {"ingredient_name": "Coles Kitchen Garlic Bread", "price": "$3.20 ($0.71 per 100g)", "store": "Coles"},
+    {"ingredient_name": "Coles Kitchen Green Goddess Style Salad Kit", "price": "$5.50 ($1.83 per 100g)", "store": "Coles"},
+    {"ingredient_name": "Coles Australian Red Perino Tomatoes", "price": "$3.50 ($17.50 per 1kg)", "store": "Coles"},
 ]
 
 def seed_database():
-    print("🔄 Clearing and seeding database...")
+    print("🔄 Clearing and seeding database with live data...")
     create_db_and_tables()
 
     with Session(engine) as session:
-        # Clear existing data
-        session.query(RecipeIngredientLink).delete()
+        # Clear existing data from Specials table only
         session.query(Special).delete()
-        session.query(Recipe).delete()
-        session.query(Ingredient).delete()
+        print("Old specials cleared.")
         session.commit()
 
         # Add new specials
@@ -64,7 +75,7 @@ def seed_database():
         
         session.commit()
 
-    print("✅ Database seeded successfully with 20 specials!")
+    print(f"✅ Database seeded successfully with {len(SPECIALS_DATA)} new specials!")
 
 if __name__ == "__main__":
     seed_database()

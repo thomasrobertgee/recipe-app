@@ -1,4 +1,4 @@
-# backend/ai_service.py (Corrected for better parsing)
+# backend/ai_service.py
 
 import os
 import json
@@ -15,31 +15,31 @@ def generate_recipes_from_specials(specials_list):
     
     specials_as_dicts = [s.model_dump() for s in specials_list]
 
-    # --- CHANGE 1: The prompt is now more specific about the output structure ---
-    system_prompt = """
+    system_prompt = f"""
     You are a creative chef who creates simple, delicious recipes for people on a budget.
-    Your task is to generate 3 unique dinner recipes based on on-special ingredients provided by the user.
+    Your task is to generate 5 unique dinner recipes based on on-special ingredients provided by the user.
+
     You must provide the output as a single JSON object with a key named "recipes", which contains an array of recipe objects.
     
     Example of the required JSON output format:
-    {
+    {{
         "recipes": [
-            {
+            {{
                 "title": "Example Recipe Title",
                 "description": "A short, enticing description.",
                 "instructions": "1. First step.\\n2. Second step.",
                 "ingredients": [
-                    { "name": "Ingredient 1", "quantity": "1 cup" }
+                    {{ "name": "Ingredient 1", "quantity": "1 cup" }}
                 ]
-            }
+            }}
         ]
-    }
+    }}
     """
 
     user_prompt = f"""
     Here are this week's on-special ingredients:
     {json.dumps(specials_as_dicts, indent=2)}
-    Please generate 3 recipes based on these and provide them in the specified JSON format.
+    Please generate 5 recipes based on these and provide them in the specified JSON format.
     """
 
     try:
@@ -55,7 +55,6 @@ def generate_recipes_from_specials(specials_list):
         response_content = completion.choices[0].message.content
         response_data = json.loads(response_content)
         
-        # --- CHANGE 2: The parsing logic now looks for the specific "recipes" key ---
         if "recipes" in response_data and isinstance(response_data["recipes"], list):
             return response_data["recipes"]
         else:
