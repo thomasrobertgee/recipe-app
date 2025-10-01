@@ -1,4 +1,4 @@
-# R# Recipe App MVP
+# Recipe App MVP
 
 This project is a full-stack Minimum Viable Product (MVP) of a recipe recommendation app. The goal is to help users save money by generating recipes based on supermarket specials.
 
@@ -8,13 +8,14 @@ The application consists of a Python backend that serves data from a database an
 
 ## Features
 
+- **AI-powered recipe generation** based on the current list of weekly specials.
 - Fetches and displays a list of recipes from the backend API.
+- A dedicated page with a structured form for managing weekly specials.
 - Clean, responsive card-based layout for recipes.
 - Click on any recipe card to view detailed ingredients and instructions in a modal view.
 - Select and deselect recipes to build a dynamic shopping list.
-- User's recipe selections are saved in their browser, so their shopping list persists between sessions.
 - Intelligently consolidates ingredient quantities (e.g., "2 large" + "2 large" becomes "4 large").
-- **A dedicated page with a structured form for managing weekly specials, including price, unit, and store.**
+- User's recipe selections are saved in their browser, so their shopping list persists between sessions.
 
 ---
 
@@ -25,12 +26,14 @@ The application consists of a Python backend that serves data from a database an
 - **Framework:** FastAPI
 - **Database ORM:** SQLModel (combining SQLAlchemy and Pantic)
 - **Database:** SQLite
+- **AI:** OpenAI GPT API
 
 ### Frontend
 - **Language:** JavaScript
 - **Framework:** React
 - **Build Tool:** Vite
 - **HTTP Client:** Axios
+- **Routing:** React Router
 
 ---
 

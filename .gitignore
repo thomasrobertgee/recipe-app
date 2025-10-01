@@ -8,3 +8,6 @@ __pycache__/
 
 # Database file
 db.sqlite3
+
+# Environment variables
+.env

@@ -1,66 +1,70 @@
 # backend/seed.py
 
-from sqlmodel import Session
-# ADD THIS to import the create_db_and_tables function
+from sqlmodel import Session, select
 from database import engine, create_db_and_tables
-from models import Recipe, Ingredient, RecipeIngredientLink
+from models import Recipe, Ingredient, RecipeIngredientLink, Special
+
+# A list of 20 specials to populate the database
+SPECIALS_DATA = [
+    {"ingredient_name": "Chicken Breast Fillet", "price": "$9.50 per kg", "store": "Coles"},
+    {"ingredient_name": "Beef Mince (Premium)", "price": "$14.00 per kg", "store": "Woolworths"},
+    {"ingredient_name": "Pork Sausages", "price": "$7.50 per pack", "store": "Aldi"},
+    {"ingredient_name": "Tasmanian Salmon Fillets", "price": "$28.00 per kg", "store": "Coles"},
+    {"ingredient_name": "Broccoli", "price": "$3.00 per kg", "store": "Woolworths"},
+    {"ingredient_name": "Carrots", "price": "$1.20 per kg", "store": "Aldi"},
+    {"ingredient_name": "Brown Onions", "price": "$2.50 per kg", "store": "Coles"},
+    {"ingredient_name": "Red Capsicum", "price": "$5.00 per kg", "store": "Woolworths"},
+    {"ingredient_name": "Washed Potatoes", "price": "$3.00 for 2kg bag", "store": "Aldi"},
+    {"ingredient_name": "Avocados", "price": "2 for $4.00", "store": "Coles"},
+    {"ingredient_name": "Bananas", "price": "$2.90 per kg", "store": "Woolworths"},
+    {"ingredient_name": "Strawberries", "price": "$3.50 per punnet", "store": "Aldi"},
+    {"ingredient_name": "Cheddar Cheese Block", "price": "$8.00 per 500g", "store": "Coles"},
+    {"ingredient_name": "Free Range Eggs", "price": "$4.80 per dozen", "store": "Woolworths"},
+    {"ingredient_name": "Milk (2L)", "price": "$3.10 each", "store": "Aldi"},
+    {"ingredient_name": "Sliced White Bread", "price": "$2.50 each", "store": "Coles"},
+    {"ingredient_name": "Pasta Sauce", "price": "$2.00 each", "store": "Woolworths"},
+    {"ingredient_name": "Mushrooms", "price": "$10.00 per kg", "store": "Aldi"},
+    {"ingredient_name": "Baby Spinach", "price": "$2.00 per 120g bag", "store": "Coles"},
+    {"ingredient_name": "Greek Yoghurt", "price": "$4.50 per 1kg tub", "store": "Woolworths"}
+]
 
 def seed_database():
-    # ADD THIS line to create the tables before trying to add data
+    print("🔄 Clearing and seeding database...")
     create_db_and_tables()
 
-    print("🌱 Seeding database...")
-
-    # Create some ingredient instances
-    ingredient1 = Ingredient(name="Chicken Breast")
-    ingredient2 = Ingredient(name="Broccoli")
-    ingredient3 = Ingredient(name="Lemon")
-    ingredient4 = Ingredient(name="Olive Oil")
-    ingredient5 = Ingredient(name="Garlic")
-    ingredient6 = Ingredient(name="Dried Herbs (e.g., Oregano)")
-
-    # Create a recipe instance
-    recipe1 = Recipe(
-        title="Sheet Pan Lemon Herb Chicken",
-        description="A simple, delicious, and easy-to-clean-up one-pan meal.",
-        instructions=(
-            "1. Preheat oven to 200°C (400°F).\n"
-            "2. Chop broccoli into florets. Mince garlic.\n"
-            "3. In a large bowl, toss chicken and broccoli with olive oil, minced garlic, dried herbs, juice of half a lemon, salt, and pepper.\n"
-            "4. Spread evenly on a baking sheet.\n"
-            "5. Bake for 20-25 minutes, or until chicken is cooked through and broccoli is tender-crisp.\n"
-            "6. Squeeze remaining lemon juice over the top before serving."
-        )
-    )
-
     with Session(engine) as session:
-        session.add(ingredient1)
-        session.add(ingredient2)
-        session.add(ingredient3)
-        session.add(ingredient4)
-        session.add(ingredient5)
-        session.add(ingredient6)
-        session.add(recipe1)
-
+        # Clear existing data
+        session.query(RecipeIngredientLink).delete()
+        session.query(Special).delete()
+        session.query(Recipe).delete()
+        session.query(Ingredient).delete()
         session.commit()
 
-        link1 = RecipeIngredientLink(recipe_id=recipe1.id, ingredient_id=ingredient1.id, quantity="2 boneless, skinless")
-        link2 = RecipeIngredientLink(recipe_id=recipe1.id, ingredient_id=ingredient2.id, quantity="1 large head")
-        link3 = RecipeIngredientLink(recipe_id=recipe1.id, ingredient_id=ingredient3.id, quantity="1 whole")
-        link4 = RecipeIngredientLink(recipe_id=recipe1.id, ingredient_id=ingredient4.id, quantity="2 tablespoons")
-        link5 = RecipeIngredientLink(recipe_id=recipe1.id, ingredient_id=ingredient5.id, quantity="3 cloves")
-        link6 = RecipeIngredientLink(recipe_id=recipe1.id, ingredient_id=ingredient6.id, quantity="1 tablespoon")
+        # Add new specials
+        for special_data in SPECIALS_DATA:
+            # Find or create the ingredient
+            ingredient_name = special_data["ingredient_name"]
+            existing_ingredient = session.exec(select(Ingredient).where(Ingredient.name == ingredient_name)).first()
 
-        session.add(link1)
-        session.add(link2)
-        session.add(link3)
-        session.add(link4)
-        session.add(link5)
-        session.add(link6)
+            if existing_ingredient:
+                ingredient = existing_ingredient
+            else:
+                ingredient = Ingredient(name=ingredient_name)
+                session.add(ingredient)
+                session.commit()
+                session.refresh(ingredient)
 
+            # Create the special
+            special = Special(
+                ingredient_id=ingredient.id,
+                price=special_data["price"],
+                store=special_data["store"]
+            )
+            session.add(special)
+        
         session.commit()
 
-    print("✅ Database seeded successfully!")
+    print("✅ Database seeded successfully with 20 specials!")
 
 if __name__ == "__main__":
     seed_database()
