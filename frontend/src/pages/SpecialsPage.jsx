@@ -61,22 +61,35 @@ const SpecialsPage = () => {
       .catch(error => console.error("Error clearing specials:", error));
   };
 
-  const handleGenerateRecipes = () => {
+  // --- THIS IS THE CHANGE ---
+  // The function is now async to handle multiple API calls
+  const handleGenerateRecipes = async () => {
     if (specials.length === 0) {
       alert("Please add some specials before generating recipes.");
       return;
     }
     setIsGenerating(true);
-    axios.post('http://127.0.0.1:8000/api/generate-recipes', specials)
-      .then(response => {
-        setIsGenerating(false);
-        alert(response.data.message);
-      })
-      .catch(error => {
-        setIsGenerating(false);
-        console.error("Error generating recipes:", error);
-        alert("An error occurred while generating recipes. Please check the console.");
-      });
+    try {
+      // 1. Fetch the user's current preferences
+      const profileResponse = await axios.get('http://127.0.0.1:8000/users/me');
+      const preferences = profileResponse.data;
+
+      // 2. Construct the payload with both specials and preferences
+      const payload = {
+        specials: specials,
+        preferences: preferences,
+      };
+
+      // 3. Send everything to the generation endpoint
+      const generateResponse = await axios.post('http://127.0.0.1:8000/api/generate-recipes', payload);
+      alert(generateResponse.data.message);
+
+    } catch (error) {
+      console.error("Error generating recipes:", error);
+      alert("An error occurred while generating recipes. Please check the console.");
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   return (

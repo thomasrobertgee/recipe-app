@@ -1,4 +1,4 @@
-# backend/main.py (Complete with Docs Fix)
+# backend/main.py (Complete)
 
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
@@ -8,7 +8,7 @@ from typing import List
 from sqlmodel import Session, select
 from database import engine, create_db_and_tables
 from models import User, Recipe, Ingredient, RecipeIngredientLink, Special
-from schemas import UserCreate, UserRead, UserUpdate, Token, RecipeResponse, IngredientInRecipe, RecipeCreate, SpecialCreate, SpecialRead
+from schemas import GenerateRequest, UserCreate, UserRead, UserUpdate, Token, RecipeResponse, IngredientInRecipe, RecipeCreate, SpecialCreate, SpecialRead
 from security import get_password_hash, verify_password, create_access_token, get_current_user, oauth2_scheme
 from ai_service import generate_recipes_from_specials
 
@@ -47,7 +47,7 @@ def _save_recipe_to_db(recipe_data: RecipeCreate, session: Session) -> Recipe:
     session.commit()
     session.refresh(new_recipe)
     return new_recipe
-
+    
 # --- AUTHENTICATION ENDPOINTS ---
 @app.post("/register", response_model=UserRead)
 def create_user(user: UserCreate, session: Session = Depends(get_session)):
@@ -68,7 +68,7 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), ses
         raise HTTPException(status_code=401, detail="Incorrect email or password", headers={"WWW-Authenticate": "Bearer"})
     access_token = create_access_token(data={"sub": user.email})
     return Token(access_token=access_token, token_type="bearer")
-
+    
 # --- USER PROFILE ENDPOINTS (Protected) ---
 @app.get("/users/me", response_model=UserRead, dependencies=[Depends(oauth2_scheme)])
 def read_users_me(current_user: User = Depends(get_current_user)):
@@ -77,7 +77,6 @@ def read_users_me(current_user: User = Depends(get_current_user)):
 @app.put("/users/me", response_model=UserRead, dependencies=[Depends(oauth2_scheme)])
 def update_user_me(user_update: UserUpdate, session: Session = Depends(get_session), current_user: User = Depends(get_current_user)):
     update_data = user_update.model_dump(exclude_unset=True)
-    # Manually update fields on the user object from the session
     for key, value in update_data.items():
         setattr(current_user, key, value)
     session.add(current_user)
@@ -89,9 +88,12 @@ def update_user_me(user_update: UserUpdate, session: Session = Depends(get_sessi
 @app.get("/")
 def read_root(): return {"message": "Welcome!"}
 
-@app.post("/api/generate-recipes")
-def generate_recipes_endpoint(specials: List[SpecialRead], session: Session = Depends(get_session)):
-    ai_generated_recipes = generate_recipes_from_specials(specials)
+@app.post("/api/generate-recipes", dependencies=[Depends(oauth2_scheme)])
+def generate_recipes_endpoint(request: GenerateRequest, current_user: User = Depends(get_current_user), session: Session = Depends(get_session)):
+    ai_generated_recipes = generate_recipes_from_specials(
+        specials_list=request.specials,
+        preferences=request.preferences
+    )
     saved_recipes_count = 0
     for recipe_dict in ai_generated_recipes:
         try:
@@ -100,10 +102,10 @@ def generate_recipes_endpoint(specials: List[SpecialRead], session: Session = De
             saved_recipes_count += 1
         except Exception as e:
             print(f"Could not validate or save AI recipe: {e}")
-    return {"message": f"Successfully generated and saved {saved_recipes_count} new recipes."}
+    return {"message": f"Successfully generated and saved {saved_recipes_count} new recipes based on your preferences."}
 
 # --- SPECIALS ENDPOINTS ---
-@app.post("/api/specials", response_model=SpecialRead)
+@app.post("/api/specials", response_model=SpecialRead, dependencies=[Depends(oauth2_scheme)])
 def create_special(special_data: SpecialCreate, session: Session = Depends(get_session)):
     ingredient = session.exec(select(Ingredient).where(Ingredient.name == special_data.ingredient_name)).first()
     if not ingredient:
@@ -114,12 +116,12 @@ def create_special(special_data: SpecialCreate, session: Session = Depends(get_s
     session.refresh(special)
     return SpecialRead.from_orm(special, update={'ingredient_name': ingredient.name})
 
-@app.get("/api/specials", response_model=List[SpecialRead])
+@app.get("/api/specials", response_model=List[SpecialRead], dependencies=[Depends(oauth2_scheme)])
 def get_specials(session: Session = Depends(get_session)):
     db_specials = session.exec(select(Special)).all()
     return [SpecialRead.from_orm(s, update={'ingredient_name': s.ingredient.name}) for s in db_specials]
 
-@app.delete("/api/specials/{special_id}")
+@app.delete("/api/specials/{special_id}", dependencies=[Depends(oauth2_scheme)])
 def delete_special(special_id: int, session: Session = Depends(get_session)):
     special = session.get(Special, special_id)
     if not special: raise HTTPException(status_code=404, detail="Special not found")
@@ -127,14 +129,14 @@ def delete_special(special_id: int, session: Session = Depends(get_session)):
     session.commit()
     return {"message": "Special deleted successfully."}
 
-@app.delete("/api/specials")
+@app.delete("/api/specials", dependencies=[Depends(oauth2_scheme)])
 def delete_all_specials(session: Session = Depends(get_session)):
     session.query(Special).delete()
     session.commit()
     return {"message": "All specials cleared."}
 
 # --- RECIPES ENDPOINTS ---
-@app.post("/api/recipes", response_model=RecipeResponse)
+@app.post("/api/recipes", response_model=RecipeResponse, dependencies=[Depends(oauth2_scheme)])
 def create_recipe(recipe_data: RecipeCreate, session: Session = Depends(get_session)):
     new_recipe = _save_recipe_to_db(recipe_data, session)
     response_ingredients = [IngredientInRecipe(name=link.ingredient.name, quantity=link.quantity) for link in new_recipe.links]
@@ -149,7 +151,7 @@ def get_recipes(session: Session = Depends(get_session)):
         response_recipes.append(RecipeResponse.from_orm(recipe, update={'ingredients': response_ingredients}))
     return response_recipes
 
-@app.delete("/api/recipes/{recipe_id}")
+@app.delete("/api/recipes/{recipe_id}", dependencies=[Depends(oauth2_scheme)])
 def delete_recipe(recipe_id: int, session: Session = Depends(get_session)):
     recipe = session.get(Recipe, recipe_id)
     if not recipe: raise HTTPException(status_code=404, detail="Recipe not found")
@@ -157,7 +159,7 @@ def delete_recipe(recipe_id: int, session: Session = Depends(get_session)):
     session.commit()
     return {"message": "Recipe deleted successfully."}
 
-@app.delete("/api/recipes")
+@app.delete("/api/recipes", dependencies=[Depends(oauth2_scheme)])
 def delete_all_recipes(session: Session = Depends(get_session)):
     session.query(RecipeIngredientLink).delete()
     session.query(Recipe).delete()

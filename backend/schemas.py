@@ -4,7 +4,6 @@ from sqlmodel import SQLModel
 from typing import List, Optional
 from pydantic import Field
 
-# (Recipe and Special schemas are unchanged)
 class IngredientInRecipe(SQLModel):
     name: str
     quantity: str
@@ -38,8 +37,6 @@ class SpecialRead(SpecialBase):
     id: int
     ingredient_id: int
 
-# --- UPDATED: User Schemas with List-based Preferences ---
-
 class UserBase(SQLModel):
     email: str
 
@@ -49,16 +46,19 @@ class UserCreate(UserBase):
 class UserRead(UserBase):
     id: int
     household_size: Optional[int]
-    # --- THIS IS THE CHANGE ---
     dietary_requirements: List[str]
     allergies: List[str]
 
 class UserUpdate(SQLModel):
     household_size: Optional[int] = None
-    # --- THIS IS THE CHANGE ---
     dietary_requirements: Optional[List[str]] = None
     allergies: Optional[List[str]] = None
 
 class Token(SQLModel):
     access_token: str
     token_type: str
+
+# --- NEW: Schema for the AI generation request ---
+class GenerateRequest(SQLModel):
+    specials: List[SpecialRead]
+    preferences: UserRead
