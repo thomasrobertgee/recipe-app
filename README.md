@@ -9,14 +9,12 @@ The application consists of a Python backend that serves data from a database an
 ## Current Features
 
 - **Full User Authentication:** Users can register, log in, and maintain a persistent session using JWTs.
-- **User Preference Management:** A dedicated profile page where logged-in users can save their household size, and select dietary requirements and allergies from a predefined list.
-- **AI-powered recipe generation** triggered by a button in the UI.
+- **User Preference Management:** A dedicated profile page where logged-in users can save their household size and select dietary requirements and allergies.
+- **AI-powered recipe generation** that uses a user's saved preferences to create tailored recipes from the current list of specials.
 - A dedicated page with a structured form for managing weekly specials.
-- Full CRUD (Create, Read, Delete) functionality for recipes and specials.
-- Clean, responsive card-based layout for recipes.
-- Interactive modal view for detailed recipe ingredients and instructions.
-- Dynamic shopping list with intelligent ingredient consolidation.
-- User's recipe selections are saved in their browser.
+- **Interactive Shopping List:** A dynamic list with intelligent ingredient consolidation and a persistent checklist that remembers a user's selections.
+- Full CRUD functionality for recipes and specials.
+- Clean, responsive card-based layout and interactive modal view for recipes.
 
 ---
 
@@ -30,9 +28,8 @@ This section outlines the planned features to evolve the app from an MVP into a 
 - **OAuth:** Add "Sign in with Google" as an alternative login method.
 
 ### Core App Enhancements
-- **Personalized AI:** Update the AI prompt to use the user's saved preferences to generate tailored recipes.
+- **Shopping List Price Estimation:** Display individual and total estimated costs for the shopping list.
 - **Filtered Recipe View:** The main recipe page will filter recipes based on the user's saved preferences.
-- **Interactive Shopping List:** Add checklist functionality and price estimation.
 - **Recipe Management:** Allow users to save favorite recipes and rate them.
 - **Multi-Supermarket Support:** Expand the web scraper to include Woolworths and Aldi.
 

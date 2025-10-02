@@ -1,56 +1,61 @@
 // src/components/ShoppingList.jsx
 
-import React, { useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import './ShoppingList.css';
 
 const ShoppingList = ({ selectedRecipes }) => {
+  // --- NEW: State to track checked items, initialized from localStorage ---
+  const [checkedItems, setCheckedItems] = useState(() => {
+    const saved = localStorage.getItem('checkedItems');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  // --- NEW: Effect to save checked items to localStorage whenever they change ---
+  useEffect(() => {
+    localStorage.setItem('checkedItems', JSON.stringify(checkedItems));
+  }, [checkedItems]);
 
   const consolidatedList = useMemo(() => {
     const ingredientMap = new Map();
-
     selectedRecipes.forEach(recipe => {
       recipe.ingredients.forEach(ingredient => {
         const key = ingredient.name.toLowerCase();
-
-        // Regex to find a number (integer or decimal) and the unit
-        const quantityMatch = ingredient.quantity.match(/^(\d*\.?\d+)\s*(.*)$/);
-        
         if (!ingredientMap.has(key)) {
-          // If this is the first time we see this ingredient, create its entry
           ingredientMap.set(key, { name: ingredient.name, items: [] });
         }
-
+        const quantityMatch = ingredient.quantity.match(/^(\d*\.?\d+)\s*(.*)$/);
         if (quantityMatch) {
-          // If we found a number (e.g., "2", "large")
           const value = parseFloat(quantityMatch[1]);
           const unit = quantityMatch[2].trim().toLowerCase();
-
-          // Find if we already have an entry with the same unit
           const existingItem = ingredientMap.get(key).items.find(item => item.unit === unit);
-
           if (existingItem) {
-            // If yes, just add the new value to the total
             existingItem.total += value;
           } else {
-            // If no, add a new entry for this unit
             ingredientMap.get(key).items.push({ total: value, unit: unit });
           }
         } else {
-          // If no number was found (e.g., "a pinch"), treat the whole quantity as the unit
           const unit = ingredient.quantity.trim().toLowerCase();
           const existingItem = ingredientMap.get(key).items.find(item => item.unit === unit);
-
           if (existingItem) {
-            existingItem.total += 1; // e.g., "a pinch" + "a pinch" = "2 a pinch"
+            existingItem.total += 1;
           } else {
             ingredientMap.get(key).items.push({ total: 1, unit: unit });
           }
         }
       });
     });
-
     return Array.from(ingredientMap.values());
   }, [selectedRecipes]);
+
+  // --- NEW: Function to handle checking/unchecking an item ---
+  const handleCheckItem = (itemName) => {
+    const key = itemName.toLowerCase();
+    if (checkedItems.includes(key)) {
+      setCheckedItems(checkedItems.filter(item => item !== key));
+    } else {
+      setCheckedItems([...checkedItems, key]);
+    }
+  };
 
   return (
     <div className="shopping-list-container">
@@ -59,15 +64,28 @@ const ShoppingList = ({ selectedRecipes }) => {
         <p>Select some recipes to get started!</p>
       ) : (
         <ul>
-          {consolidatedList.map(item => (
-            <li key={item.name}>
-              <strong>{item.name}</strong>
-              {/* Join the different unit groups for the same ingredient */}
-              <span>
-                {item.items.map(subItem => `${subItem.total} ${subItem.unit}`).join(', ')}
-              </span>
-            </li>
-          ))}
+          {consolidatedList.map(item => {
+            // --- NEW: Check if the current item is in our checkedItems state ---
+            const isChecked = checkedItems.includes(item.name.toLowerCase());
+            
+            return (
+              // --- NEW: Add a dynamic 'checked' class to the list item ---
+              <li key={item.name} className={isChecked ? 'checked' : ''}>
+                <label className="checkbox-label">
+                  {/* --- NEW: The checkbox input --- */}
+                  <input
+                    type="checkbox"
+                    checked={isChecked}
+                    onChange={() => handleCheckItem(item.name)}
+                  />
+                  <strong>{item.name}</strong>
+                </label>
+                <span>
+                  {item.items.map(subItem => `${subItem.total} ${subItem.unit}`).join(', ')}
+                </span>
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>
