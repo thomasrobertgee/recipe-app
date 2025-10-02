@@ -1,9 +1,10 @@
-# backend/schemas.py (Corrected)
+# backend/schemas.py
 
 from sqlmodel import SQLModel
-from typing import List
-from pydantic import Field # Import Field for validation
+from typing import List, Optional
+from pydantic import Field
 
+# (Recipe and Special schemas are unchanged)
 class IngredientInRecipe(SQLModel):
     name: str
     quantity: str
@@ -37,16 +38,26 @@ class SpecialRead(SpecialBase):
     id: int
     ingredient_id: int
 
+# --- UPDATED: User Schemas with List-based Preferences ---
+
 class UserBase(SQLModel):
     email: str
 
 class UserCreate(UserBase):
-    # --- THIS IS THE FIX ---
-    # We add validation to ensure the password is between 8 and 72 characters.
     password: str = Field(min_length=8, max_length=72)
 
 class UserRead(UserBase):
     id: int
+    household_size: Optional[int]
+    # --- THIS IS THE CHANGE ---
+    dietary_requirements: List[str]
+    allergies: List[str]
+
+class UserUpdate(SQLModel):
+    household_size: Optional[int] = None
+    # --- THIS IS THE CHANGE ---
+    dietary_requirements: Optional[List[str]] = None
+    allergies: Optional[List[str]] = None
 
 class Token(SQLModel):
     access_token: str

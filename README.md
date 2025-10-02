@@ -6,22 +6,40 @@ The application consists of a Python backend that serves data from a database an
 
 ---
 
-## Features
+## Current Features
 
-- **Automated Web Scraper** to fetch live weekly specials from Coles.
+- **Full User Authentication:** Users can register, log in, and maintain a persistent session using JWTs.
+- **User Preference Management:** A dedicated profile page where logged-in users can save their household size, and select dietary requirements and allergies from a predefined list.
 - **AI-powered recipe generation** triggered by a button in the UI.
-- Fetches and displays a list of recipes from the backend API.
 - A dedicated page with a structured form for managing weekly specials.
-- **Full CRUD functionality for recipes:** Users can create (via AI), read, and delete recipes.
+- Full CRUD (Create, Read, Delete) functionality for recipes and specials.
 - Clean, responsive card-based layout for recipes.
-- Click on any recipe card to view detailed ingredients and instructions in a modal view.
-- Select and deselect recipes to build a dynamic shopping list.
-- Intelligently consolidates ingredient quantities.
-- User's recipe selections are saved in their browser, so their shopping list persists between sessions.
+- Interactive modal view for detailed recipe ingredients and instructions.
+- Dynamic shopping list with intelligent ingredient consolidation.
+- User's recipe selections are saved in their browser.
+
+---
+
+## Future Development Roadmap
+
+This section outlines the planned features to evolve the app from an MVP into a full-featured product.
+
+### User Personalization
+- **Budget Tracking:** Allow users to set a weekly or monthly budget.
+- **Likes & Dislikes:** A system for users to specify ingredients to avoid.
+- **OAuth:** Add "Sign in with Google" as an alternative login method.
+
+### Core App Enhancements
+- **Personalized AI:** Update the AI prompt to use the user's saved preferences to generate tailored recipes.
+- **Filtered Recipe View:** The main recipe page will filter recipes based on the user's saved preferences.
+- **Interactive Shopping List:** Add checklist functionality and price estimation.
+- **Recipe Management:** Allow users to save favorite recipes and rate them.
+- **Multi-Supermarket Support:** Expand the web scraper to include Woolworths and Aldi.
 
 ---
 
 ## Tech Stack
+
 
 ### Backend
 - **Language:** Python

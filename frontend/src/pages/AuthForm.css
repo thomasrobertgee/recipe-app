@@ -49,3 +49,28 @@
   border-radius: 4px;
   text-align: center;
 }
+
+/* Add to bottom of src/pages/AuthForm.css */
+
+.auth-form label {
+  font-weight: 500;
+  margin-bottom: -0.5rem; /* Pulls the label closer to its input */
+}
+
+.auth-form textarea {
+  padding: 12px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-family: inherit;
+  min-height: 80px;
+  resize: vertical;
+}
+
+.success-message {
+  color: #2e7d32;
+  background-color: #c8e6c9;
+  padding: 10px;
+  border-radius: 4px;
+  text-align: center;
+}

@@ -1,7 +1,4 @@
-# backend/main.py (Complete with Debug Prints)
-
-# --- DEBUG PRINT 1 ---
-print("--- MAIN.PY HAS BEEN RELOADED ---")
+# backend/main.py (Complete with Docs Fix)
 
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
@@ -11,20 +8,18 @@ from typing import List
 from sqlmodel import Session, select
 from database import engine, create_db_and_tables
 from models import User, Recipe, Ingredient, RecipeIngredientLink, Special
-from schemas import UserCreate, UserRead, Token, RecipeResponse, IngredientInRecipe, RecipeCreate, SpecialCreate, SpecialRead
-from security import get_password_hash, verify_password, create_access_token
+from schemas import UserCreate, UserRead, UserUpdate, Token, RecipeResponse, IngredientInRecipe, RecipeCreate, SpecialCreate, SpecialRead
+from security import get_password_hash, verify_password, create_access_token, get_current_user, oauth2_scheme
 from ai_service import generate_recipes_from_specials
 
 # --- App Setup ---
 origins = ["http://localhost:5173"]
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     print("Starting up... 🚀")
     create_db_and_tables()
     yield
     print("Shutting down...")
-
 app = FastAPI(lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
@@ -56,9 +51,6 @@ def _save_recipe_to_db(recipe_data: RecipeCreate, session: Session) -> Recipe:
 # --- AUTHENTICATION ENDPOINTS ---
 @app.post("/register", response_model=UserRead)
 def create_user(user: UserCreate, session: Session = Depends(get_session)):
-    # --- DEBUG PRINT 2 ---
-    print(f"--- ATTEMPTING TO REGISTER USER with password length: {len(user.password)} ---")
-
     existing_user = session.exec(select(User).where(User.email == user.email)).first()
     if existing_user:
         raise HTTPException(status_code=400, detail="Email already registered")
@@ -76,6 +68,22 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), ses
         raise HTTPException(status_code=401, detail="Incorrect email or password", headers={"WWW-Authenticate": "Bearer"})
     access_token = create_access_token(data={"sub": user.email})
     return Token(access_token=access_token, token_type="bearer")
+
+# --- USER PROFILE ENDPOINTS (Protected) ---
+@app.get("/users/me", response_model=UserRead, dependencies=[Depends(oauth2_scheme)])
+def read_users_me(current_user: User = Depends(get_current_user)):
+    return current_user
+
+@app.put("/users/me", response_model=UserRead, dependencies=[Depends(oauth2_scheme)])
+def update_user_me(user_update: UserUpdate, session: Session = Depends(get_session), current_user: User = Depends(get_current_user)):
+    update_data = user_update.model_dump(exclude_unset=True)
+    # Manually update fields on the user object from the session
+    for key, value in update_data.items():
+        setattr(current_user, key, value)
+    session.add(current_user)
+    session.commit()
+    session.refresh(current_user)
+    return current_user
 
 # --- API ENDPOINTS ---
 @app.get("/")
