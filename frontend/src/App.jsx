@@ -2,12 +2,11 @@
 
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
-import { ToastContainer } from 'react-toastify'; // Import from react-toastify
-import 'react-toastify/dist/ReactToastify.css'; // Import the CSS
+import { ToastContainer } from 'react-toastify'; // FIX: Import 'ToastContainer'
+import 'react-toastify/dist/ReactToastify.css';
 import Navbar from './components/Navbar';
 import ProtectedRoute from './components/ProtectedRoute';
 import HomePage from './pages/HomePage';
-import SpecialsPage from './pages/SpecialsPage';
 import SignUpPage from './pages/SignUpPage';
 import LoginPage from './pages/LoginPage';
 import ProfilePage from './pages/ProfilePage';
@@ -16,17 +15,19 @@ import './App.css';
 function App() {
   return (
     <div>
-      {/* Replace Toaster with ToastContainer */}
-      <ToastContainer position="top-center" autoClose={5000} hideProgressBar={false} />
+      {/* FIX: Use the correct component name */}
+      <ToastContainer position="top-center" autoClose={3000} hideProgressBar={false} />
+      
       <Navbar />
       <main className="app-container">
         <Routes>
-          {/* (Routes are unchanged) */}
+          {/* Public Routes */}
           <Route path="/" element={<HomePage />} />
           <Route path="/signup" element={<SignUpPage />} />
           <Route path="/login" element={<LoginPage />} />
+          
+          {/* Protected Routes */}
           <Route element={<ProtectedRoute />}>
-            <Route path="/specials" element={<SpecialsPage />} />
             <Route path="/profile" element={<ProfilePage />} />
           </Route>
         </Routes>

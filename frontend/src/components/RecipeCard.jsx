@@ -4,15 +4,14 @@ import React from 'react';
 import './RecipeCard.css';
 
 const RecipeCard = ({ recipe, onClick, onSelect, isSelected, onDelete }) => {
-
+  
   const handleSelectClick = (e) => {
-    e.stopPropagation(); 
+    e.stopPropagation(); // Prevents the card's onClick from firing
     onSelect(recipe);
   };
 
-  // --- NEW: Handler for the delete button ---
   const handleDeleteClick = (e) => {
-    e.stopPropagation(); // Prevent the modal from opening
+    e.stopPropagation(); // Prevents the card's onClick from firing
     if (window.confirm(`Are you sure you want to delete "${recipe.title}"?`)) {
       onDelete(recipe.id);
     }
@@ -23,16 +22,22 @@ const RecipeCard = ({ recipe, onClick, onSelect, isSelected, onDelete }) => {
       className={`recipe-card ${isSelected ? 'selected' : ''}`} 
       onClick={onClick}
     >
-      {/* --- NEW: Delete button in the corner --- */}
-      <button className="delete-btn" onClick={handleDeleteClick}>×</button>
+      {/* NEW: Delete button at top right */}
+      <div className="card-header-actions">
+        <button className="delete-btn" onClick={handleDeleteClick}>×</button>
+      </div>
 
       <div className="card-content">
         <h2>{recipe.title}</h2>
         <p>{recipe.description}</p>
       </div>
-      <button onClick={handleSelectClick} className="select-btn">
-        {isSelected ? 'Deselect' : 'Select'}
-      </button>
+
+      {/* NEW: Select button at the bottom center */}
+      <div className="card-bottom-action">
+        <button onClick={handleSelectClick} className="select-btn">
+          {isSelected ? 'Remove from List' : 'Add to Shopping List'} {/* Updated text */}
+        </button>
+      </div>
     </div>
   );
 };
