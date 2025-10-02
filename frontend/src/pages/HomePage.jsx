@@ -1,4 +1,4 @@
-// src/pages/HomePage.jsx (Complete)
+// src/pages/HomePage.jsx
 
 import { useState, useEffect } from 'react';
 import axios from 'axios';
@@ -8,6 +8,7 @@ import ShoppingList from '../components/ShoppingList';
 
 const HomePage = () => {
   const [recipes, setRecipes] = useState([]);
+  const [allSpecials, setAllSpecials] = useState([]); // NEW: State for all specials
   const [loading, setLoading] = useState(true);
   const [selectedRecipe, setSelectedRecipe] = useState(null);
   const [selectedRecipes, setSelectedRecipes] = useState(() => {
@@ -15,21 +16,22 @@ const HomePage = () => {
     return saved ? JSON.parse(saved) : [];
   });
 
-  const fetchRecipes = () => {
-    setLoading(true);
-    axios.get('http://127.0.0.1:8000/api/recipes')
-      .then(response => {
-        setRecipes(response.data);
-        setLoading(false);
-      })
-      .catch(error => {
-        console.error("There was an error fetching the recipes!", error);
-        setLoading(false);
-      });
-  };
-
   useEffect(() => {
-    fetchRecipes();
+    // Fetch both recipes and specials when the page loads
+    const fetchInitialData = async () => {
+      try {
+        setLoading(true);
+        const recipesResponse = await axios.get('http://127.0.0.1:8000/api/recipes');
+        const specialsResponse = await axios.get('http://127.0.0.1:8000/api/specials');
+        setRecipes(recipesResponse.data);
+        setAllSpecials(specialsResponse.data);
+      } catch (error) {
+        console.error("There was an error fetching initial data!", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchInitialData();
   }, []);
 
   useEffect(() => {
@@ -90,12 +92,11 @@ const HomePage = () => {
             })
           )}
         </div>
-
         <div className="shopping-list-section">
-          <ShoppingList selectedRecipes={selectedRecipes} />
+          {/* Pass the allSpecials list down as a prop */}
+          <ShoppingList selectedRecipes={selectedRecipes} allSpecials={allSpecials} />
         </div>
       </div>
-
       {selectedRecipe && (
         <RecipeDetail 
           recipe={selectedRecipe} 
