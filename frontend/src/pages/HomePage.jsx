@@ -1,14 +1,15 @@
 // src/pages/HomePage.jsx
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { toast } from 'react-toastify'; // Import toast
 import RecipeCard from '../components/RecipeCard';
 import RecipeDetail from '../components/RecipeDetail';
 import ShoppingList from '../components/ShoppingList';
 
 const HomePage = () => {
   const [recipes, setRecipes] = useState([]);
-  const [allSpecials, setAllSpecials] = useState([]); // NEW: State for all specials
+  const [allSpecials, setAllSpecials] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedRecipe, setSelectedRecipe] = useState(null);
   const [selectedRecipes, setSelectedRecipes] = useState(() => {
@@ -17,7 +18,6 @@ const HomePage = () => {
   });
 
   useEffect(() => {
-    // Fetch both recipes and specials when the page loads
     const fetchInitialData = async () => {
       try {
         setLoading(true);
@@ -39,10 +39,13 @@ const HomePage = () => {
   }, [selectedRecipes]);
 
   const handleSelectRecipe = (recipeToToggle) => {
+    // --- THIS IS THE CHANGE ---
     if (selectedRecipes.find(r => r.id === recipeToToggle.id)) {
       setSelectedRecipes(selectedRecipes.filter(r => r.id !== recipeToToggle.id));
+      toast.info(`"${recipeToToggle.title}" removed from your list.`);
     } else {
       setSelectedRecipes([...selectedRecipes, recipeToToggle]);
+      toast.success(`"${recipeToToggle.title}" added to your list!`);
     }
   };
 
@@ -52,18 +55,27 @@ const HomePage = () => {
         .then(() => {
           setRecipes([]);
           setSelectedRecipes([]);
+          toast.success("All recipes have been cleared.");
         })
-        .catch(error => console.error("Error clearing recipes:", error));
+        .catch(error => {
+            console.error("Error clearing recipes:", error)
+            toast.error("Could not clear recipes.");
+        });
     }
   };
 
   const handleDeleteRecipe = (recipeId) => {
     axios.delete(`http://127.0.0.1:8000/api/recipes/${recipeId}`)
       .then(() => {
+        const deletedRecipe = recipes.find(r => r.id === recipeId);
+        toast.success(`"${deletedRecipe.title}" was deleted.`);
         setRecipes(recipes.filter(r => r.id !== recipeId));
         setSelectedRecipes(selectedRecipes.filter(r => r.id !== recipeId));
       })
-      .catch(error => console.error("Error deleting recipe:", error));
+      .catch(error => {
+        console.error("Error deleting recipe:", error)
+        toast.error("Could not delete recipe.");
+      });
   };
 
   return (
@@ -93,7 +105,6 @@ const HomePage = () => {
           )}
         </div>
         <div className="shopping-list-section">
-          {/* Pass the allSpecials list down as a prop */}
           <ShoppingList selectedRecipes={selectedRecipes} allSpecials={allSpecials} />
         </div>
       </div>

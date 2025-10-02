@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import './AuthForm.css';
 
 const SignUpPage = () => {
@@ -22,8 +23,9 @@ const SignUpPage = () => {
     axios.post('http://127.0.0.1:8000/register', formData)
       .then(response => {
         setIsLoading(false);
-        alert('Registration successful! Please log in.');
-        navigate('/login'); // Redirect to login page on success
+        // Replace alert with toast.success
+        toast.success('Registration successful! Please log in.');
+        navigate('/login');
       })
       .catch(err => {
         setIsLoading(false);

@@ -15,3 +15,40 @@
   gap: 10px;
   cursor: pointer;
 }
+
+/* Add to bottom of src/components/ShoppingList.css */
+
+.item-details {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.item-price {
+  font-weight: bold;
+  color: #333;
+  min-width: 100px; /* Helps align prices */
+  text-align: right;
+}
+
+.item-quantity {
+  color: #666;
+}
+
+.total-cost-section {
+  display: flex;
+  justify-content: space-between;
+  font-size: 1.2rem;
+  font-weight: bold;
+  padding: 15px 10px;
+  border-top: 2px solid #333;
+  margin-top: 10px;
+}
+
+.disclaimer {
+  font-size: 0.8rem;
+  color: #888;
+  text-align: right;
+  margin-top: 5px;
+  padding-right: 10px;
+}

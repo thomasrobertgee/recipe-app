@@ -6,12 +6,11 @@ import axios from 'axios';
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  // Initialize token from localStorage to persist login across refreshes
   const [token, setToken] = useState(localStorage.getItem('token'));
+  // NEW: Add a loading state to track initial auth setup
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // This effect runs whenever the token changes.
-    // It sets the default Authorization header for all future axios requests.
     if (token) {
       localStorage.setItem('token', token);
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
@@ -19,6 +18,8 @@ export const AuthProvider = ({ children }) => {
       localStorage.removeItem('token');
       delete axios.defaults.headers.common['Authorization'];
     }
+    // Finished initial loading
+    setIsLoading(false);
   }, [token]);
 
   const login = (newToken) => {
@@ -29,14 +30,14 @@ export const AuthProvider = ({ children }) => {
     setToken(null);
   };
 
+  // Provide the isLoading state to the rest of the app
   return (
-    <AuthContext.Provider value={{ token, login, logout }}>
-      {children}
+    <AuthContext.Provider value={{ token, isLoading, login, logout }}>
+      {!isLoading && children}
     </AuthContext.Provider>
   );
 };
 
-// Custom hook to easily use the auth context in other components
 export const useAuth = () => {
   return useContext(AuthContext);
 };
