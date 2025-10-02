@@ -2,11 +2,12 @@
 
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
-import { ToastContainer } from 'react-toastify'; // FIX: Import 'ToastContainer'
+import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Navbar from './components/Navbar';
 import ProtectedRoute from './components/ProtectedRoute';
 import HomePage from './pages/HomePage';
+import SpecialsPage from './pages/SpecialsPage'; // Make sure this is imported
 import SignUpPage from './pages/SignUpPage';
 import LoginPage from './pages/LoginPage';
 import ProfilePage from './pages/ProfilePage';
@@ -15,9 +16,7 @@ import './App.css';
 function App() {
   return (
     <div>
-      {/* FIX: Use the correct component name */}
       <ToastContainer position="top-center" autoClose={3000} hideProgressBar={false} />
-      
       <Navbar />
       <main className="app-container">
         <Routes>
@@ -28,6 +27,8 @@ function App() {
           
           {/* Protected Routes */}
           <Route element={<ProtectedRoute />}>
+            {/* --- THIS IS THE FIX: Add the /specials route back in --- */}
+            <Route path="/specials" element={<SpecialsPage />} />
             <Route path="/profile" element={<ProfilePage />} />
           </Route>
         </Routes>
