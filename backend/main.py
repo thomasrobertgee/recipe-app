@@ -1,15 +1,21 @@
-# backend/main.py
+# backend/main.py (Complete with Debug Prints)
 
-from fastapi import FastAPI, HTTPException
+# --- DEBUG PRINT 1 ---
+print("--- MAIN.PY HAS BEEN RELOADED ---")
+
+from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from contextlib import asynccontextmanager
 from typing import List
 from sqlmodel import Session, select
 from database import engine, create_db_and_tables
-from models import Recipe, Ingredient, RecipeIngredientLink, Special
-from schemas import RecipeResponse, IngredientInRecipe, RecipeCreate, SpecialCreate, SpecialRead
+from models import User, Recipe, Ingredient, RecipeIngredientLink, Special
+from schemas import UserCreate, UserRead, Token, RecipeResponse, IngredientInRecipe, RecipeCreate, SpecialCreate, SpecialRead
+from security import get_password_hash, verify_password, create_access_token
 from ai_service import generate_recipes_from_specials
 
+# --- App Setup ---
 origins = ["http://localhost:5173"]
 
 @asynccontextmanager
@@ -28,6 +34,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# --- Dependency for Database Session ---
+def get_session():
+    with Session(engine) as session:
+        yield session
+
 # --- HELPER FUNCTION to save a recipe ---
 def _save_recipe_to_db(recipe_data: RecipeCreate, session: Session) -> Recipe:
     new_recipe = Recipe(title=recipe_data.title, description=recipe_data.description, instructions=recipe_data.instructions)
@@ -42,95 +53,105 @@ def _save_recipe_to_db(recipe_data: RecipeCreate, session: Session) -> Recipe:
     session.refresh(new_recipe)
     return new_recipe
 
-# --- API ENDPOINTS ---
+# --- AUTHENTICATION ENDPOINTS ---
+@app.post("/register", response_model=UserRead)
+def create_user(user: UserCreate, session: Session = Depends(get_session)):
+    # --- DEBUG PRINT 2 ---
+    print(f"--- ATTEMPTING TO REGISTER USER with password length: {len(user.password)} ---")
 
+    existing_user = session.exec(select(User).where(User.email == user.email)).first()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Email already registered")
+    hashed_password = get_password_hash(user.password)
+    new_user = User(email=user.email, hashed_password=hashed_password)
+    session.add(new_user)
+    session.commit()
+    session.refresh(new_user)
+    return new_user
+
+@app.post("/token", response_model=Token)
+def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), session: Session = Depends(get_session)):
+    user = session.exec(select(User).where(User.email == form_data.username)).first()
+    if not user or not verify_password(form_data.password, user.hashed_password):
+        raise HTTPException(status_code=401, detail="Incorrect email or password", headers={"WWW-Authenticate": "Bearer"})
+    access_token = create_access_token(data={"sub": user.email})
+    return Token(access_token=access_token, token_type="bearer")
+
+# --- API ENDPOINTS ---
 @app.get("/")
 def read_root(): return {"message": "Welcome!"}
 
 @app.post("/api/generate-recipes")
-def generate_recipes_endpoint(specials: List[SpecialRead]):
+def generate_recipes_endpoint(specials: List[SpecialRead], session: Session = Depends(get_session)):
     ai_generated_recipes = generate_recipes_from_specials(specials)
     saved_recipes_count = 0
-    with Session(engine) as session:
-        for recipe_dict in ai_generated_recipes:
-            try:
-                recipe_data = RecipeCreate(**recipe_dict)
-                _save_recipe_to_db(recipe_data, session)
-                saved_recipes_count += 1
-            except Exception as e:
-                print(f"Could not validate or save AI recipe: {e}")
+    for recipe_dict in ai_generated_recipes:
+        try:
+            recipe_data = RecipeCreate(**recipe_dict)
+            _save_recipe_to_db(recipe_data, session)
+            saved_recipes_count += 1
+        except Exception as e:
+            print(f"Could not validate or save AI recipe: {e}")
     return {"message": f"Successfully generated and saved {saved_recipes_count} new recipes."}
 
 # --- SPECIALS ENDPOINTS ---
 @app.post("/api/specials", response_model=SpecialRead)
-def create_special(special_data: SpecialCreate):
-    with Session(engine) as session:
-        ingredient = session.exec(select(Ingredient).where(Ingredient.name == special_data.ingredient_name)).first()
-        if not ingredient:
-            ingredient = Ingredient(name=special_data.ingredient_name)
-        special = Special(ingredient=ingredient, price=special_data.price, store=special_data.store)
-        session.add(special)
-        session.commit()
-        session.refresh(special)
-        return SpecialRead.from_orm(special, update={'ingredient_name': ingredient.name})
+def create_special(special_data: SpecialCreate, session: Session = Depends(get_session)):
+    ingredient = session.exec(select(Ingredient).where(Ingredient.name == special_data.ingredient_name)).first()
+    if not ingredient:
+        ingredient = Ingredient(name=special_data.ingredient_name)
+    special = Special(ingredient=ingredient, price=special_data.price, store=special_data.store)
+    session.add(special)
+    session.commit()
+    session.refresh(special)
+    return SpecialRead.from_orm(special, update={'ingredient_name': ingredient.name})
 
 @app.get("/api/specials", response_model=List[SpecialRead])
-def get_specials():
-    with Session(engine) as session:
-        db_specials = session.exec(select(Special)).all()
-        return [SpecialRead.from_orm(s, update={'ingredient_name': s.ingredient.name}) for s in db_specials]
+def get_specials(session: Session = Depends(get_session)):
+    db_specials = session.exec(select(Special)).all()
+    return [SpecialRead.from_orm(s, update={'ingredient_name': s.ingredient.name}) for s in db_specials]
 
 @app.delete("/api/specials/{special_id}")
-def delete_special(special_id: int):
-    with Session(engine) as session:
-        special = session.get(Special, special_id)
-        if not special: raise HTTPException(status_code=404, detail="Special not found")
-        session.delete(special)
-        session.commit()
-        return {"message": "Special deleted successfully."}
+def delete_special(special_id: int, session: Session = Depends(get_session)):
+    special = session.get(Special, special_id)
+    if not special: raise HTTPException(status_code=404, detail="Special not found")
+    session.delete(special)
+    session.commit()
+    return {"message": "Special deleted successfully."}
 
 @app.delete("/api/specials")
-def delete_all_specials():
-    with Session(engine) as session:
-        session.query(Special).delete()
-        session.commit()
-        return {"message": "All specials cleared."}
+def delete_all_specials(session: Session = Depends(get_session)):
+    session.query(Special).delete()
+    session.commit()
+    return {"message": "All specials cleared."}
 
 # --- RECIPES ENDPOINTS ---
 @app.post("/api/recipes", response_model=RecipeResponse)
-def create_recipe(recipe_data: RecipeCreate):
-    with Session(engine) as session:
-        new_recipe = _save_recipe_to_db(recipe_data, session)
-        response_ingredients = [IngredientInRecipe(name=link.ingredient.name, quantity=link.quantity) for link in new_recipe.links]
-        return RecipeResponse.from_orm(new_recipe, update={'ingredients': response_ingredients})
+def create_recipe(recipe_data: RecipeCreate, session: Session = Depends(get_session)):
+    new_recipe = _save_recipe_to_db(recipe_data, session)
+    response_ingredients = [IngredientInRecipe(name=link.ingredient.name, quantity=link.quantity) for link in new_recipe.links]
+    return RecipeResponse.from_orm(new_recipe, update={'ingredients': response_ingredients})
 
 @app.get("/api/recipes", response_model=List[RecipeResponse])
-def get_recipes():
-    with Session(engine) as session:
-        db_recipes = session.exec(select(Recipe)).all()
-        response_recipes = []
-        for recipe in db_recipes:
-            response_ingredients = [IngredientInRecipe(name=link.ingredient.name, quantity=link.quantity) for link in recipe.links]
-            response_recipes.append(RecipeResponse.from_orm(recipe, update={'ingredients': response_ingredients}))
-        return response_recipes
+def get_recipes(session: Session = Depends(get_session)):
+    db_recipes = session.exec(select(Recipe)).all()
+    response_recipes = []
+    for recipe in db_recipes:
+        response_ingredients = [IngredientInRecipe(name=link.ingredient.name, quantity=link.quantity) for link in recipe.links]
+        response_recipes.append(RecipeResponse.from_orm(recipe, update={'ingredients': response_ingredients}))
+    return response_recipes
 
-# --- NEW: Endpoint to delete a single recipe ---
 @app.delete("/api/recipes/{recipe_id}")
-def delete_recipe(recipe_id: int):
-    with Session(engine) as session:
-        recipe = session.get(Recipe, recipe_id)
-        if not recipe:
-            raise HTTPException(status_code=404, detail="Recipe not found")
-
-        # The relationships we set up with 'back_populates' handle deleting the links automatically!
-        session.delete(recipe)
-        session.commit()
-        return {"message": "Recipe deleted successfully."}
+def delete_recipe(recipe_id: int, session: Session = Depends(get_session)):
+    recipe = session.get(Recipe, recipe_id)
+    if not recipe: raise HTTPException(status_code=404, detail="Recipe not found")
+    session.delete(recipe)
+    session.commit()
+    return {"message": "Recipe deleted successfully."}
 
 @app.delete("/api/recipes")
-def delete_all_recipes():
-    with Session(engine) as session:
-        session.query(RecipeIngredientLink).delete()
-        session.query(Recipe).delete()
-        session.commit()
-        return {"message": "All recipes have been cleared."}
+def delete_all_recipes(session: Session = Depends(get_session)):
+    session.query(RecipeIngredientLink).delete()
+    session.query(Recipe).delete()
+    session.commit()
+    return {"message": "All recipes have been cleared."}

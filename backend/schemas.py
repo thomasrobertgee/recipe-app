@@ -1,22 +1,19 @@
-# backend/schemas.py
+# backend/schemas.py (Corrected)
 
 from sqlmodel import SQLModel
 from typing import List
+from pydantic import Field # Import Field for validation
 
-# This defines the shape of an ingredient when it's part of a recipe response
 class IngredientInRecipe(SQLModel):
     name: str
     quantity: str
 
-# This defines the shape of the main recipe response
 class RecipeResponse(SQLModel):
     id: int
     title: str
     description: str
     instructions: str
     ingredients: List[IngredientInRecipe]
-
-    # Add these to the bottom of backend/schemas.py
 
 class IngredientCreate(SQLModel):
     name: str
@@ -27,8 +24,6 @@ class RecipeCreate(SQLModel):
     description: str
     instructions: str
     ingredients: List[IngredientCreate]
-
-# Add these new classes to the bottom of backend/schemas.py
 
 class SpecialBase(SQLModel):
     ingredient_name: str
@@ -41,3 +36,18 @@ class SpecialCreate(SpecialBase):
 class SpecialRead(SpecialBase):
     id: int
     ingredient_id: int
+
+class UserBase(SQLModel):
+    email: str
+
+class UserCreate(UserBase):
+    # --- THIS IS THE FIX ---
+    # We add validation to ensure the password is between 8 and 72 characters.
+    password: str = Field(min_length=8, max_length=72)
+
+class UserRead(UserBase):
+    id: int
+
+class Token(SQLModel):
+    access_token: str
+    token_type: str

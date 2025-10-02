@@ -24,3 +24,34 @@
   border-bottom: 2px solid #4caf50;
   padding-bottom: 4px;
 }
+
+/* Add to bottom of src/components/Navbar.css */
+.nav-auth {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.signup-button {
+  background-color: #4caf50;
+  color: white !important;
+  padding: 8px 16px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.signup-button:hover {
+  background-color: #45a049;
+}
+
+.signup-button.active {
+  border-bottom: none !important;
+}
+
+.logout-button {
+  background: none;
+  border: 1px solid #ccc;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+}
