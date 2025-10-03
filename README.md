@@ -9,10 +9,11 @@ The application consists of a Python backend that serves data from a database an
 ## Current Features
 
 - **Full User Authentication:** Users can register, log in, and maintain a persistent session using JWTs.
-- **User Preference Management:** A dedicated profile page where users can save their household size, dietary requirements, and allergies.
+- **User Preference Management:** A dedicated profile page where users can save their household size and select dietary requirements and allergies.
 - **AI-powered recipe generation** that uses a user's saved preferences to create tailored recipes.
 - A read-only page for viewing the current weekly specials.
-- **Interactive Shopping List:** A dynamic list with intelligent ingredient consolidation, a persistent checklist, and price estimation.
+- **Recipe & Shopping List Costing:** Displays an estimated cost for each recipe and a total for the shopping list, based on the full price of the required on-special items.
+- **Interactive Shopping List:** A dynamic list of required special items with a persistent checklist.
 - Full CRUD functionality for recipes (AI-Create, Read, Delete) and specials (backend-managed).
 - A dedicated landing page for new and logged-out users.
 - Polished UI with a modern recipe card design, interactive modals, and toast notifications.
@@ -21,25 +22,17 @@ The application consists of a Python backend that serves data from a database an
 
 ## Future Development Roadmap
 
-This section outlines the planned features to evolve the app into a full-featured product.
+This section outlines the planned features to evolve the app from an MVP into a full-featured product.
 
-### Core Recipe & Shopping Experience
-- **Personalized Home Dashboard:** The main page for logged-in users will display a 3x3 grid of personalized recipes based on current specials, with a "View More" button to load more.
-- **Recipe Costing Engine:**
-    - Each recipe will have a calculated dollar value.
-    - This cost will dynamically scale based on the user's saved household size.
-- **Enhanced Recipe Cards:** Recipe cards will display the calculated cost and the user rating.
-- **Special Ingredient Highlighting:** On the recipe detail view, ingredients that are not currently on special will be visually highlighted.
-- **Interactive Shopping List 2.0:** The shopping list will be enhanced with price scaling based on household size.
+### User Personalization
+- **Budget Tracking:** Allow users to set a weekly or monthly budget.
+- **Recipe Management:** Allow users to save their favorite recipes to a personal collection and rate them on a 1-5 star scale.
+- **OAuth:** Add "Sign in with Google" as an alternative login method.
 
-### User Personalization & Interaction
-- **Recipe Rating System:** Users will be able to rate recipes on a 1-5 star scale.
-- **Recipe Filtering:** The main recipes page will have filter options, allowing users to show only recipes that match their saved dietary and allergy preferences (e.g., "Vegan", "Gluten-Free").
-- **Recipe Tagging System:** The backend will automatically tag recipes with relevant dietary/allergy info upon generation.
-
-### Data & Backend Enhancements
-- **Multi-Supermarket Database:** Expand the specials database to include data from Woolworths and Aldi for comprehensive comparisons.
-- **Persistent Recipes:** Generated recipes are saved permanently in the database.
+### Core App Enhancements
+- **Advanced Costing:** Implement per-portion recipe costing and waste calculation.
+- **Filtered Recipe View:** The main recipe page will filter recipes based on the user's saved preferences.
+- **Multi-Supermarket Support:** Expand the specials database to include data from Woolworths and Aldi.
 
 ---
 

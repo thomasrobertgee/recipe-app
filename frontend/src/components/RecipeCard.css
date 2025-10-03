@@ -10,7 +10,7 @@
   cursor: pointer;
   display: flex;
   flex-direction: column;
-  position: relative; /* Needed for absolute positioning of delete button */
+  position: relative;
 }
 
 .recipe-card:hover {
@@ -23,87 +23,99 @@
   box-shadow: 0 4px 8px rgba(76, 175, 80, 0.2);
 }
 
-/* NEW: Container for top-right actions */
 .card-header-actions {
   position: absolute;
   top: 10px;
   right: 10px;
-  z-index: 10; /* Ensure it's above other content */
+  z-index: 10;
 }
 
-/* Delete button styling */
 .delete-btn {
   background: transparent;
   border: none;
-  font-size: 24px; /* Larger for better clickability */
+  font-size: 24px;
   color: #aaa;
   cursor: pointer;
   transition: color 0.2s;
   padding: 5px;
-  line-height: 1; /* Aligns the 'x' better */
+  line-height: 1;
 }
 
 .delete-btn:hover {
-  color: #e57373; /* Light red */
+  color: #e57373;
 }
 
-/* Card content (title, description) */
 .card-content {
   padding: 20px;
   flex-grow: 1;
 }
 
-.card-content h2 {
+/* --- NEW: Style for the row containing the title and cost --- */
+.card-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 0.5rem;
+}
+
+.card-title-row h2 {
   margin-top: 0;
   font-size: 1.2rem;
   font-weight: 600;
   color: #333;
-  margin-bottom: 0.5rem; /* Space between title and description */
+  margin-bottom: 0; 
+}
+
+/* --- NEW: Style for the cost display --- */
+.recipe-cost {
+  font-size: 1.3rem;
+  font-weight: bold;
+  color: #388e3c; /* Dark green */
+  white-space: nowrap; /* Prevents the price from wrapping */
+  padding-top: 2px;
 }
 
 .card-content p {
   font-size: 0.9rem;
   color: #666;
   line-height: 1.5;
+  margin-top: 0;
 }
 
-/* NEW: Container for bottom-center action */
 .card-bottom-action {
   padding: 15px 20px;
   border-top: 1px solid #f0f0f0;
   margin-top: auto;
-  text-align: center; /* Center the button */
+  text-align: center;
 }
 
-/* Select button styling */
 .select-btn {
-  /* NEW: Light green background */
-  background-color: #e8f5e9; /* A light green */
-  color: #388e3c; /* Darker green text */
-  border: 1px solid #a5d6a7; /* Green border */
-  border-radius: 6px; /* Slightly more prominent corners */
+  background-color: #e8f5e9;
+  color: #388e3c;
+  border: 1px solid #a5d6a7;
+  border-radius: 6px;
   padding: 10px 20px;
   cursor: pointer;
-  font-weight: 600; /* Bolder text */
-  font-size: 0.95rem; /* Slightly larger text */
+  font-weight: 600;
+  font-size: 0.95rem;
   transition: background-color 0.2s, border-color 0.2s, color 0.2s;
-  width: 100%; /* Make it span the width of its container */
-  max-width: 250px; /* But not too wide */
+  width: 100%;
+  max-width: 250px;
 }
 
 .select-btn:hover {
-  background-color: #dcedc8; /* Lighter green on hover */
+  background-color: #dcedc8;
   border-color: #8bc34a;
 }
 
-/* Style for when the card is selected */
 .recipe-card.selected .select-btn {
-  background-color: #4caf50; /* Solid green for selected */
+  background-color: #4caf50;
   color: white;
   border-color: #4caf50;
 }
 
 .recipe-card.selected .select-btn:hover {
-  background-color: #43a047; /* Slightly darker green on hover when selected */
+  background-color: #43a047;
   border-color: #43a047;
 }

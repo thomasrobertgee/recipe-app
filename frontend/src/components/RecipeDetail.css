@@ -56,3 +56,14 @@
 .instructions p {
   line-height: 1.6;
 }
+
+.modal-content li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.ingredient-price {
+  font-style: italic;
+  color: #555;
+  font-size: 0.9rem;
+}
