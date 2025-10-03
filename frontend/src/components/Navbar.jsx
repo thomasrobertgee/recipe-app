@@ -13,15 +13,14 @@ const Navbar = () => {
       <NavLink to="/" className="nav-logo">Recipe Saver</NavLink>
       <div className="nav-links">
         <NavLink to="/">Recipes</NavLink>
-        {/* ADD THIS LINK BACK */}
+        {/* --- ADD THIS LINK BACK --- */}
         {token && <NavLink to="/specials">View Specials</NavLink>}
+        {token && <NavLink to="/saved-recipes">My Saved</NavLink>}
+        {token && <NavLink to="/profile">Profile</NavLink>}
       </div>
       <div className="nav-auth">
         {token ? (
-          <>
-            <NavLink to="/profile">Profile</NavLink>
-            <button onClick={logout} className="logout-button">Log Out</button>
-          </>
+          <button onClick={logout} className="logout-button">Log Out</button>
         ) : (
           <>
             <NavLink to="/login">Log In</NavLink>

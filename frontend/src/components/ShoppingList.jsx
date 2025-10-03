@@ -1,13 +1,8 @@
 // src/components/ShoppingList.jsx
 
 import React, { useState, useEffect, useMemo } from 'react';
+import { calculateRecipeCost } from '../utils/priceUtils'; // Import the one true calculator
 import './ShoppingList.css';
-
-const getSimplePrice = (priceString) => {
-    if (!priceString) return 0;
-    const match = priceString.match(/\$(\d+\.?\d*)/);
-    return match ? parseFloat(match[1]) : 0;
-};
 
 const ShoppingList = ({ selectedRecipes, allSpecials }) => {
     const [checkedItems, setCheckedItems] = useState(() => {
@@ -19,6 +14,7 @@ const ShoppingList = ({ selectedRecipes, allSpecials }) => {
         localStorage.setItem('checkedItems', JSON.stringify(checkedItems));
     }, [checkedItems]);
 
+    // Get a simple list of all unique on-special ingredients needed
     const { lineItems, totalCost } = useMemo(() => {
         if (!allSpecials || selectedRecipes.length === 0) return { lineItems: [], totalCost: 0 };
         
@@ -33,14 +29,17 @@ const ShoppingList = ({ selectedRecipes, allSpecials }) => {
                      shoppingListMap.set(special.ingredient_name, {
                         name: special.ingredient_name,
                         priceString: special.price,
-                        cost: getSimplePrice(special.price),
                      });
                 }
             });
         });
         
         const uniqueItems = Array.from(shoppingListMap.values());
-        const total = uniqueItems.reduce((sum, item) => sum + item.cost, 0);
+        
+        // Calculate total cost by summing the cost of each selected recipe
+        const total = selectedRecipes.reduce((sum, recipe) => {
+            return sum + calculateRecipeCost(recipe, allSpecials);
+        }, 0);
 
         return { lineItems: uniqueItems, totalCost: total };
     }, [selectedRecipes, allSpecials]);
@@ -84,5 +83,4 @@ const ShoppingList = ({ selectedRecipes, allSpecials }) => {
         </div>
     );
 };
-
 export default ShoppingList;

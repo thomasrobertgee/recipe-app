@@ -119,3 +119,21 @@
   background-color: #43a047;
   border-color: #43a047;
 }
+
+/* Add to bottom of src/components/RecipeCard.css */
+.save-btn {
+  background: none;
+  border: none;
+  font-size: 28px;
+  color: #aaa;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  transition: color 0.2s, transform 0.2s;
+}
+.save-btn:hover {
+  transform: scale(1.2);
+}
+.save-btn.saved {
+  color: #e57373; /* Red color for saved */
+}
