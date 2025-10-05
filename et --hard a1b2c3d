@@ -1,0 +1,29 @@
+[33m997df80[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m fix: Unify and correct all frontend price calculation logic
+[33ma54b71f[m refactor(pricing): Simplify cost calculation model to fix bugs
+[33m4cdeefd[m feat: Update seeder with 150 specials and 26 test users
+[33m40931f5[m refactor: Add landing page, simplify specials page, and fix UI bugs
+[33m1ba1292[m refactor: Redesign recipe cards and fix auth UI bugs
+[33m56d82e8[m feat: Add toast notifications for recipe and shopping list actions
+[33m7de4d76[m fix: Correct shopping list price estimation and unit conversion
+[33m6bb4300[m feat: Add interactive checklist to shopping list
+[33m22d0577[m refactor: Improve AI prompt with stricter dietary rules
+[33m38c2e03[m feat: Implement checkbox-based user preference management
+[33m909a8a2[m feat: Implement email and password user authentication
+[33m91bfdc2[m feat: Increase AI recipe generation count to 5
+[33mc5cafa7[m feat: Add delete recipe functionality
+[33m024874b[m docs: Add future development roadmap to README
+[33mb53bcf2[m fix: Correct prop passed to RecipeDetail modal
+[33m9d0c74b[m feat: Implement automated web scraper for Coles specials
+[33mc3c120a[m feat: Add frontend button to trigger AI generation
+[33m1276662[m feat: Implement AI recipe generation from specials
+[33mf8107ba[m refactor: Update specials form to use structured inputs
+[33m7f16762[m fix: Improve ingredient consolidation logic in shopping list
+[33m8ba8a0e[m feat: Persist selected recipes using localStorage
+[33m643e027[m feat: Implement dynamic shopping list functionality
+[33mf1e4c23[m feat: Add interactive modal for recipe details
+[33m98c4f54[m feat: Connect React frontend and update README
+[33mef107d1[m docs: Add README.md and requirements.txt
+[33m113c189[m docs: Add README.md and requirements.txt
+[33mf938d33[m feat: Build complete backend with database and API endpoint
+[33m0146504[m feat: Initial setup with basic FastAPI server
+[33m32336bd[m feat: Initial setup with basic FastAPI server

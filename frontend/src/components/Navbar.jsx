@@ -12,8 +12,8 @@ const Navbar = () => {
     <nav className="navbar">
       <NavLink to="/" className="nav-logo">Recipe Saver</NavLink>
       <div className="nav-links">
-        <NavLink to="/">Recipes</NavLink>
-        {/* --- ADD THIS LINK BACK --- */}
+        {token && <NavLink to="/dashboard">Dashboard</NavLink>}
+        {token && <NavLink to="/recipes">All Recipes</NavLink>}
         {token && <NavLink to="/specials">View Specials</NavLink>}
         {token && <NavLink to="/saved-recipes">My Saved</NavLink>}
         {token && <NavLink to="/profile">Profile</NavLink>}

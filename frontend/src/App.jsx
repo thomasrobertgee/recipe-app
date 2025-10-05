@@ -12,6 +12,8 @@ import MySavedRecipesPage from './pages/MySavedRecipesPage';
 import SignUpPage from './pages/SignUpPage';
 import LoginPage from './pages/LoginPage';
 import ProfilePage from './pages/ProfilePage';
+import DashboardPage from './pages/DashboardPage';
+import AllRecipesPage from './pages/AllRecipesPage';
 import './App.css';
 
 function App() {
@@ -28,7 +30,8 @@ function App() {
           
           {/* Protected Routes */}
           <Route element={<ProtectedRoute />}>
-            {/* --- ADD THIS ROUTE BACK --- */}
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/recipes" element={<AllRecipesPage />} />
             <Route path="/specials" element={<SpecialsPage />} />
             <Route path="/saved-recipes" element={<MySavedRecipesPage />} />
             <Route path="/profile" element={<ProfilePage />} />
