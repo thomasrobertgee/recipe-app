@@ -6,61 +6,29 @@ import { useAuth } from '../context/AuthContext';
 import './AuthForm.css';
 import './ProfilePage.css';
 
-// --- UPDATED: Sorted the list alphabetically ---
 const DIETARY_RESTRICTIONS = [
-  "Dairy-Free",
-  "Egg Allergy",
-  "Fish Allergy",
-  "Gluten-Free",
-  "Halal",
-  "Keto",
-  "Kosher",
-  "Low-Carb",
-  "Low-Fat",
-  "Low-Sodium",
-  "No Red Meat",
-  "Paleo",
-  "Peanut Allergy",
-  "Pescatarian",
-  "Shellfish Allergy",
-  "Soy Allergy",
-  "Tree Nut Allergy",
-  "Vegan",
-  "Vegetarian",
-  "Wheat Allergy",
+  "Dairy-Free", "Egg Allergy", "Fish Allergy", "Gluten-Free", "Halal", "Keto", 
+  "Kosher", "Low-Carb", "Low-Fat", "Low-Sodium", "No Red Meat", "Paleo", 
+  "Peanut Allergy", "Pescatarian", "Shellfish Allergy", "Soy Allergy", 
+  "Tree Nut Allergy", "Vegan", "Vegetarian", "Wheat Allergy",
 ];
 
 const ProfilePage = () => {
-  const { token } = useAuth();
-  const [formData, setFormData] = useState({
+  // --- UPDATED: Use userProfile from AuthContext ---
+  const { userProfile, setUserProfile } = useAuth();
+  const [formData, setFormData] = useState(userProfile || {
     email: '',
     household_size: 2,
     dietary_restrictions: [],
+    weekly_budget: '',
   });
   const [message, setMessage] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
+  // Sync local form state if global profile changes
   useEffect(() => {
-    if (token) {
-      setIsLoading(true);
-      axios.get('http://127.0.0.1:8000/users/me')
-        .then(response => {
-          const userData = {
-            dietary_restrictions: [], 
-            ...response.data
-          };
-          setFormData(userData);
-        })
-        .catch(error => {
-          console.error("Error fetching user profile:", error);
-        })
-        .finally(() => {
-            setIsLoading(false);
-        });
-    } else {
-        setIsLoading(false);
-    }
-  }, [token]);
+    setFormData(userProfile || {});
+  }, [userProfile]);
 
   const handleInputChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -69,7 +37,6 @@ const ProfilePage = () => {
   const handleCheckboxChange = (e) => {
     const { name, value, checked } = e.target;
     const currentValues = formData[name] || [];
-
     if (checked) {
       setFormData({ ...formData, [name]: [...currentValues, value] });
     } else {
@@ -85,56 +52,59 @@ const ProfilePage = () => {
     const dataToUpdate = {
       household_size: parseInt(formData.household_size, 10),
       dietary_restrictions: formData.dietary_restrictions || [],
+      weekly_budget: formData.weekly_budget ? parseFloat(formData.weekly_budget) : null,
     };
 
     axios.put('http://127.0.0.1:8000/users/me', dataToUpdate)
       .then(response => {
-        setFormData(response.data);
+        // --- UPDATED: Update the global context state ---
+        setUserProfile(response.data);
         setMessage('Profile updated successfully!');
       })
-      .catch(error => {
-        setMessage('Failed to update profile. Please try again.');
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
+      .catch(error => setMessage('Failed to update profile. Please try again.'))
+      .finally(() => setIsLoading(false));
   };
+
+  if (!userProfile) {
+    return <p>Loading profile...</p>;
+  }
 
   return (
     <div className="auth-container">
       <h1>My Profile</h1>
-      {isLoading ? <p>Loading profile...</p> : (
-        <form onSubmit={handleSubmit} className="auth-form">
-          <label htmlFor="email">Email</label>
-          <input type="email" name="email" value={formData.email} disabled />
+      <form onSubmit={handleSubmit} className="auth-form">
+        <label htmlFor="email">Email</label>
+        <input type="email" name="email" value={formData.email} disabled />
 
-          <label htmlFor="household_size">Household Size</label>
-          <input type="number" name="household_size" value={formData.household_size} onChange={handleInputChange} min="1" required />
+        <label htmlFor="household_size">Household Size</label>
+        <input type="number" name="household_size" value={formData.household_size} onChange={handleInputChange} min="1" required />
 
-          <fieldset>
-            <legend>Dietary Restrictions</legend>
-            <div className="checkbox-group">
-              {DIETARY_RESTRICTIONS.map(option => (
-                <label key={option} className="checkbox-label">
-                  <input 
-                    type="checkbox" 
-                    name="dietary_restrictions" 
-                    value={option} 
-                    checked={(formData.dietary_restrictions || []).includes(option)} 
-                    onChange={handleCheckboxChange} 
-                  />
-                  {option}
-                </label>
-              ))}
-            </div>
-          </fieldset>
+        <label htmlFor="weekly_budget">Weekly Budget ($)</label>
+        <input type="number" name="weekly_budget" placeholder="e.g., 150.00" value={formData.weekly_budget || ''} onChange={handleInputChange} min="0" step="0.01" />
 
-          <button type="submit" disabled={isLoading}>
-            {isLoading ? 'Saving...' : 'Update Profile'}
-          </button>
-          {message && <p className={message.includes('success') ? 'success-message' : 'error-message'}>{message}</p>}
-        </form>
-      )}
+        <fieldset>
+          <legend>Dietary Restrictions</legend>
+          <div className="checkbox-group">
+            {DIETARY_RESTRICTIONS.map(option => (
+              <label key={option} className="checkbox-label">
+                <input 
+                  type="checkbox" 
+                  name="dietary_restrictions" 
+                  value={option} 
+                  checked={(formData.dietary_restrictions || []).includes(option)} 
+                  onChange={handleCheckboxChange} 
+                />
+                {option}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+
+        <button type="submit" disabled={isLoading}>
+          {isLoading ? 'Saving...' : 'Update Profile'}
+        </button>
+        {message && <p className={message.includes('success') ? 'success-message' : 'error-message'}>{message}</p>}
+      </form>
     </div>
   );
 };

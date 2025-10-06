@@ -8,8 +8,6 @@ const AuthContext = createContext();
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
-  // --- THIS IS THE FIX ---
-  // This function now properly checks for 'null' as a string.
   const [token, setToken] = useState(() => {
     const storedToken = localStorage.getItem('token');
     return (storedToken && storedToken !== 'null') ? storedToken : null;
@@ -18,6 +16,9 @@ export const AuthProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [savedRecipeIds, setSavedRecipeIds] = useState(new Set());
   const [selectedRecipes, setSelectedRecipes] = useState(() => JSON.parse(localStorage.getItem('selectedRecipes') || '[]'));
+  const [userProfile, setUserProfile] = useState(null);
+  
+  const [removedItems, setRemovedItems] = useState(() => JSON.parse(localStorage.getItem('removedItems') || '[]'));
 
   useEffect(() => {
     const initializeAuth = async () => {
@@ -25,13 +26,24 @@ export const AuthProvider = ({ children }) => {
         localStorage.setItem('token', token);
         axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
         try {
-          const response = await axios.get('http://127.0.0.1:8000/api/users/me/saved-recipes');
-          setSavedRecipeIds(new Set(response.data.map(recipe => recipe.id)));
-        } catch (error) { console.error("Could not fetch saved recipes", error); }
+          const [savedRecipesRes, userProfileRes] = await Promise.all([
+            axios.get('http://127.0.0.1:8000/api/users/me/saved-recipes'),
+            axios.get('http://127.0.0.1:8000/users/me')
+          ]);
+          setSavedRecipeIds(new Set(savedRecipesRes.data.map(recipe => recipe.id)));
+          setUserProfile(userProfileRes.data);
+        } catch (error) { 
+          console.error("Could not fetch initial user data", error);
+          if (error.response && error.response.status === 401) {
+            setToken(null);
+            setUserProfile(null);
+          }
+        }
       } else {
         localStorage.removeItem('token');
         delete axios.defaults.headers.common['Authorization'];
         setSavedRecipeIds(new Set());
+        setUserProfile(null);
       }
       setIsLoading(false);
     };
@@ -42,8 +54,18 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem('selectedRecipes', JSON.stringify(selectedRecipes));
   }, [selectedRecipes]);
 
+  useEffect(() => {
+    localStorage.setItem('removedItems', JSON.stringify(removedItems));
+  }, [removedItems]);
+
+
   const login = (newToken) => setToken(newToken);
-  const logout = () => { setToken(null); setSelectedRecipes([]); };
+  const logout = () => { 
+    setToken(null); 
+    setSelectedRecipes([]); 
+    setUserProfile(null);
+    setRemovedItems([]);
+  };
   
   const saveRecipe = async (recipeId) => {
     try {
@@ -62,17 +84,44 @@ export const AuthProvider = ({ children }) => {
   };
   
   const handleSelectRecipe = (recipeToToggle) => {
-    const isSelected = selectedRecipes.find(r => r.id === recipeToToggle.id);
-    if (isSelected) {
-      setSelectedRecipes(selectedRecipes.filter(r => r.id !== recipeToToggle.id));
+    const isAlreadySelected = selectedRecipes.some(r => r.id === recipeToToggle.id);
+
+    if (isAlreadySelected) {
+      const recipeItemIds = recipeToToggle.ingredients.map(ing => `${ing.name}-${recipeToToggle.id}`);
+      setRemovedItems(prev => prev.filter(id => !recipeItemIds.includes(id)));
+      setSelectedRecipes(prev => prev.filter(r => r.id !== recipeToToggle.id));
       toast.info(`"${recipeToToggle.title}" removed from your list.`);
     } else {
-      setSelectedRecipes([...selectedRecipes, recipeToToggle]);
+      setSelectedRecipes(prev => [...prev, recipeToToggle]);
       toast.success(`"${recipeToToggle.title}" added to your list!`);
     }
   };
 
-  const contextValue = { token, isLoading, login, logout, savedRecipeIds, saveRecipe, unsaveRecipe, selectedRecipes, handleSelectRecipe };
+  const handleRemoveShoppingListItem = (itemId) => {
+    setRemovedItems(prev => [...prev, itemId]);
+  };
+  
+  const handleAddShoppingListItem = (itemId) => {
+    setRemovedItems(prev => prev.filter(id => id !== itemId));
+  };
+
+
+  const contextValue = { 
+    token, 
+    isLoading, 
+    login, 
+    logout, 
+    savedRecipeIds, 
+    saveRecipe, 
+    unsaveRecipe, 
+    selectedRecipes, 
+    handleSelectRecipe,
+    userProfile,
+    setUserProfile,
+    removedItems,
+    handleRemoveShoppingListItem,
+    handleAddShoppingListItem
+  };
 
   return (<AuthContext.Provider value={contextValue}>{!isLoading && children}</AuthContext.Provider>);
 };

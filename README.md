@@ -26,11 +26,14 @@ The application consists of a Python backend that serves data from a database an
 This section outlines the planned features to evolve the app from an MVP into a full-featured product.
 
 ### User Personalization
-- **Budget Tracking:** Allow users to set a weekly or monthly budget.
+- **Budget Tracking:** Allow users to set a weekly or monthly budget and see how their shopping list compares.
 - **OAuth:** Add "Sign in with Google" as an alternative login method.
+- **My Pantry Feature:** Allow users to track ingredients they already own to reduce food waste and cost.
+- **User-Uploaded Recipes:** Allow users to add and save their own personal recipes to their collection.
 
 ### Core App Enhancements
 - **Advanced Costing:** Implement per-portion recipe costing and waste calculation.
+- **Recipe Tagging & Advanced Filtering:** Have the AI automatically add tags (e.g., "Quick & Easy", "Spicy") to recipes for better discovery.
 - **Multi-Supermarket Support:** Expand the specials database to include data from Woolworths and Aldi.
 
 ---

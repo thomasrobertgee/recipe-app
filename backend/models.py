@@ -38,10 +38,10 @@ class Recipe(SQLModel, table=True):
     description: str
     instructions: str
     links: List[RecipeIngredientLink] = Relationship(back_populates="recipe", cascade_delete=True)
-    
+
     total_rating: int = Field(default=0)
     rating_count: int = Field(default=0)
-    
+
     saved_by_users: List["User"] = Relationship(back_populates="saved_recipes", link_model=UserRecipeLink)
 
 class User(SQLModel, table=True):
@@ -49,7 +49,8 @@ class User(SQLModel, table=True):
     email: str = Field(unique=True, index=True)
     hashed_password: str
     household_size: Optional[int] = Field(default=2)
-    # --- UPDATED: Combined fields ---
     dietary_restrictions: List[str] = Field(default=[], sa_column=Column(JSON))
-    
+    # --- NEW ---
+    weekly_budget: Optional[float] = Field(default=None)
+
     saved_recipes: List[Recipe] = Relationship(back_populates="saved_by_users", link_model=UserRecipeLink)

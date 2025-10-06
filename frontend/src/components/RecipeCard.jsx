@@ -1,13 +1,16 @@
 // src/components/RecipeCard.jsx
+
 import React, { useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { calculateRecipeCost } from '../utils/priceUtils';
+// --- UPDATED: Import the new function ---
+import { calculateSingleRecipeCost } from '../utils/priceUtils';
 import StarRating from './StarRating';
 import './RecipeCard.css';
 
 const RecipeCard = ({ recipe, onClick, onDelete, allSpecials }) => {
   const { savedRecipeIds, saveRecipe, unsaveRecipe, selectedRecipes, handleSelectRecipe } = useAuth();
-  const cost = useMemo(() => calculateRecipeCost(recipe, allSpecials), [recipe, allSpecials]);
+  // --- UPDATED: Call the correct function for single recipe cost ---
+  const cost = useMemo(() => calculateSingleRecipeCost(recipe, allSpecials), [recipe, allSpecials]);
   const isSaved = savedRecipeIds.has(recipe.id);
   const isSelected = selectedRecipes.some(r => r.id === recipe.id);
 
@@ -30,7 +33,6 @@ const RecipeCard = ({ recipe, onClick, onDelete, allSpecials }) => {
           {cost > 0 && (<div className="recipe-cost">${cost.toFixed(2)}</div>)}
         </div>
         <p>{recipe.description}</p>
-        {/* --- UPDATED --- */}
         <div className="card-rating-display">
           <StarRating rating={recipe.average_rating} readOnly={true} />
           {recipe.rating_count > 0 && (
