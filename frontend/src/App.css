@@ -1,48 +1,61 @@
 /* src/App.css */
+
 .app-container {
   padding: 20px;
   max-width: 1200px;
   margin: 0 auto;
 }
 
-.main-content {
-  display: flex;
-  flex-direction: row;
-  gap: 20px;
-  align-items: flex-start;
-}
-
-.recipe-grid {
-  flex: 3;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 16px;
-}
-
-.shopping-list-section {
-  flex: 1;
-  position: sticky;
-  top: 20px;
-}
-
-/* Add these styles to the bottom of src/App.css */
 .page-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
+  margin-bottom: 2rem;
 }
 
-.page-header h1 {
-  margin: 0;
-}
+.page-header h1 { margin: 0; }
 
 .clear-all-btn {
-    padding: 8px 12px;
-    background-color: #f44336; /* Red color */
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
+  padding: 8px 12px;
+  background-color: #f44336;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.recipe-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 24px;
+  justify-items: center;
+}
+
+.view-more-container { text-align: center; margin-top: 40px; }
+
+.view-more-btn {
+  padding: 12px 24px;
+  font-size: 1rem;
+  font-weight: bold;
+  color: white;
+  background-color: #4caf50;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+/* --- NEW LAYOUT STYLES --- */
+.app-layout { display: flex; }
+.main-content { flex-grow: 1; transition: width 0.3s ease; }
+.sidebar {
+  width: 25%;
+  min-width: 320px;
+  flex-shrink: 0;
+  background: #fdfdfd;
+  border-left: 1px solid #e0e0e0;
+  padding: 20px;
+  height: calc(100vh - 65px); /* Full height minus navbar */
+  position: sticky;
+  top: 65px; /* Stick below the navbar */
+  overflow-y: auto;
 }

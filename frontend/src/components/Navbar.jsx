@@ -1,12 +1,13 @@
 // src/components/Navbar.jsx
-
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useUI } from '../context/UIContext';
 import './Navbar.css';
 
 const Navbar = () => {
-  const { token, logout } = useAuth();
+  const { token, logout, selectedRecipes } = useAuth();
+  const { isSidebarOpen, openSidebar } = useUI();
 
   return (
     <nav className="navbar">
@@ -19,6 +20,11 @@ const Navbar = () => {
         {token && <NavLink to="/profile">Profile</NavLink>}
       </div>
       <div className="nav-auth">
+        {token && !isSidebarOpen && (
+          <button onClick={openSidebar} className="sidebar-tab">
+            Shopping List ({selectedRecipes.length})
+          </button>
+        )}
         {token ? (
           <button onClick={logout} className="logout-button">Log Out</button>
         ) : (
@@ -31,5 +37,4 @@ const Navbar = () => {
     </nav>
   );
 };
-
 export default Navbar;

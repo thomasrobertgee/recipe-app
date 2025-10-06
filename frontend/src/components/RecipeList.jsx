@@ -1,6 +1,7 @@
 // src/components/RecipeList.jsx
+
 import React, { useState } from 'react';
-import RecipeCard from './RecipeCard'; // Assuming RecipeCard.jsx is the correct name
+import RecipeCard from './RecipeCard';
 import RecipeDetail from './RecipeDetail';
 
 const RecipeList = ({ recipes, allSpecials, onSelect, onDelete, selectedRecipes }) => {
@@ -11,7 +12,8 @@ const RecipeList = ({ recipes, allSpecials, onSelect, onDelete, selectedRecipes 
     <div>
       <div className="recipe-grid">
         {recipes.slice(0, visibleCount).map(recipe => {
-          const isSelected = selectedRecipes.some(r => r.id === recipe.id);
+          // Ensure selectedRecipes is an array before calling .some()
+          const isSelected = Array.isArray(selectedRecipes) && selectedRecipes.some(r => r.id === recipe.id);
           return (
             <RecipeCard 
               key={recipe.id}
