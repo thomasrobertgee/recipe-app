@@ -8,9 +8,12 @@ export const UIProvider = ({ children }) => {
 
   const openSidebar = () => setIsSidebarOpen(true);
   const closeSidebar = () => setIsSidebarOpen(false);
+  // --- NEW ---
+  const toggleSidebar = () => setIsSidebarOpen(prev => !prev);
+
 
   return (
-    <UIContext.Provider value={{ isSidebarOpen, openSidebar, closeSidebar }}>
+    <UIContext.Provider value={{ isSidebarOpen, openSidebar, closeSidebar, toggleSidebar }}>
       {children}
     </UIContext.Provider>
   );

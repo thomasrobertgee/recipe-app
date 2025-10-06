@@ -8,7 +8,7 @@ import './ShoppingList.css';
 
 const ShoppingList = ({ allSpecials }) => {
     const { selectedRecipes } = useAuth();
-    const { closeSidebar } = useUI();
+    // --- UPDATED: No longer need closeSidebar ---
     const [checkedItems, setCheckedItems] = useState(() => JSON.parse(localStorage.getItem('checkedItems') || '[]'));
 
     useEffect(() => { localStorage.setItem('checkedItems', JSON.stringify(checkedItems)); }, [checkedItems]);
@@ -32,16 +32,15 @@ const ShoppingList = ({ allSpecials }) => {
 
     const handleCheckItem = (itemName) => {
         const key = itemName.toLowerCase();
-        if (checkedItems.includes(key)) { setCheckedItems(checkedItems.filter(item => item !== key)); } 
+        if (checkedItems.includes(key)) { setCheckedItems(checkedItems.filter(item => item !== key)); }
         else { setCheckedItems([...checkedItems, key]); }
     };
 
     return (
         <div className="shopping-list-container">
+            {/* --- UPDATED: Removed the minimize button --- */}
             <div className="shopping-list-header">
                 <h2>Shopping List</h2>
-                {/* --- THIS IS THE CHANGE --- */}
-                <button onClick={closeSidebar} className="minimize-btn">Minimize</button>
             </div>
             {lineItems.length === 0 ? (<p>Select recipes to start your list.</p>) : (
                 <>
