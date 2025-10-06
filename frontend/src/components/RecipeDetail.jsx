@@ -23,7 +23,13 @@ const RecipeDetail = ({ recipe, onClose, allSpecials, onRate }) => {
           <div className="recipe-detail-header">
             <h2>{recipe.title}</h2>
             <div className="rating-section">
-              <StarRating rating={recipe.average_rating} readOnly={true} />
+              {/* --- UPDATED --- */}
+              <div className="rating-display">
+                <StarRating rating={recipe.average_rating} readOnly={true} />
+                {recipe.rating_count > 0 && (
+                  <span className="rating-value">({recipe.average_rating.toFixed(1)})</span>
+                )}
+              </div>
               <button className="rate-recipe-btn" onClick={() => setIsRatingModalOpen(true)}>
                 Rate Recipe
               </button>

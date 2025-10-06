@@ -30,7 +30,13 @@ const RecipeCard = ({ recipe, onClick, onDelete, allSpecials }) => {
           {cost > 0 && (<div className="recipe-cost">${cost.toFixed(2)}</div>)}
         </div>
         <p>{recipe.description}</p>
-        <StarRating rating={recipe.average_rating} readOnly={true} />
+        {/* --- UPDATED --- */}
+        <div className="card-rating-display">
+          <StarRating rating={recipe.average_rating} readOnly={true} />
+          {recipe.rating_count > 0 && (
+            <span className="rating-value">({recipe.average_rating.toFixed(1)})</span>
+          )}
+        </div>
       </div>
       <div className="card-bottom-action">
         <button onClick={handleSelectClick} className="select-btn">{isSelected ? 'Remove from List' : 'Add to Shopping List'}</button>

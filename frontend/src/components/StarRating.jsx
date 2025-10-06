@@ -5,14 +5,31 @@ import './StarRating.css';
 const StarRating = ({ rating, onRate, readOnly = false }) => {
   return (
     <div className={`star-rating ${readOnly ? 'read-only' : ''}`}>
-      {[...Array(5)].map((star, index) => {
-        index += 1;
+      {[...Array(5)].map((_, index) => {
+        const starValue = index + 1;
+
+        let starClass = 'off';
+        // Logic for read-only display with half stars
+        if (readOnly) {
+          if (rating >= starValue) {
+            starClass = 'on';
+          } else if (rating >= starValue - 0.5) {
+            starClass = 'half';
+          }
+        } 
+        // Logic for interactive rating (full stars)
+        else {
+          if (rating >= starValue) {
+            starClass = 'on';
+          }
+        }
+
         return (
           <button
             type="button"
-            key={index}
-            className={index <= rating ? "on" : "off"}
-            onClick={() => !readOnly && onRate(index)}
+            key={starValue}
+            className={starClass}
+            onClick={() => !readOnly && onRate(starValue)}
             disabled={readOnly}
           >
             <span className="star">&#9733;</span>

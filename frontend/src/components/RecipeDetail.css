@@ -99,3 +99,19 @@
   color: #555;
   font-size: 0.9rem;
 }
+
+/* src/components/RecipeDetail.css */
+/* (Existing styles remain the same) */
+
+/* --- ADD TO BOTTOM OF FILE (or update existing if they conflict) --- */
+.rating-display {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rating-value {
+  font-size: 0.9rem;
+  color: #777;
+  font-weight: 500;
+}

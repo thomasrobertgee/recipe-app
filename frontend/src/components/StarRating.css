@@ -22,6 +22,14 @@
   color: #e0e0e0; /* Grey */
 }
 
+/* --- NEW --- */
+.star-rating .half .star {
+  background: linear-gradient(90deg, #fdd835 50%, #e0e0e0 50%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: #fdd835; /* Fallback */
+}
+
 .star-rating .star {
   font-size: 1.5rem;
 }
