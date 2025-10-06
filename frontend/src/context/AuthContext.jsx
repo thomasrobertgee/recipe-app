@@ -14,10 +14,25 @@ export const AuthProvider = ({ children }) => {
   });
 
   const [isLoading, setIsLoading] = useState(true);
-  const [savedRecipeIds, setSavedRecipeIds] = useState(new Set());
-  const [selectedRecipes, setSelectedRecipes] = useState(() => JSON.parse(localStorage.getItem('selectedRecipes') || '[]'));
-  const [userProfile, setUserProfile] = useState(null);
   
+  const [selectedRecipes, setSelectedRecipes] = useState(() => {
+    try {
+      const storedData = JSON.parse(localStorage.getItem('selectedRecipes') || '[]');
+      if (Array.isArray(storedData)) {
+        if (storedData.length > 0 && storedData[0] && typeof storedData[0].recipe === 'undefined') {
+          return storedData.map(recipe => ({ recipe: recipe, quantity: 1 }));
+        }
+        return storedData;
+      }
+      return [];
+    } catch (error) {
+      console.error("Error parsing selected recipes from localStorage", error);
+      return [];
+    }
+  });
+
+  const [userProfile, setUserProfile] = useState(null);
+  const [savedRecipeIds, setSavedRecipeIds] = useState(new Set());
   const [removedItems, setRemovedItems] = useState(() => JSON.parse(localStorage.getItem('removedItems') || '[]'));
 
   useEffect(() => {
@@ -83,18 +98,41 @@ export const AuthProvider = ({ children }) => {
     } catch (error) { console.error("Error unsaving recipe:", error); toast.error("Could not unsave recipe."); }
   };
   
-  const handleSelectRecipe = (recipeToToggle) => {
-    const isAlreadySelected = selectedRecipes.some(r => r.id === recipeToToggle.id);
-
+  const handleSelectRecipe = (recipeToAdd) => {
+    const isAlreadySelected = selectedRecipes.some(item => item.recipe.id === recipeToAdd.id);
     if (isAlreadySelected) {
-      const recipeItemIds = recipeToToggle.ingredients.map(ing => `${ing.name}-${recipeToToggle.id}`);
-      setRemovedItems(prev => prev.filter(id => !recipeItemIds.includes(id)));
-      setSelectedRecipes(prev => prev.filter(r => r.id !== recipeToToggle.id));
-      toast.info(`"${recipeToToggle.title}" removed from your list.`);
+        setSelectedRecipes(prev => prev.filter(item => item.recipe.id !== recipeToAdd.id));
+        toast.info(`"${recipeToAdd.title}" removed from your list.`);
     } else {
-      setSelectedRecipes(prev => [...prev, recipeToToggle]);
-      toast.success(`"${recipeToToggle.title}" added to your list!`);
+        setSelectedRecipes(prev => [...prev, { recipe: recipeToAdd, quantity: 1 }]);
+        toast.success(`"${recipeToAdd.title}" added to your list!`);
     }
+  };
+
+  const incrementRecipeQuantity = (recipeId) => {
+    setSelectedRecipes(prev =>
+        prev.map(item =>
+            item.recipe.id === recipeId
+                ? { ...item, quantity: item.quantity + 1 }
+                : item
+        )
+    );
+  };
+
+  const decrementRecipeQuantity = (recipeId) => {
+      const existingItem = selectedRecipes.find(item => item.recipe.id === recipeId);
+      if (existingItem && existingItem.quantity > 1) {
+          setSelectedRecipes(prev => prev.map(item =>
+              item.recipe.id === recipeId
+                  ? { ...item, quantity: item.quantity - 1 }
+                  : item
+          ));
+      } else {
+          if (existingItem) {
+            toast.info(`"${existingItem.recipe.title}" removed from your list.`);
+          }
+          setSelectedRecipes(prev => prev.filter(item => item.recipe.id !== recipeId));
+      }
   };
 
   const handleRemoveShoppingListItem = (itemId) => {
@@ -104,7 +142,12 @@ export const AuthProvider = ({ children }) => {
   const handleAddShoppingListItem = (itemId) => {
     setRemovedItems(prev => prev.filter(id => id !== itemId));
   };
-
+  
+  const clearShoppingList = () => {
+    setSelectedRecipes([]);
+    setRemovedItems([]);
+    toast.info("Shopping list cleared.");
+  };
 
   const contextValue = { 
     token, 
@@ -120,7 +163,10 @@ export const AuthProvider = ({ children }) => {
     setUserProfile,
     removedItems,
     handleRemoveShoppingListItem,
-    handleAddShoppingListItem
+    handleAddShoppingListItem,
+    incrementRecipeQuantity,
+    decrementRecipeQuantity,
+    clearShoppingList
   };
 
   return (<AuthContext.Provider value={contextValue}>{!isLoading && children}</AuthContext.Provider>);

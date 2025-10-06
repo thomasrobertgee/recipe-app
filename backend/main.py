@@ -10,8 +10,8 @@ from sqlmodel import Session, select, func
 from database import engine, create_db_and_tables, get_session
 from models import User, Recipe, Ingredient, RecipeIngredientLink, Special, UserRecipeRatingLink
 from schemas import (
-    GenerateRequest, UserCreate, UserRead, UserUpdate, Token,
-    RecipeResponse, IngredientInRecipe, RecipeCreate, SpecialCreate,
+    GenerateRequest, UserCreate, UserRead, UserUpdate, Token, 
+    RecipeResponse, IngredientInRecipe, RecipeCreate, SpecialCreate, 
     SpecialRead, RecipeRating
 )
 from security import get_password_hash, verify_password, create_access_token, get_current_user
@@ -35,19 +35,49 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# --- NEW: Intelligent ingredient matching function ---
+def get_or_create_ingredient(name: str, session: Session) -> Ingredient:
+    # Try for an exact match first
+    exact_match = session.exec(select(Ingredient).where(func.lower(Ingredient.name) == name.lower())).first()
+    if exact_match:
+        return exact_match
+
+    # If no exact match, try to find the best partial match from the existing ingredients in DB
+    all_ingredients = session.exec(select(Ingredient)).all()
+    best_match = None
+    
+    # Simple heuristic: find if the AI ingredient name is a substring of an existing ingredient
+    for db_ing in all_ingredients:
+        if name.lower() in db_ing.name.lower():
+            best_match = db_ing
+            break # Take the first good match
+    
+    if best_match:
+        return best_match
+
+    # If still no match, create a new ingredient (fallback)
+    new_ingredient = Ingredient(name=name)
+    session.add(new_ingredient)
+    session.commit()
+    session.refresh(new_ingredient)
+    return new_ingredient
+
+
 def _save_recipe_to_db(recipe_data: RecipeCreate, session: Session) -> Recipe:
     new_recipe = Recipe(title=recipe_data.title, description=recipe_data.description, instructions=recipe_data.instructions)
+    session.add(new_recipe)
+
     for ing_data in recipe_data.ingredients:
-        ingredient = session.exec(select(Ingredient).where(Ingredient.name == ing_data.name)).first()
-        if not ingredient:
-            ingredient = Ingredient(name=ing_data.name)
+        # --- UPDATED: Use the new matching logic ---
+        ingredient = get_or_create_ingredient(ing_data.name, session)
         link = RecipeIngredientLink(recipe=new_recipe, ingredient=ingredient, quantity=ing_data.quantity)
         session.add(link)
-    session.add(new_recipe)
+        
     session.commit()
     session.refresh(new_recipe)
     return new_recipe
 
+# (register, token, user endpoints remain the same)
 @app.post("/register", response_model=UserRead)
 def create_user(user: UserCreate, session: Session = Depends(get_session)):
     existing_user = session.exec(select(User).where(User.email == user.email)).first()
@@ -82,14 +112,47 @@ def update_user_me(user_update: UserUpdate, session: Session = Depends(get_sessi
     session.refresh(current_user)
     return current_user
 
+
+# --- UPDATED: Endpoints now return the ingredient_id ---
 @app.get("/api/users/me/saved-recipes", response_model=List[RecipeResponse])
 def get_saved_recipes(session: Session = Depends(get_session), current_user: User = Depends(get_current_user)):
     response_recipes = []
     for recipe in current_user.saved_recipes:
-        response_ingredients = [IngredientInRecipe(name=link.ingredient.name, quantity=link.quantity) for link in recipe.links]
+        response_ingredients = [
+            IngredientInRecipe(ingredient_id=link.ingredient.id, name=link.ingredient.name, quantity=link.quantity) 
+            for link in recipe.links
+        ]
         response_recipes.append(RecipeResponse.from_orm(recipe, update={'ingredients': response_ingredients}))
     return response_recipes
 
+@app.get("/api/recipes", response_model=List[RecipeResponse])
+def get_recipes(
+    session: Session = Depends(get_session),
+    min_rating: Optional[float] = Query(None, ge=1, le=5),
+    sort_by: Optional[str] = Query(None)
+):
+    average_rating = func.coalesce(Recipe.total_rating / func.nullif(Recipe.rating_count, 0), 0)
+    query = select(Recipe)
+    if min_rating is not None:
+        query = query.where(average_rating >= min_rating)
+    if sort_by is not None:
+        if sort_by == "rating_asc":
+            query = query.order_by(average_rating.asc())
+        elif sort_by == "rating_desc":
+            query = query.order_by(average_rating.desc())
+    db_recipes = session.exec(query).all()
+    response_recipes = []
+    for recipe in db_recipes:
+        response_ingredients = [
+            IngredientInRecipe(ingredient_id=link.ingredient.id, name=link.ingredient.name, quantity=link.quantity) 
+            for link in recipe.links
+        ]
+        response_recipes.append(
+            RecipeResponse.from_orm(recipe, update={'ingredients': response_ingredients})
+        )
+    return response_recipes
+
+# (Other endpoints like /specials, /rate, delete, etc., remain the same)
 @app.post("/api/users/me/saved-recipes/{recipe_id}", status_code=201)
 def save_a_recipe(recipe_id: int, session: Session = Depends(get_session), current_user: User = Depends(get_current_user)):
     recipe = session.get(Recipe, recipe_id)
@@ -137,38 +200,6 @@ def get_specials(session: Session = Depends(get_session)):
     db_specials = session.exec(select(Special)).all()
     return [SpecialRead.from_orm(s, update={'ingredient_name': s.ingredient.name}) for s in db_specials]
 
-@app.get("/api/recipes", response_model=List[RecipeResponse])
-def get_recipes(
-    session: Session = Depends(get_session),
-    min_rating: Optional[float] = Query(None, ge=1, le=5),
-    sort_by: Optional[str] = Query(None)
-):
-    # --- THIS IS THE FIX ---
-    # Use a CASE statement to avoid division by zero
-    average_rating = func.coalesce(Recipe.total_rating / func.nullif(Recipe.rating_count, 0), 0)
-    
-    query = select(Recipe)
-
-    if min_rating is not None:
-        query = query.where(average_rating >= min_rating)
-        
-    if sort_by is not None:
-        if sort_by == "rating_asc":
-            query = query.order_by(average_rating.asc())
-        elif sort_by == "rating_desc":
-            query = query.order_by(average_rating.desc())
-
-    db_recipes = session.exec(query).all()
-    response_recipes = []
-    for recipe in db_recipes:
-        response_ingredients = [IngredientInRecipe(name=link.ingredient.name, quantity=link.quantity) for link in recipe.links]
-        response_recipes.append(
-            RecipeResponse.from_orm(
-                recipe, 
-                update={'ingredients': response_ingredients}
-            )
-        )
-    return response_recipes
 
 @app.post("/api/recipes/{recipe_id}/rate", status_code=200)
 def rate_recipe(

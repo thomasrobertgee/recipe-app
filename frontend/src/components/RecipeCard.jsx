@@ -2,23 +2,46 @@
 
 import React, { useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
-// --- UPDATED: Import the new function ---
 import { calculateSingleRecipeCost } from '../utils/priceUtils';
 import StarRating from './StarRating';
 import './RecipeCard.css';
 
 const RecipeCard = ({ recipe, onClick, onDelete, allSpecials }) => {
-  const { savedRecipeIds, saveRecipe, unsaveRecipe, selectedRecipes, handleSelectRecipe } = useAuth();
-  // --- UPDATED: Call the correct function for single recipe cost ---
+  const { 
+    savedRecipeIds, 
+    saveRecipe, 
+    unsaveRecipe, 
+    selectedRecipes, 
+    handleSelectRecipe,
+    incrementRecipeQuantity,
+    decrementRecipeQuantity 
+  } = useAuth();
+
   const cost = useMemo(() => calculateSingleRecipeCost(recipe, allSpecials), [recipe, allSpecials]);
   const isSaved = savedRecipeIds.has(recipe.id);
-  const isSelected = selectedRecipes.some(r => r.id === recipe.id);
+  
+  // --- UPDATED: Logic to find the selected item and its quantity ---
+  const selectedItem = selectedRecipes.find(item => item.recipe.id === recipe.id);
+  const isSelected = !!selectedItem;
+  const currentQuantity = selectedItem ? selectedItem.quantity : 0;
 
   const handleSaveClick = (e) => { e.stopPropagation(); if (isSaved) unsaveRecipe(recipe.id); else saveRecipe(recipe.id); };
-  const handleSelectClick = (e) => { e.stopPropagation(); handleSelectRecipe(recipe); };
   const handleDeleteClick = (e) => {
     e.stopPropagation();
     if (window.confirm(`Are you sure you want to delete "${recipe.title}"?`)) { onDelete(recipe.id); }
+  };
+
+  const handleIncrement = (e) => {
+    e.stopPropagation();
+    incrementRecipeQuantity(recipe.id);
+  };
+  const handleDecrement = (e) => {
+    e.stopPropagation();
+    decrementRecipeQuantity(recipe.id);
+  };
+  const handleAddClick = (e) => {
+    e.stopPropagation();
+    handleSelectRecipe(recipe);
   };
 
   return (
@@ -41,7 +64,18 @@ const RecipeCard = ({ recipe, onClick, onDelete, allSpecials }) => {
         </div>
       </div>
       <div className="card-bottom-action">
-        <button onClick={handleSelectClick} className="select-btn">{isSelected ? 'Remove from List' : 'Add to Shopping List'}</button>
+        {/* --- UPDATED: Conditionally render button or stepper --- */}
+        {isSelected ? (
+            <div className="quantity-stepper">
+                <button onClick={handleDecrement}>-</button>
+                <span>{currentQuantity}</span>
+                <button onClick={handleIncrement}>+</button>
+            </div>
+        ) : (
+            <button onClick={handleAddClick} className="select-btn">
+                Add to Shopping List
+            </button>
+        )}
       </div>
     </div>
   );

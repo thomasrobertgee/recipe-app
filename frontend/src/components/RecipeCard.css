@@ -156,3 +156,32 @@
   font-weight: 500;
   margin-top: -2px; /* Helps align with stars */
 }
+
+
+.quantity-stepper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+}
+
+.quantity-stepper button {
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  font-size: 1.5rem;
+  font-weight: bold;
+  cursor: pointer;
+  line-height: 1;
+  padding-bottom: 4px; /* Adjust for vertical alignment */
+}
+
+.quantity-stepper span {
+  font-size: 1.2rem;
+  font-weight: 600;
+  min-width: 20px;
+  text-align: center;
+}

@@ -9,15 +9,16 @@ The application consists of a Python backend that serves data from a database an
 ## Current Features
 
 - **Full User Authentication:** Users can register, log in, and maintain a persistent session using JWTs.
-- **User Preference Management:** A dedicated profile page where users can save their household size and select dietary requirements and allergies.
+- **User Preference Management:** A dedicated profile page where users can save their household size, weekly budget, and dietary restrictions.
 - **AI-powered recipe generation** that uses a user's saved preferences to create tailored recipes.
 - **Recipe Ratings & Filtering:** Users can rate recipes from 1-5 stars. All recipe pages can be filtered by minimum star rating and sorted by rating.
-- A read-only page for viewing the current weekly specials.
-- **Recipe & Shopping List Costing:** Displays an estimated cost for each recipe and a total for the shopping list, based on the full price of the required on-special items.
-- **Interactive Shopping List:** A dynamic list of required special items with a persistent checklist.
+- **Recipe Quantity Selection:** Users can select multiple quantities of a single recipe to cook.
+- **Intelligent Shopping List:** A dynamic list that consolidates ingredients from multiple recipes, calculates total quantities and costs, and tracks spending against the user's budget.
+- **Granular Item Control:** Users can individually check off or remove specific items from the shopping list.
 - Full CRUD functionality for recipes (AI-Create, Read, Delete) and specials (backend-managed).
 - A dedicated landing page for new and logged-out users.
 - Polished UI with a modern recipe card design, interactive modals, and toast notifications.
+
 
 ---
 
@@ -26,7 +27,6 @@ The application consists of a Python backend that serves data from a database an
 This section outlines the planned features to evolve the app from an MVP into a full-featured product.
 
 ### User Personalization
-- **Budget Tracking:** Allow users to set a weekly or monthly budget and see how their shopping list compares.
 - **OAuth:** Add "Sign in with Google" as an alternative login method.
 - **My Pantry Feature:** Allow users to track ingredients they already own to reduce food waste and cost.
 - **User-Uploaded Recipes:** Allow users to add and save their own personal recipes to their collection.

@@ -5,6 +5,8 @@ from typing import List, Optional
 from pydantic import Field, computed_field
 
 class IngredientInRecipe(SQLModel):
+    # --- NEW: Add the ingredient's unique ID ---
+    ingredient_id: int
     name: str
     quantity: str
 
@@ -56,13 +58,11 @@ class UserRead(UserBase):
     id: int
     household_size: Optional[int]
     dietary_restrictions: List[str]
-    # --- NEW ---
     weekly_budget: Optional[float] = None
 
 class UserUpdate(SQLModel):
     household_size: Optional[int] = None
     dietary_restrictions: Optional[List[str]] = None
-    # --- NEW ---
     weekly_budget: Optional[float] = None
 
 class Token(SQLModel):

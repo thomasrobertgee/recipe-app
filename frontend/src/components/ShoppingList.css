@@ -2,9 +2,9 @@
 
 .shopping-list-header {
     display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 15px;
+    /* --- UPDATED: Allow space for the clear button --- */
+    justify-content: space-between;
+    align-items: center;
     border-bottom: 2px solid #333;
     margin-bottom: 10px;
     padding-bottom: 15px;
@@ -13,6 +13,21 @@
 .shopping-list-header h2 {
     margin: 0;
 }
+
+/* --- NEW: Style for the Clear All button --- */
+.clear-all-btn {
+    background: none;
+    border: 1px solid #ccc;
+    color: #555;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    cursor: pointer;
+}
+.clear-all-btn:hover {
+    background-color: #f0f0f0;
+}
+
 
 .shopping-list-container ul {
     list-style: none;
@@ -49,7 +64,6 @@
   margin-right: 10px;
 }
 
-/* --- NEW: Style for the "from Recipe" text --- */
 .recipe-source {
   display: block;
   font-size: 0.8rem;
@@ -96,9 +110,10 @@
 }
 
 .budget-tracker {
-  margin-top: 0;
-  padding-top: 0;
-  border-top: none;
+  /* --- UPDATED: Re-add margin to separate from the list --- */
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #eee;
 }
 
 .budget-info {
@@ -123,7 +138,6 @@
   transition: width 0.3s ease-in-out;
 }
 
-/* --- NEW: Styles for the removed items section --- */
 .removed-items-section {
   margin-top: 20px;
   padding-top: 15px;
