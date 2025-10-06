@@ -17,29 +17,24 @@ def generate_recipes_from_specials(specials_list: List[SpecialRead], preferences
     
     specials_as_dicts = [s.model_dump() for s in specials_list]
 
-    # --- THIS IS THE CHANGE: Combine safety rules ---
-    safety_rules = []
-    if preferences.allergies:
-        safety_rules.append(f"The user has a critical allergy to: {', '.join(preferences.allergies)}. Do not include these ingredients or their derivatives.")
-    if preferences.dietary_requirements:
-        safety_rules.append(f"The user has a critical dietary requirement for: {', '.join(preferences.dietary_requirements)} recipes.")
-    
-    if not safety_rules:
-        safety_rules.append("The user has specified no allergies or dietary requirements.")
+    # --- UPDATED: Simplified safety rules ---
+    safety_rules = ""
+    if preferences.dietary_restrictions:
+        safety_rules = f"The user has critical dietary restrictions: {', '.join(preferences.dietary_restrictions)}. Do not include these ingredients or their derivatives."
+    else:
+        safety_rules = "The user has specified no dietary restrictions."
 
-    # Build the rest of the preference text
     preference_text = ""
     if preferences.household_size:
         preference_text += f"The recipes should be suitable for a household of {preferences.household_size} people."
 
-    # Construct the final system prompt
     system_prompt = f"""
     You are a helpful and extremely cautious recipe assistant. Your primary goal is to generate 5 unique dinner recipes based on user preferences and a list of on-special ingredients.
 
     ---
-    **CRITICAL SAFETY & DIETARY RULES:**
-    - {" ".join(safety_rules)}
-    - YOU MUST NOT include any of the specified allergens or ingredients that violate the dietary requirements.
+    **CRITICAL DIETARY RULES:**
+    - {safety_rules}
+    - YOU MUST NOT include any ingredients that violate the user's dietary restrictions.
     - Before providing your final answer, you MUST double-check every ingredient in every generated recipe to ensure it strictly complies with ALL of the above rules. This is the most important instruction.
     ---
 
@@ -56,7 +51,7 @@ def generate_recipes_from_specials(specials_list: List[SpecialRead], preferences
     user_prompt = f"""
     Here are this week's on-special ingredients:
     {json.dumps(specials_as_dicts, indent=2)}
-    Please generate 5 recipes based on these specials and my safety/dietary rules and preferences. Provide them in the specified JSON format.
+    Please generate 5 recipes based on these specials and my dietary restrictions and preferences. Provide them in the specified JSON format.
     """
 
     try:

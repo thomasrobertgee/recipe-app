@@ -7,7 +7,6 @@ class UserRecipeLink(SQLModel, table=True):
     user_id: Optional[int] = Field(default=None, foreign_key="user.id", primary_key=True)
     recipe_id: Optional[int] = Field(default=None, foreign_key="recipe.id", primary_key=True)
 
-# --- NEW: Link table for user ratings ---
 class UserRecipeRatingLink(SQLModel, table=True):
     user_id: Optional[int] = Field(default=None, foreign_key="user.id", primary_key=True)
     recipe_id: Optional[int] = Field(default=None, foreign_key="recipe.id", primary_key=True)
@@ -40,7 +39,6 @@ class Recipe(SQLModel, table=True):
     instructions: str
     links: List[RecipeIngredientLink] = Relationship(back_populates="recipe", cascade_delete=True)
     
-    # --- NEW: Rating fields ---
     total_rating: int = Field(default=0)
     rating_count: int = Field(default=0)
     
@@ -51,7 +49,7 @@ class User(SQLModel, table=True):
     email: str = Field(unique=True, index=True)
     hashed_password: str
     household_size: Optional[int] = Field(default=2)
-    dietary_requirements: List[str] = Field(default=[], sa_column=Column(JSON))
-    allergies: List[str] = Field(default=[], sa_column=Column(JSON))
+    # --- UPDATED: Combined fields ---
+    dietary_restrictions: List[str] = Field(default=[], sa_column=Column(JSON))
     
     saved_recipes: List[Recipe] = Relationship(back_populates="saved_by_users", link_model=UserRecipeLink)

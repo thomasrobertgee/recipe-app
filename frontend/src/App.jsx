@@ -1,9 +1,9 @@
 // src/App.jsx
 
 import React, { useState, useEffect } from 'react';
-import { Routes, Route } from 'react-router-dom';
-import axios from 'axios'; // This was the missing line
-import { ToastContainer } from 'react-toastify';
+import { Routes, Route, useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Navbar from './components/Navbar';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -21,9 +21,10 @@ import AllRecipesPage from './pages/AllRecipesPage';
 import './App.css';
 
 function App() {
-  const { token } = useAuth();
+  const { token, logout } = useAuth(); // Get logout function
   const { isSidebarOpen } = useUI();
   const [allSpecials, setAllSpecials] = useState([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (token) {
@@ -32,6 +33,28 @@ function App() {
         .catch(error => console.error("Could not fetch specials in App.jsx", error));
     }
   }, [token]);
+
+  // --- NEW: Axios interceptor for handling 401 errors ---
+  useEffect(() => {
+    const interceptor = axios.interceptors.response.use(
+      response => response,
+      error => {
+        // Check if the error is a 401 Unauthorized
+        if (error.response && error.response.status === 401) {
+          logout(); // Log the user out
+          navigate('/login'); // Redirect to login page
+          toast.info("Your session has expired. Please log in again.");
+        }
+        return Promise.reject(error);
+      }
+    );
+
+    // Cleanup function to remove the interceptor when the component unmounts
+    return () => {
+      axios.interceptors.response.eject(interceptor);
+    };
+  }, [logout, navigate]);
+
 
   return (
     <div>

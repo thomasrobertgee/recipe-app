@@ -55,13 +55,13 @@ class UserCreate(UserBase):
 class UserRead(UserBase):
     id: int
     household_size: Optional[int]
-    dietary_requirements: List[str]
-    allergies: List[str]
+    # --- UPDATED ---
+    dietary_restrictions: List[str]
 
 class UserUpdate(SQLModel):
     household_size: Optional[int] = None
-    dietary_requirements: Optional[List[str]] = None
-    allergies: Optional[List[str]] = None
+    # --- UPDATED ---
+    dietary_restrictions: Optional[List[str]] = None
 
 class Token(SQLModel):
     access_token: str

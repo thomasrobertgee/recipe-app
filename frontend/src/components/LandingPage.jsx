@@ -9,14 +9,19 @@ const LandingPage = () => {
       <header className="hero-section">
         <h1>Save Money, Eat Smarter.</h1>
         <p className="subtitle">Let AI create delicious, budget-friendly recipes from your local supermarket's weekly specials.</p>
-        <Link to="/signup" className="cta-button">Get Started for Free</Link>
+        
+        {/* --- UPDATED --- */}
+        <div className="cta-buttons-container">
+          <Link to="/signup" className="cta-button">Sign up for free</Link>
+          <Link to="/login" className="secondary-cta-button">Log in</Link>
+        </div>
+
       </header>
 
       <section className="features-section">
         <h2>How It Works</h2>
         <div className="features-grid">
           <div className="feature-card">
-            {/* --- THIS TEXT HAS BEEN CHANGED --- */}
             <h3>1. View Specials</h3>
             <p>Browse daily updated specials from Australia's major supermarkets.</p>
           </div>

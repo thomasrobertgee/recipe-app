@@ -4,34 +4,61 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import './AuthForm.css';
-import './ProfilePage.css'; // New stylesheet for checkbox layout
+import './ProfilePage.css';
 
-const DIETARY_OPTIONS = ["Vegetarian", "Vegan", "Gluten-Free", "Dairy-Free", "Pescatarian"];
-const ALLERGY_OPTIONS = ["Peanuts", "Tree Nuts", "Milk", "Eggs", "Soy", "Wheat", "Fish", "Shellfish"];
+// --- UPDATED: Sorted the list alphabetically ---
+const DIETARY_RESTRICTIONS = [
+  "Dairy-Free",
+  "Egg Allergy",
+  "Fish Allergy",
+  "Gluten-Free",
+  "Halal",
+  "Keto",
+  "Kosher",
+  "Low-Carb",
+  "Low-Fat",
+  "Low-Sodium",
+  "No Red Meat",
+  "Paleo",
+  "Peanut Allergy",
+  "Pescatarian",
+  "Shellfish Allergy",
+  "Soy Allergy",
+  "Tree Nut Allergy",
+  "Vegan",
+  "Vegetarian",
+  "Wheat Allergy",
+];
 
 const ProfilePage = () => {
   const { token } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
     household_size: 2,
-    dietary_requirements: [],
-    allergies: [],
+    dietary_restrictions: [],
   });
   const [message, setMessage] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (token) {
       setIsLoading(true);
       axios.get('http://127.0.0.1:8000/users/me')
         .then(response => {
-          setFormData(response.data);
-          setIsLoading(false);
+          const userData = {
+            dietary_restrictions: [], 
+            ...response.data
+          };
+          setFormData(userData);
         })
         .catch(error => {
           console.error("Error fetching user profile:", error);
-          setIsLoading(false);
+        })
+        .finally(() => {
+            setIsLoading(false);
         });
+    } else {
+        setIsLoading(false);
     }
   }, [token]);
 
@@ -41,13 +68,11 @@ const ProfilePage = () => {
 
   const handleCheckboxChange = (e) => {
     const { name, value, checked } = e.target;
-    const currentValues = formData[name];
+    const currentValues = formData[name] || [];
 
     if (checked) {
-      // Add the value to the array if it's not already there
       setFormData({ ...formData, [name]: [...currentValues, value] });
     } else {
-      // Remove the value from the array
       setFormData({ ...formData, [name]: currentValues.filter(item => item !== value) });
     }
   };
@@ -59,26 +84,26 @@ const ProfilePage = () => {
     
     const dataToUpdate = {
       household_size: parseInt(formData.household_size, 10),
-      dietary_requirements: formData.dietary_requirements,
-      allergies: formData.allergies,
+      dietary_restrictions: formData.dietary_restrictions || [],
     };
 
     axios.put('http://127.0.0.1:8000/users/me', dataToUpdate)
       .then(response => {
-        setIsLoading(false);
         setFormData(response.data);
         setMessage('Profile updated successfully!');
       })
       .catch(error => {
-        setIsLoading(false);
         setMessage('Failed to update profile. Please try again.');
+      })
+      .finally(() => {
+        setIsLoading(false);
       });
   };
 
   return (
     <div className="auth-container">
       <h1>My Profile</h1>
-      {isLoading && !formData.email ? <p>Loading profile...</p> : (
+      {isLoading ? <p>Loading profile...</p> : (
         <form onSubmit={handleSubmit} className="auth-form">
           <label htmlFor="email">Email</label>
           <input type="email" name="email" value={formData.email} disabled />
@@ -87,23 +112,17 @@ const ProfilePage = () => {
           <input type="number" name="household_size" value={formData.household_size} onChange={handleInputChange} min="1" required />
 
           <fieldset>
-            <legend>Dietary Requirements</legend>
+            <legend>Dietary Restrictions</legend>
             <div className="checkbox-group">
-              {DIETARY_OPTIONS.map(option => (
+              {DIETARY_RESTRICTIONS.map(option => (
                 <label key={option} className="checkbox-label">
-                  <input type="checkbox" name="dietary_requirements" value={option} checked={formData.dietary_requirements.includes(option)} onChange={handleCheckboxChange} />
-                  {option}
-                </label>
-              ))}
-            </div>
-          </fieldset>
-          
-          <fieldset>
-            <legend>Allergies</legend>
-            <div className="checkbox-group">
-              {ALLERGY_OPTIONS.map(option => (
-                <label key={option} className="checkbox-label">
-                  <input type="checkbox" name="allergies" value={option} checked={formData.allergies.includes(option)} onChange={handleCheckboxChange} />
+                  <input 
+                    type="checkbox" 
+                    name="dietary_restrictions" 
+                    value={option} 
+                    checked={(formData.dietary_restrictions || []).includes(option)} 
+                    onChange={handleCheckboxChange} 
+                  />
                   {option}
                 </label>
               ))}

@@ -23,6 +23,14 @@
   margin-bottom: 2rem;
 }
 
+/* --- NEW: Container for the buttons --- */
+.cta-buttons-container {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
 .cta-button {
   background-color: #4caf50;
   color: white;
@@ -32,10 +40,28 @@
   font-size: 1.1rem;
   font-weight: bold;
   transition: background-color 0.3s ease;
+  border: 2px solid transparent;
 }
 
 .cta-button:hover {
   background-color: #45a049;
+}
+
+/* --- NEW: Style for the secondary login button --- */
+.secondary-cta-button {
+  background-color: transparent;
+  color: #4caf50;
+  padding: 1rem 2rem;
+  border-radius: 50px;
+  text-decoration: none;
+  font-size: 1.1rem;
+  font-weight: bold;
+  transition: all 0.3s ease;
+  border: 2px solid #4caf50;
+}
+
+.secondary-cta-button:hover {
+  background-color: #e8f5e9;
 }
 
 .features-section {
