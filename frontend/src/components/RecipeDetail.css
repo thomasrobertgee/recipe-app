@@ -35,6 +35,40 @@
   color: #888;
 }
 
+.recipe-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  border-bottom: 2px solid #f4f7f6;
+  padding-bottom: 15px;
+  margin-bottom: 15px;
+}
+
+.recipe-detail-header h2 {
+  margin: 0;
+}
+
+.rating-section {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.rate-recipe-btn {
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: #f9f9f9;
+  cursor: pointer;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.rate-recipe-btn:hover {
+  background-color: #f0f0f0;
+}
+
 .modal-content h3 {
   border-bottom: 2px solid #f4f7f6;
   padding-bottom: 8px;
@@ -51,17 +85,15 @@
   margin-bottom: 8px;
   padding: 10px;
   border-radius: 4px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .instructions p {
   line-height: 1.6;
 }
 
-.modal-content li {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
 .ingredient-price {
   font-style: italic;
   color: #555;

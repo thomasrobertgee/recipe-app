@@ -1,14 +1,19 @@
 # backend/main.py
 
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
 from contextlib import asynccontextmanager
-from typing import List
-from sqlmodel import Session, select
+from typing import List, Optional
+from sqlmodel import Session, select, func
+
 from database import engine, create_db_and_tables, get_session
-from models import User, Recipe, Ingredient, RecipeIngredientLink, Special
-from schemas import GenerateRequest, UserCreate, UserRead, UserUpdate, Token, RecipeResponse, IngredientInRecipe, RecipeCreate, SpecialCreate, SpecialRead
+from models import User, Recipe, Ingredient, RecipeIngredientLink, Special, UserRecipeRatingLink
+from schemas import (
+    GenerateRequest, UserCreate, UserRead, UserUpdate, Token,
+    RecipeResponse, IngredientInRecipe, RecipeCreate, SpecialCreate,
+    SpecialRead, RecipeRating
+)
 from security import get_password_hash, verify_password, create_access_token, get_current_user
 from ai_service import generate_recipes_from_specials
 
@@ -91,7 +96,6 @@ def save_a_recipe(recipe_id: int, session: Session = Depends(get_session), curre
     if not recipe:
         raise HTTPException(status_code=404, detail="Recipe not found")
     
-    # Re-attach the user object to this session to be safe
     session.add(current_user)
     
     if recipe not in current_user.saved_recipes:
@@ -105,7 +109,6 @@ def unsave_a_recipe(recipe_id: int, session: Session = Depends(get_session), cur
     if not recipe:
         raise HTTPException(status_code=404, detail="Recipe not found")
 
-    # Re-attach the user object to this session
     session.add(current_user)
     
     if recipe in current_user.saved_recipes:
@@ -135,13 +138,72 @@ def get_specials(session: Session = Depends(get_session)):
     return [SpecialRead.from_orm(s, update={'ingredient_name': s.ingredient.name}) for s in db_specials]
 
 @app.get("/api/recipes", response_model=List[RecipeResponse])
-def get_recipes(session: Session = Depends(get_session)):
-    db_recipes = session.exec(select(Recipe)).all()
+def get_recipes(
+    session: Session = Depends(get_session),
+    min_rating: Optional[float] = Query(None, ge=1, le=5),
+    sort_by: Optional[str] = Query(None)
+):
+    # --- THIS IS THE FIX ---
+    # Use a CASE statement to avoid division by zero
+    average_rating = func.coalesce(Recipe.total_rating / func.nullif(Recipe.rating_count, 0), 0)
+    
+    query = select(Recipe)
+
+    if min_rating is not None:
+        query = query.where(average_rating >= min_rating)
+        
+    if sort_by is not None:
+        if sort_by == "rating_asc":
+            query = query.order_by(average_rating.asc())
+        elif sort_by == "rating_desc":
+            query = query.order_by(average_rating.desc())
+
+    db_recipes = session.exec(query).all()
     response_recipes = []
     for recipe in db_recipes:
         response_ingredients = [IngredientInRecipe(name=link.ingredient.name, quantity=link.quantity) for link in recipe.links]
-        response_recipes.append(RecipeResponse.from_orm(recipe, update={'ingredients': response_ingredients}))
+        response_recipes.append(
+            RecipeResponse.from_orm(
+                recipe, 
+                update={'ingredients': response_ingredients}
+            )
+        )
     return response_recipes
+
+@app.post("/api/recipes/{recipe_id}/rate", status_code=200)
+def rate_recipe(
+    recipe_id: int,
+    rating: RecipeRating,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
+    recipe = session.get(Recipe, recipe_id)
+    if not recipe:
+        raise HTTPException(status_code=404, detail="Recipe not found")
+
+    existing_rating_link = session.exec(
+        select(UserRecipeRatingLink).where(
+            UserRecipeRatingLink.user_id == current_user.id,
+            UserRecipeRatingLink.recipe_id == recipe_id
+        )
+    ).first()
+
+    if existing_rating_link:
+        recipe.total_rating -= existing_rating_link.rating
+        existing_rating_link.rating = rating.rating
+        recipe.total_rating += rating.rating
+        session.add(existing_rating_link)
+    else:
+        recipe.total_rating += rating.rating
+        recipe.rating_count += 1
+        new_rating_link = UserRecipeRatingLink(user_id=current_user.id, recipe_id=recipe_id, rating=rating.rating)
+        session.add(new_rating_link)
+
+    session.add(recipe)
+    session.commit()
+    session.refresh(recipe)
+    return {"message": "Recipe rated successfully"}
+
 
 @app.delete("/api/recipes/{recipe_id}")
 def delete_recipe(recipe_id: int, session: Session = Depends(get_session)):

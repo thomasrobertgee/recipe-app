@@ -1,0 +1,32 @@
+/* src/components/RatingModal.css */
+.rating-modal-content {
+  background-color: white;
+  padding: 20px 40px;
+  border-radius: 8px;
+  max-width: 400px;
+  width: 90%;
+  text-align: center;
+  position: relative;
+}
+
+.rating-stars-container {
+  margin: 20px 0;
+  transform: scale(1.2); /* Make stars slightly bigger */
+}
+
+.submit-rating-btn {
+  padding: 12px 24px;
+  border: none;
+  background-color: #4caf50;
+  color: white;
+  font-size: 1rem;
+  font-weight: bold;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-top: 10px;
+  width: 100%;
+}
+
+.submit-rating-btn:hover {
+  background-color: #45a049;
+}

@@ -2,6 +2,7 @@
 import React, { useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { calculateRecipeCost } from '../utils/priceUtils';
+import StarRating from './StarRating';
 import './RecipeCard.css';
 
 const RecipeCard = ({ recipe, onClick, onDelete, allSpecials }) => {
@@ -16,6 +17,7 @@ const RecipeCard = ({ recipe, onClick, onDelete, allSpecials }) => {
     e.stopPropagation();
     if (window.confirm(`Are you sure you want to delete "${recipe.title}"?`)) { onDelete(recipe.id); }
   };
+
   return (
     <div className={`recipe-card ${isSelected ? 'selected' : ''}`} onClick={onClick}>
       <div className="card-header-actions">
@@ -28,6 +30,7 @@ const RecipeCard = ({ recipe, onClick, onDelete, allSpecials }) => {
           {cost > 0 && (<div className="recipe-cost">${cost.toFixed(2)}</div>)}
         </div>
         <p>{recipe.description}</p>
+        <StarRating rating={recipe.average_rating} readOnly={true} />
       </div>
       <div className="card-bottom-action">
         <button onClick={handleSelectClick} className="select-btn">{isSelected ? 'Remove from List' : 'Add to Shopping List'}</button>
@@ -35,4 +38,5 @@ const RecipeCard = ({ recipe, onClick, onDelete, allSpecials }) => {
     </div>
   );
 };
+
 export default RecipeCard;

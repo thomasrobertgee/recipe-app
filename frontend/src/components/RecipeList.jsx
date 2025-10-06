@@ -1,10 +1,9 @@
 // src/components/RecipeList.jsx
-
 import React, { useState } from 'react';
 import RecipeCard from './RecipeCard';
 import RecipeDetail from './RecipeDetail';
 
-const RecipeList = ({ recipes, allSpecials, onSelect, onDelete, selectedRecipes }) => {
+const RecipeList = ({ recipes, allSpecials, onSelect, onDelete, onRate, selectedRecipes }) => {
   const [visibleCount, setVisibleCount] = useState(9);
   const [selectedRecipe, setSelectedRecipe] = useState(null);
 
@@ -12,10 +11,9 @@ const RecipeList = ({ recipes, allSpecials, onSelect, onDelete, selectedRecipes 
     <div>
       <div className="recipe-grid">
         {recipes.slice(0, visibleCount).map(recipe => {
-          // Ensure selectedRecipes is an array before calling .some()
           const isSelected = Array.isArray(selectedRecipes) && selectedRecipes.some(r => r.id === recipe.id);
           return (
-            <RecipeCard 
+            <RecipeCard
               key={recipe.id}
               recipe={recipe}
               allSpecials={allSpecials}
@@ -37,10 +35,11 @@ const RecipeList = ({ recipes, allSpecials, onSelect, onDelete, selectedRecipes 
       )}
 
       {selectedRecipe && (
-        <RecipeDetail 
-          recipe={selectedRecipe} 
+        <RecipeDetail
+          recipe={selectedRecipe}
           onClose={() => setSelectedRecipe(null)}
           allSpecials={allSpecials}
+          onRate={onRate}
         />
       )}
     </div>

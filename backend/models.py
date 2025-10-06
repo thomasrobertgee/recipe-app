@@ -3,10 +3,15 @@
 from typing import List, Optional
 from sqlmodel import Field, SQLModel, Relationship, Column, JSON
 
-# --- NEW: Link table for User and Recipe many-to-many relationship ---
 class UserRecipeLink(SQLModel, table=True):
     user_id: Optional[int] = Field(default=None, foreign_key="user.id", primary_key=True)
     recipe_id: Optional[int] = Field(default=None, foreign_key="recipe.id", primary_key=True)
+
+# --- NEW: Link table for user ratings ---
+class UserRecipeRatingLink(SQLModel, table=True):
+    user_id: Optional[int] = Field(default=None, foreign_key="user.id", primary_key=True)
+    recipe_id: Optional[int] = Field(default=None, foreign_key="recipe.id", primary_key=True)
+    rating: int = Field()
 
 class RecipeIngredientLink(SQLModel, table=True):
     recipe_id: Optional[int] = Field(default=None, foreign_key="recipe.id", primary_key=True)
@@ -35,7 +40,10 @@ class Recipe(SQLModel, table=True):
     instructions: str
     links: List[RecipeIngredientLink] = Relationship(back_populates="recipe", cascade_delete=True)
     
-    # --- NEW: Relationship to users who have saved this recipe ---
+    # --- NEW: Rating fields ---
+    total_rating: int = Field(default=0)
+    rating_count: int = Field(default=0)
+    
     saved_by_users: List["User"] = Relationship(back_populates="saved_recipes", link_model=UserRecipeLink)
 
 class User(SQLModel, table=True):
@@ -46,5 +54,4 @@ class User(SQLModel, table=True):
     dietary_requirements: List[str] = Field(default=[], sa_column=Column(JSON))
     allergies: List[str] = Field(default=[], sa_column=Column(JSON))
     
-    # --- NEW: Relationship to recipes this user has saved ---
     saved_recipes: List[Recipe] = Relationship(back_populates="saved_by_users", link_model=UserRecipeLink)

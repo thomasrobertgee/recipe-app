@@ -11,6 +11,7 @@ The application consists of a Python backend that serves data from a database an
 - **Full User Authentication:** Users can register, log in, and maintain a persistent session using JWTs.
 - **User Preference Management:** A dedicated profile page where users can save their household size and select dietary requirements and allergies.
 - **AI-powered recipe generation** that uses a user's saved preferences to create tailored recipes.
+- **Recipe Ratings & Filtering:** Users can rate recipes from 1-5 stars. All recipe pages can be filtered by minimum star rating and sorted by rating.
 - A read-only page for viewing the current weekly specials.
 - **Recipe & Shopping List Costing:** Displays an estimated cost for each recipe and a total for the shopping list, based on the full price of the required on-special items.
 - **Interactive Shopping List:** A dynamic list of required special items with a persistent checklist.
@@ -26,12 +27,10 @@ This section outlines the planned features to evolve the app from an MVP into a 
 
 ### User Personalization
 - **Budget Tracking:** Allow users to set a weekly or monthly budget.
-- **Recipe Management:** Allow users to save their favorite recipes to a personal collection and rate them on a 1-5 star scale.
 - **OAuth:** Add "Sign in with Google" as an alternative login method.
 
 ### Core App Enhancements
 - **Advanced Costing:** Implement per-portion recipe costing and waste calculation.
-- **Filtered Recipe View:** The main recipe page will filter recipes based on the user's saved preferences.
 - **Multi-Supermarket Support:** Expand the specials database to include data from Woolworths and Aldi.
 
 ---

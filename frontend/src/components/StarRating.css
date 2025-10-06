@@ -1,0 +1,31 @@
+/* src/components/StarRating.css */
+.star-rating {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.star-rating button {
+  background-color: transparent;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  padding: 0;
+  margin: 0 2px;
+}
+
+.star-rating .on {
+  color: #fdd835; /* Yellow */
+}
+
+.star-rating .off {
+  color: #e0e0e0; /* Grey */
+}
+
+.star-rating .star {
+  font-size: 1.5rem;
+}
+
+.star-rating.read-only button {
+  cursor: default;
+}
