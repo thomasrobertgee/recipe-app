@@ -4,8 +4,15 @@ from sqlmodel import SQLModel
 from typing import List, Optional
 from pydantic import Field, computed_field
 
+class PantryItem(SQLModel):
+    ingredient_id: int
+    name: str
+    category: Optional[str] = None
+
+class PantryItemCreate(SQLModel):
+    ingredient_name: str
+
 class IngredientInRecipe(SQLModel):
-    # --- NEW: Add the ingredient's unique ID ---
     ingredient_id: int
     name: str
     quantity: str
@@ -72,6 +79,7 @@ class Token(SQLModel):
 class GenerateRequest(SQLModel):
     specials: List[SpecialRead]
     preferences: UserRead
+    pantry_items: List[PantryItem]
 
 class RecipeRating(SQLModel):
     rating: int = Field(ge=1, le=5)

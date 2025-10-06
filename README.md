@@ -10,7 +10,8 @@ The application consists of a Python backend that serves data from a database an
 
 - **Full User Authentication:** Users can register, log in, and maintain a persistent session using JWTs.
 - **User Preference Management:** A dedicated profile page where users can save their household size, weekly budget, and dietary restrictions.
-- **AI-powered recipe generation** that uses a user's saved preferences to create tailored recipes.
+- **AI-powered recipe generation** that uses a user's saved preferences and pantry items to create tailored recipes.
+- **My Pantry Feature:** Users can add from a categorized list of staple ingredients to their personal pantry, which the AI then prioritizes when creating recipes.
 - **Recipe Ratings & Filtering:** Users can rate recipes from 1-5 stars. All recipe pages can be filtered by minimum star rating and sorted by rating.
 - **Recipe Quantity Selection:** Users can select multiple quantities of a single recipe to cook.
 - **Intelligent Shopping List:** A dynamic list that consolidates ingredients from multiple recipes, calculates total quantities and costs, and tracks spending against the user's budget.
@@ -28,7 +29,6 @@ This section outlines the planned features to evolve the app from an MVP into a 
 
 ### User Personalization
 - **OAuth:** Add "Sign in with Google" as an alternative login method.
-- **My Pantry Feature:** Allow users to track ingredients they already own to reduce food waste and cost.
 - **User-Uploaded Recipes:** Allow users to add and save their own personal recipes to their collection.
 
 ### Core App Enhancements

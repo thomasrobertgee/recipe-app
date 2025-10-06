@@ -18,10 +18,11 @@ import LoginPage from './pages/LoginPage';
 import ProfilePage from './pages/ProfilePage';
 import DashboardPage from './pages/DashboardPage';
 import AllRecipesPage from './pages/AllRecipesPage';
+import PantryPage from './pages/PantryPage'; // --- NEW ---
 import './App.css';
 
 function App() {
-  const { token, logout } = useAuth(); // Get logout function
+  const { token, logout } = useAuth();
   const { isSidebarOpen } = useUI();
   const [allSpecials, setAllSpecials] = useState([]);
   const navigate = useNavigate();
@@ -34,22 +35,19 @@ function App() {
     }
   }, [token]);
 
-  // --- NEW: Axios interceptor for handling 401 errors ---
   useEffect(() => {
     const interceptor = axios.interceptors.response.use(
       response => response,
       error => {
-        // Check if the error is a 401 Unauthorized
         if (error.response && error.response.status === 401) {
-          logout(); // Log the user out
-          navigate('/login'); // Redirect to login page
+          logout();
+          navigate('/login');
           toast.info("Your session has expired. Please log in again.");
         }
         return Promise.reject(error);
       }
     );
 
-    // Cleanup function to remove the interceptor when the component unmounts
     return () => {
       axios.interceptors.response.eject(interceptor);
     };
@@ -72,6 +70,7 @@ function App() {
               <Route path="/specials" element={<SpecialsPage />} />
               <Route path="/saved-recipes" element={<MySavedRecipesPage allSpecials={allSpecials} />} />
               <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/pantry" element={<PantryPage />} /> {/* --- NEW --- */}
             </Route>
           </Routes>
         </main>

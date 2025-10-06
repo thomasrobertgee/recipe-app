@@ -7,7 +7,6 @@ import './Navbar.css';
 
 const Navbar = () => {
   const { token, logout, selectedRecipes } = useAuth();
-  // --- UPDATED: No longer need openSidebar ---
   const { toggleSidebar } = useUI();
 
   return (
@@ -17,11 +16,11 @@ const Navbar = () => {
         {token && <NavLink to="/dashboard">Dashboard</NavLink>}
         {token && <NavLink to="/recipes">All Recipes</NavLink>}
         {token && <NavLink to="/specials">View Specials</NavLink>}
+        {token && <NavLink to="/pantry">My Pantry</NavLink>} {/* --- NEW --- */}
         {token && <NavLink to="/saved-recipes">My Saved</NavLink>}
         {token && <NavLink to="/profile">Profile</NavLink>}
       </div>
       <div className="nav-auth">
-        {/* --- UPDATED: onClick now uses toggleSidebar --- */}
         {token && (
           <button onClick={toggleSidebar} className="sidebar-tab">
             Shopping List ({selectedRecipes.length})

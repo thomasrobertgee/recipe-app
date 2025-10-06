@@ -1,0 +1,101 @@
+/* src/pages/PantryPage.css */
+
+.pantry-page-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.pantry-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.pantry-header h1 {
+  margin-bottom: 10px;
+}
+
+.pantry-header p {
+  font-size: 1rem;
+  color: #555;
+}
+
+.add-item-section {
+  position: relative;
+  margin-bottom: 40px;
+}
+
+.pantry-search-input {
+  width: 100%;
+  padding: 15px;
+  font-size: 1.1rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+}
+
+.search-results-list {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #ccc;
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 300px;
+  overflow-y: auto;
+  z-index: 100;
+}
+
+.search-results-list li {
+  padding: 15px;
+  cursor: pointer;
+}
+
+.search-results-list li:hover {
+  background-color: #f0f0f0;
+}
+
+.pantry-list-section h2 {
+  border-bottom: 2px solid #eee;
+  padding-bottom: 10px;
+}
+
+.pantry-list {
+  list-style: none;
+  padding: 0;
+}
+
+.pantry-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 10px;
+  border-bottom: 1px solid #eee;
+  font-size: 1.1rem;
+}
+
+.remove-item-btn {
+  background: none;
+  border: none;
+  color: #d32f2f;
+  font-size: 1.8rem;
+  font-weight: bold;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.pantry-category {
+    margin-bottom: 30px;
+}
+
+.pantry-category h3 {
+    font-size: 1.2rem;
+    color: #333;
+    border-bottom: 2px solid #4caf50;
+    padding-bottom: 8px;
+    margin-bottom: 15px;
+}

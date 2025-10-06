@@ -4,10 +4,10 @@ import os
 import json
 import openai
 from dotenv import load_dotenv
-from schemas import UserRead, SpecialRead
+from schemas import UserRead, SpecialRead, PantryItem
 from typing import List
 
-def generate_recipes_from_specials(specials_list: List[SpecialRead], preferences: UserRead):
+def generate_recipes_from_specials(specials_list: List[SpecialRead], preferences: UserRead, pantry_items: List[PantryItem]):
     load_dotenv()
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
@@ -16,8 +16,8 @@ def generate_recipes_from_specials(specials_list: List[SpecialRead], preferences
     client = openai.OpenAI(api_key=api_key)
     
     specials_as_dicts = [s.model_dump() for s in specials_list]
+    pantry_as_dicts = [p.model_dump() for p in pantry_items]
 
-    # --- UPDATED: Simplified safety rules ---
     safety_rules = ""
     if preferences.dietary_restrictions:
         safety_rules = f"The user has critical dietary restrictions: {', '.join(preferences.dietary_restrictions)}. Do not include these ingredients or their derivatives."
@@ -27,9 +27,16 @@ def generate_recipes_from_specials(specials_list: List[SpecialRead], preferences
     preference_text = ""
     if preferences.household_size:
         preference_text += f"The recipes should be suitable for a household of {preferences.household_size} people."
+    
+    # --- NEW: Create text for pantry items ---
+    pantry_text = "The user has no items in their pantry."
+    if pantry_items:
+        pantry_list_str = ", ".join([item.name for item in pantry_items])
+        pantry_text = f"The user has the following items in their pantry: {pantry_list_str}. You should prioritize creating recipes that use these ingredients to help reduce food waste."
+
 
     system_prompt = f"""
-    You are a helpful and extremely cautious recipe assistant. Your primary goal is to generate 5 unique dinner recipes based on user preferences and a list of on-special ingredients.
+    You are a helpful and extremely cautious recipe assistant. Your primary goal is to generate 5 unique dinner recipes based on user preferences, a list of on-special ingredients, and a list of ingredients the user already has in their pantry.
 
     ---
     **CRITICAL DIETARY RULES:**
@@ -37,6 +44,9 @@ def generate_recipes_from_specials(specials_list: List[SpecialRead], preferences
     - YOU MUST NOT include any ingredients that violate the user's dietary restrictions.
     - Before providing your final answer, you MUST double-check every ingredient in every generated recipe to ensure it strictly complies with ALL of the above rules. This is the most important instruction.
     ---
+
+    **PANTRY INGREDIENTS:**
+    {pantry_text}
 
     **Other User Preferences:**
     {preference_text if preference_text else "The user has no other specific preferences."}
@@ -51,7 +61,8 @@ def generate_recipes_from_specials(specials_list: List[SpecialRead], preferences
     user_prompt = f"""
     Here are this week's on-special ingredients:
     {json.dumps(specials_as_dicts, indent=2)}
-    Please generate 5 recipes based on these specials and my dietary restrictions and preferences. Provide them in the specified JSON format.
+
+    Please generate 5 recipes based on these specials, my pantry items, and my safety/dietary rules and preferences. Provide them in the specified JSON format.
     """
 
     try:

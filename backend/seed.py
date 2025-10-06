@@ -1,9 +1,23 @@
 # backend/seed.py
 
-from sqlmodel import Session, select
+from sqlmodel import Session, select, func
 from database import engine, create_db_and_tables
 from models import Recipe, Ingredient, RecipeIngredientLink, Special, User
 from security import get_password_hash # Import the password hashing function
+
+# --- NEW: List of 100 common pantry staples ---
+STAPLES_DATA = {
+    "Oils, Fats & Vinegars": ["Olive Oil", "Vegetable Oil", "Coconut Oil", "Sesame Oil", "Butter", "Margarine", "Apple Cider Vinegar", "Balsamic Vinegar", "Red Wine Vinegar", "White Vinegar"],
+    "Grains, Flour & Carbs": ["All-Purpose Flour", "Self-Raising Flour", "Bread", "White Rice", "Brown Rice", "Pasta", "Spaghetti", "Oats", "Quinoa", "Cornstarch"],
+    "Baking": ["Baking Powder", "Baking Soda", "White Sugar", "Brown Sugar", "Icing Sugar", "Vanilla Extract", "Cocoa Powder", "Chocolate Chips", "Yeast", "Honey", "Maple Syrup"],
+    "Spices & Seasonings": ["Salt", "Black Pepper", "Garlic Powder", "Onion Powder", "Paprika", "Smoked Paprika", "Cumin", "Coriander", "Chilli Powder", "Red Pepper Flakes", "Cayenne Pepper", "Dried Oregano", "Dried Basil", "Dried Thyme", "Dried Rosemary", "Bay Leaves", "Cinnamon", "Nutmeg", "Ground Ginger", "Turmeric", "Curry Powder"],
+    "Canned Goods": ["Diced Tomatoes", "Crushed Tomatoes", "Tomato Paste", "Tomato Sauce", "Black Beans", "Kidney Beans", "Chickpeas", "Lentils", "Canned Tuna", "Canned Salmon", "Sweet Corn", "Coconut Milk", "Coconut Cream"],
+    "Condiments & Sauces": ["Ketchup", "Mayonnaise", "Dijon Mustard", "Wholegrain Mustard", "Soy Sauce", "Worcestershire Sauce", "Sweet Chilli Sauce", "Hot Sauce", "BBQ Sauce", "Peanut Butter", "Jam", "Vegemite"],
+    "Produce Staples": ["Onion", "Garlic", "Potato", "Carrot", "Celery", "Lemon", "Lime"],
+    "Dairy & Eggs": ["Milk", "Eggs", "Cheddar Cheese", "Parmesan Cheese", "Plain Yogurt", "Sour Cream", "Cream"],
+    "Broths & Stocks": ["Chicken Broth", "Beef Broth", "Vegetable Broth"],
+    "Nuts & Seeds": ["Almonds", "Walnuts", "Peanuts", "Chia Seeds", "Sesame Seeds", "Poppy Seeds"]
+}
 
 # A curated list of 150 meat, seafood, and produce specials
 SPECIALS_DATA = [
@@ -155,7 +169,7 @@ SPECIALS_DATA = [
 
 
 def seed_database():
-    print("🔄 Clearing and seeding database with 150 specials and 26 test users...")
+    print("🔄 Clearing and seeding database with staples, specials, and test users...")
     create_db_and_tables()
 
     with Session(engine) as session:
@@ -166,6 +180,16 @@ def seed_database():
         session.query(Ingredient).delete()
         session.query(User).delete()
         print("Old data cleared.")
+        session.commit()
+        
+        # --- NEW: Add staple ingredients ---
+        staple_count = 0
+        for category, items in STAPLES_DATA.items():
+            for item_name in items:
+                staple_ingredient = Ingredient(name=item_name, is_staple=True, category=category)
+                session.add(staple_ingredient)
+                staple_count += 1
+        print(f"{staple_count} staple ingredients created.")
         session.commit()
 
         # Add new test users
@@ -180,19 +204,18 @@ def seed_database():
 
         # Add new specials
         for special_data in SPECIALS_DATA:
-            # Find or create the ingredient
             ingredient_name = special_data["ingredient_name"]
-            existing_ingredient = session.exec(select(Ingredient).where(Ingredient.name == ingredient_name)).first()
+            # Use func.lower for case-insensitive comparison
+            existing_ingredient = session.exec(select(Ingredient).where(func.lower(Ingredient.name) == ingredient_name.lower())).first()
 
             if existing_ingredient:
                 ingredient = existing_ingredient
             else:
-                ingredient = Ingredient(name=ingredient_name)
+                ingredient = Ingredient(name=ingredient_name, is_staple=False) # Specials are not staples
                 session.add(ingredient)
                 session.commit()
                 session.refresh(ingredient)
 
-            # Create the special
             special = Special(
                 ingredient_id=ingredient.id,
                 price=special_data["price"],
