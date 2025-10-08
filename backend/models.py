@@ -46,6 +46,9 @@ class Recipe(SQLModel, table=True):
     title: str = Field(index=True)
     description: str
     instructions: str
+    # --- NEW: Field for recipe tags ---
+    tags: List[str] = Field(default=[], sa_column=Column(JSON))
+    
     links: List[RecipeIngredientLink] = Relationship(back_populates="recipe", cascade_delete=True)
     
     total_rating: int = Field(default=0)

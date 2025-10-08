@@ -19,8 +19,7 @@ const RecipeCard = ({ recipe, onClick, onDelete, allSpecials }) => {
 
   const cost = useMemo(() => calculateSingleRecipeCost(recipe, allSpecials), [recipe, allSpecials]);
   const isSaved = savedRecipeIds.has(recipe.id);
-  
-  // --- UPDATED: Logic to find the selected item and its quantity ---
+
   const selectedItem = selectedRecipes.find(item => item.recipe.id === recipe.id);
   const isSelected = !!selectedItem;
   const currentQuantity = selectedItem ? selectedItem.quantity : 0;
@@ -62,9 +61,16 @@ const RecipeCard = ({ recipe, onClick, onDelete, allSpecials }) => {
             <span className="rating-value">({recipe.average_rating.toFixed(1)})</span>
           )}
         </div>
+        {/* --- NEW: Display Recipe Tags --- */}
+        {recipe.tags && recipe.tags.length > 0 && (
+          <div className="card-tags">
+            {recipe.tags.slice(0, 3).map(tag => (
+              <span key={tag} className="tag">{tag}</span>
+            ))}
+          </div>
+        )}
       </div>
       <div className="card-bottom-action">
-        {/* --- UPDATED: Conditionally render button or stepper --- */}
         {isSelected ? (
             <div className="quantity-stepper">
                 <button onClick={handleDecrement}>-</button>

@@ -35,6 +35,7 @@ This section outlines the planned features to evolve the app from an MVP into a 
 - **Advanced Costing:** Implement per-portion recipe costing and waste calculation.
 - **Recipe Tagging & Advanced Filtering:** Have the AI automatically add tags (e.g., "Quick & Easy", "Spicy") to recipes for better discovery.
 - **Multi-Supermarket Support:** Expand the specials database to include data from Woolworths and Aldi.
+- **AI-Powered Web Scraping:** Investigate using advanced computer-use models (like Gemini 2.5) to create a more robust, human-like scraper that is less likely to be blocked by supermarket websites.
 
 ---
 

@@ -28,7 +28,6 @@ def generate_recipes_from_specials(specials_list: List[SpecialRead], preferences
     if preferences.household_size:
         preference_text += f"The recipes should be suitable for a household of {preferences.household_size} people."
     
-    # --- NEW: Create text for pantry items ---
     pantry_text = "The user has no items in their pantry."
     if pantry_items:
         pantry_list_str = ", ".join([item.name for item in pantry_items])
@@ -41,8 +40,9 @@ def generate_recipes_from_specials(specials_list: List[SpecialRead], preferences
     ---
     **CRITICAL DIETARY RULES:**
     - {safety_rules}
+    - You MUST also add any applicable dietary restrictions (e.g., "Vegan", "Gluten-Free") to the "tags" array for each recipe.
     - YOU MUST NOT include any ingredients that violate the user's dietary restrictions.
-    - Before providing your final answer, you MUST double-check every ingredient in every generated recipe to ensure it strictly complies with ALL of the above rules. This is the most important instruction.
+    - Before providing your final answer, you MUST double-check every ingredient and tag in every generated recipe to ensure it strictly complies with ALL of the above rules. This is the most important instruction.
     ---
 
     **PANTRY INGREDIENTS:**
@@ -53,9 +53,10 @@ def generate_recipes_from_specials(specials_list: List[SpecialRead], preferences
 
     **Output Rules:**
     - You must provide the output as a single JSON object with a key named "recipes", which contains an array of recipe objects. Do not include any text, titles, or markdown formatting like ```json before or after the JSON object.
-    - Each recipe object must have the keys: "title", "description", "instructions", and "ingredients".
+    - Each recipe object must have the keys: "title", "description", "instructions", "ingredients", and "tags".
     - The "instructions" must be a single string with steps separated by newline characters (\\n).
     - The "ingredients" must be an array of objects, each with "name" and "quantity" keys.
+    - The "tags" must be an array of 3-5 strings. These tags should be descriptive and helpful for filtering, for example: "Quick & Easy", "Family Friendly", "Under 30 Minutes", "Spicy", "Healthy", "Comfort Food". You MUST also include any relevant dietary tags from the user's restrictions list.
     """
 
     user_prompt = f"""

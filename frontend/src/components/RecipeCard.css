@@ -185,3 +185,25 @@
   min-width: 20px;
   text-align: center;
 }
+
+/* src/components/RecipeCard.css */
+
+/* (Keep all existing styles) */
+
+/* --- ADD TO BOTTOM OF FILE --- */
+.card-tags {
+  margin-top: 15px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+
+.tag {
+  background-color: #f0f0f0;
+  color: #555;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}

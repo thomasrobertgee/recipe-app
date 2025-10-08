@@ -59,7 +59,12 @@ def get_or_create_ingredient(name: str, session: Session) -> Ingredient:
 
 
 def _save_recipe_to_db(recipe_data: RecipeCreate, session: Session) -> Recipe:
-    new_recipe = Recipe(title=recipe_data.title, description=recipe_data.description, instructions=recipe_data.instructions)
+    new_recipe = Recipe(
+        title=recipe_data.title, 
+        description=recipe_data.description, 
+        instructions=recipe_data.instructions,
+        tags=recipe_data.tags
+    )
     session.add(new_recipe)
 
     for ing_data in recipe_data.ingredients:
@@ -213,22 +218,44 @@ def get_specials(session: Session = Depends(get_session)):
     db_specials = session.exec(select(Special)).all()
     return [SpecialRead.from_orm(s, update={'ingredient_name': s.ingredient.name}) for s in db_specials]
 
+# --- NEW: Endpoint to get all unique tags ---
+@app.get("/api/tags", response_model=List[str])
+def get_all_tags(session: Session = Depends(get_session)):
+    all_recipes = session.exec(select(Recipe)).all()
+    all_tags = set()
+    for recipe in all_recipes:
+        for tag in recipe.tags:
+            all_tags.add(tag)
+    return sorted(list(all_tags))
+
 @app.get("/api/recipes", response_model=List[RecipeResponse])
 def get_recipes(
     session: Session = Depends(get_session),
     min_rating: Optional[float] = Query(None, ge=1, le=5),
-    sort_by: Optional[str] = Query(None)
+    sort_by: Optional[str] = Query(None),
+    tags: Optional[str] = Query(None)
 ):
     average_rating = func.coalesce(Recipe.total_rating / func.nullif(Recipe.rating_count, 0), 0)
     query = select(Recipe)
+    
     if min_rating is not None:
         query = query.where(average_rating >= min_rating)
+
     if sort_by is not None:
         if sort_by == "rating_asc":
             query = query.order_by(average_rating.asc())
         elif sort_by == "rating_desc":
             query = query.order_by(average_rating.desc())
+            
     db_recipes = session.exec(query).all()
+
+    if tags:
+        selected_tags = {tag.strip() for tag in tags.split(',')}
+        db_recipes = [
+            recipe for recipe in db_recipes 
+            if selected_tags.issubset(set(recipe.tags))
+        ]
+
     response_recipes = []
     for recipe in db_recipes:
         response_ingredients = [

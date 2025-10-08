@@ -19,12 +19,8 @@ const MySavedRecipesPage = () => {
   const fetchSavedRecipes = () => {
     if (token) {
       setLoading(true);
-      const params = {};
-      if (minRating) params.min_rating = minRating;
-      if (sortBy) params.sort_by = sortBy;
-
       Promise.all([
-        axios.get('http://127.0.0.1:8000/api/users/me/saved-recipes', { params }),
+        axios.get('http://127.0.0.1:8000/api/users/me/saved-recipes'),
         axios.get('http://127.0.0.1:8000/api/specials')
       ]).then(([recipesRes, specialsRes]) => {
         let filteredRecipes = recipesRes.data;
@@ -32,13 +28,12 @@ const MySavedRecipesPage = () => {
         if (minRating) {
             filteredRecipes = filteredRecipes.filter(r => r.average_rating >= minRating);
         }
-
         if (sortBy === 'rating_asc') {
             filteredRecipes.sort((a, b) => a.average_rating - b.average_rating);
         } else if (sortBy === 'rating_desc') {
             filteredRecipes.sort((a, b) => b.average_rating - a.average_rating);
         }
-
+        
         setSavedRecipes(filteredRecipes);
         setAllSpecials(specialsRes.data);
 
@@ -75,11 +70,15 @@ const MySavedRecipesPage = () => {
   return (
     <div className="app-container">
       <div className="page-header"><h1>My Saved Recipes</h1></div>
+      {/* --- UPDATED: Pass empty/dummy props for tags --- */}
       <FilterSortControls
         minRating={minRating}
         setMinRating={setMinRating}
         sortBy={sortBy}
         setSortBy={setSortBy}
+        availableTags={[]}
+        selectedTags={[]}
+        handleTagClick={() => {}}
       />
       <div className="recipe-grid">
         {loading ? (
@@ -100,7 +99,7 @@ const MySavedRecipesPage = () => {
           <p>You haven't saved any recipes yet. Click the heart icon on a recipe to save it!</p>
         )}
       </div>
-
+      
       {selectedRecipe && (
         <RecipeDetail 
           recipe={selectedRecipe} 

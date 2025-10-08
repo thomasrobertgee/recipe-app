@@ -25,6 +25,8 @@ class RecipeResponse(SQLModel):
     ingredients: List[IngredientInRecipe]
     total_rating: int
     rating_count: int
+    # --- NEW ---
+    tags: List[str]
 
     @computed_field
     @property
@@ -42,6 +44,8 @@ class RecipeCreate(SQLModel):
     description: str
     instructions: str
     ingredients: List[IngredientCreate]
+    # --- NEW ---
+    tags: List[str]
 
 class SpecialBase(SQLModel):
     ingredient_name: str
