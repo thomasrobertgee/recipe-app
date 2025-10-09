@@ -1,14 +1,19 @@
-# backend/scraper.py (Simple, Single-Page HTML Scraper)
+# backend/scraper.py
 
 import requests
+import os
+from dotenv import load_dotenv
 from bs4 import BeautifulSoup
 import time
 
 API_URL = "http://127.0.0.1:8000/api/specials"
-COLES_URL = "https://www.coles.com.au/on-special"
-HEADERS = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-}
+load_dotenv()
+
+# --- NEW: List of categories to scrape ---
+CATEGORIES_TO_SCRAPE = [
+    "https://www.coles.com.au/on-special/meat-seafood",
+    "https://www.coles.com.au/on-special/fruit-vegetables",
+]
 
 def clear_old_specials():
     print("--- Clearing old specials ---")
@@ -25,62 +30,99 @@ def save_special(ingredient_name, price, store):
     payload = {"ingredient_name": ingredient_name, "price": price, "store": store}
     try:
         response = requests.post(API_URL, json=payload)
-        # We check for 200 OK, but don't raise for status to avoid stopping on a single validation error
-        if response.status_code == 200:
-            return True
-        else:
-            # Silently fail to keep the log clean during a large scrape
-            return False
-    except requests.exceptions.RequestException:
+        if response.status_code != 200:
+            print(f"Failed to save '{ingredient_name}': {response.status_code} {response.text}")
+        return response.status_code == 200
+    except requests.exceptions.RequestException as e:
+        print(f"Error saving special: {e}")
         return False
 
 def scrape_coles_specials():
-    """Scrapes the first page of the Coles website and saves the specials."""
-    print("\n--- Starting single-page Coles specials scrape ---")
-    total_saved_count = 0
+    """
+    Scrapes specific categories from Coles, handling pagination dynamically
+    and extracting detailed price information.
+    """
+    print("\n--- Starting targeted category scrape for Coles specials ---")
     
-    try:
-        # 1. Fetch the page content
-        response = requests.get(COLES_URL, headers=HEADERS)
-        response.raise_for_status()
+    api_key = os.getenv("SCRAPINGBEE_API_KEY")
+    if not api_key:
+        print("Error: SCRAPINGBEE_API_KEY not found in .env file.")
+        return
 
-        # 2. Parse the HTML
-        soup = BeautifulSoup(response.content, 'html.parser')
+    all_products_found = []
 
-        # 3. Find all product containers
-        products = soup.find_all('section', attrs={'data-testid': 'product-tile'})
-        
-        if not products:
-            print("Could not find any products. The website may be blocking the request.")
-            return
+    # Loop through each category URL
+    for base_url in CATEGORIES_TO_SCRAPE:
+        page_num = 1
+        category_name = base_url.split('/')[-1]
+        print(f"\n--- Scraping Category: {category_name} ---")
 
-        print(f"Found {len(products)} products on the page. Processing...")
+        # Loop through pages until no more products are found
+        while True:
+            page_url = f"{base_url}?page={page_num}"
+            print(f"Scraping Page {page_num}: {page_url}")
 
-        # 4. Loop through each product and extract the data
-        for product in products:
-            name_tag = product.find('h2', class_='product__title')
-            price_tag = product.find('span', class_='price__value')
-            unit_price_tag = product.find('div', class_='price__calculation_method')
+            try:
+                response = requests.get(
+                    url='https://app.scrapingbee.com/api/v1/',
+                    params={
+                        'api_key': api_key,
+                        'url': page_url,
+                        'render_js': 'true',
+                        'wait_for': '[data-testid="product-tile"]',
+                        'country_code': 'au' 
+                    },
+                    timeout=120
+                )
+                response.raise_for_status()
 
-            if name_tag and price_tag:
-                name = name_tag.get_text(strip=True)
-                price = price_tag.get_text(strip=True)
+                soup = BeautifulSoup(response.content, 'html.parser')
+                products = soup.find_all('section', attrs={'data-testid': 'product-tile'})
                 
-                full_price_string = price
-                if unit_price_tag:
-                    unit_price = unit_price_tag.get_text(strip=True).split('|')[0].strip()
-                    full_price_string = f"{price} ({unit_price})"
+                if not products:
+                    print(f"No products found on page {page_num}. Moving to next category.")
+                    break
 
-                # 5. Save the cleaned data to our database via our API
+                print(f"Found {len(products)} products on this page.")
+                all_products_found.extend(products)
+                
+                page_num += 1
+                time.sleep(2) # Wait between page requests
+
+            except requests.exceptions.RequestException as e:
+                print(f"Error fetching page {page_num}: {e}. Moving to next category.")
+                break # Stop trying this category if a page fails
+            except Exception as e:
+                print(f"An unexpected error occurred on page {page_num}: {e}. Moving to next category.")
+                break
+
+    if not all_products_found:
+        print("No products were found across any categories.")
+        return
+
+    print(f"\n--- All pages scraped. Found a total of {len(all_products_found)} products. Processing and saving... ---")
+    total_saved_count = 0
+    for product in all_products_found:
+        name_tag = product.find('h2', class_='product__title')
+        price_tag = product.find('span', class_='price__value')
+        # --- NEW: Find the unit price ---
+        unit_price_tag = product.find('div', class_='price__calculation_method')
+        
+        if name_tag and price_tag:
+            name = name_tag.get_text(strip=True)
+            price = price_tag.get_text(strip=True)
+            
+            full_price_string = price
+            if unit_price_tag:
+                # Extract and clean up the unit price text
+                unit_price = unit_price_tag.get_text(strip=True).split('|')[0].strip()
+                full_price_string = f"{price} ({unit_price})"
+
+            if price:
                 if save_special(ingredient_name=name, price=full_price_string, store="Coles"):
                     total_saved_count += 1
-        
-        print(f"\n--- Scraping complete! A total of {total_saved_count} specials were saved. ---")
-
-    except requests.exceptions.RequestException as e:
-        print(f"Error fetching the URL: {e}")
-    except Exception as e:
-        print(f"An unexpected error occurred: {e}")
+    
+    print(f"\n--- Scraping complete! A total of {total_saved_count} unique specials were saved. ---")
 
 if __name__ == "__main__":
     if clear_old_specials():

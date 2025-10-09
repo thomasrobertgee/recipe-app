@@ -212,11 +212,40 @@ def generate_recipes_endpoint(request: GenerateRequest, session: Session = Depen
             print(f"Could not validate or save AI recipe: {e}")
     return {"message": f"Successfully generated and saved {saved_recipes_count} new recipes."}
 
-
+@app.delete("/api/specials")
+def delete_all_specials(session: Session = Depends(get_session)):
+    """Deletes all specials from the database."""
+    try:
+        session.query(Special).delete()
+        session.commit()
+        return {"message": "All specials have been cleared."}
+    except Exception as e:
+        session.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+    
 @app.get("/api/specials", response_model=List[SpecialRead])
 def get_specials(session: Session = Depends(get_session)):
     db_specials = session.exec(select(Special)).all()
     return [SpecialRead.from_orm(s, update={'ingredient_name': s.ingredient.name}) for s in db_specials]
+
+# Add this to backend/main.py
+
+@app.post("/api/specials", response_model=SpecialRead)
+def create_special(special: SpecialCreate, session: Session = Depends(get_session)):
+    """Creates a new special after scraping."""
+    ingredient = get_or_create_ingredient(special.ingredient_name, session)
+    
+    new_special = Special(
+        ingredient_id=ingredient.id,
+        price=special.price,
+        store=special.store
+    )
+    session.add(new_special)
+    session.commit()
+    session.refresh(new_special)
+    
+    # We need to return a SpecialRead, which includes the ingredient_name
+    return SpecialRead.from_orm(new_special, update={'ingredient_name': ingredient.name})
 
 # --- NEW: Endpoint to get all unique tags ---
 @app.get("/api/tags", response_model=List[str])
