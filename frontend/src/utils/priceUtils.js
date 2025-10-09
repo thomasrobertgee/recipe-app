@@ -1,22 +1,22 @@
 // src/utils/priceUtils.js
 
-// --- UPDATED: Export this function ---
 export const getSimplePrice = (priceString) => {
     if (!priceString) return 0;
     const match = priceString.match(/\$(\d+\.?\d*)/);
     return match ? parseFloat(match[1]) : 0;
 };
 
-const findBestSpecialMatch = (ingredientName, allSpecials) => {
-  const lowerCaseIngredient = ingredientName.toLowerCase();
-  const searchRegex = new RegExp(`\\b${lowerCaseIngredient}\\b`, 'i');
+// --- NEW: Fuzzy matching logic to find the best special for an ingredient ---
+export const findBestSpecialMatch = (ingredientName, allSpecials) => {
+  if (!ingredientName || !allSpecials) return null;
 
+  const lowerCaseIngredient = ingredientName.toLowerCase();
+
+  // 1. Look for an exact match first
   const exactMatch = allSpecials.find(s => s.ingredient_name.toLowerCase() === lowerCaseIngredient);
   if (exactMatch) return exactMatch;
-
-  const wholeWordMatch = allSpecials.find(s => searchRegex.test(s.ingredient_name));
-  if (wholeWordMatch) return wholeWordMatch;
   
+  // 2. If no exact match, look for a partial match
   return allSpecials.find(s => s.ingredient_name.toLowerCase().includes(lowerCaseIngredient));
 };
 
@@ -35,12 +35,4 @@ export const calculateSingleRecipeCost = (recipe, allSpecials) => {
         }
     }
     return totalCost;
-};
-
-export const calculateRecipeCost = (consolidatedItems) => {
-    if (!consolidatedItems) return 0;
-    
-    return consolidatedItems.reduce((total, item) => {
-        return total + getSimplePrice(item.priceString);
-    }, 0);
 };

@@ -3,6 +3,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
+import { useUI } from './UIContext'; // --- NEW: Import useUI ---
 
 const AuthContext = createContext();
 export const useAuth = () => useContext(AuthContext);
@@ -34,6 +35,8 @@ export const AuthProvider = ({ children }) => {
   const [userProfile, setUserProfile] = useState(null);
   const [savedRecipeIds, setSavedRecipeIds] = useState(new Set());
   const [removedItems, setRemovedItems] = useState(() => JSON.parse(localStorage.getItem('removedItems') || '[]'));
+
+  const { openSidebar, closeSidebar } = useUI(); // --- NEW: Get sidebar controls ---
 
   useEffect(() => {
     const initializeAuth = async () => {
@@ -67,7 +70,11 @@ export const AuthProvider = ({ children }) => {
   
   useEffect(() => {
     localStorage.setItem('selectedRecipes', JSON.stringify(selectedRecipes));
-  }, [selectedRecipes]);
+    // --- NEW: Automatically close sidebar if list becomes empty ---
+    if (selectedRecipes.length === 0) {
+      closeSidebar();
+    }
+  }, [selectedRecipes, closeSidebar]);
 
   useEffect(() => {
     localStorage.setItem('removedItems', JSON.stringify(removedItems));
@@ -80,6 +87,7 @@ export const AuthProvider = ({ children }) => {
     setSelectedRecipes([]); 
     setUserProfile(null);
     setRemovedItems([]);
+    closeSidebar(); // --- NEW: Close sidebar on logout ---
   };
   
   const saveRecipe = async (recipeId) => {
@@ -104,6 +112,10 @@ export const AuthProvider = ({ children }) => {
         setSelectedRecipes(prev => prev.filter(item => item.recipe.id !== recipeToAdd.id));
         toast.info(`"${recipeToAdd.title}" removed from your list.`);
     } else {
+        // --- UPDATED: Open sidebar when the first item is added ---
+        if (selectedRecipes.length === 0) {
+          openSidebar();
+        }
         setSelectedRecipes(prev => [...prev, { recipe: recipeToAdd, quantity: 1 }]);
         toast.success(`"${recipeToAdd.title}" added to your list!`);
     }
@@ -146,6 +158,7 @@ export const AuthProvider = ({ children }) => {
   const clearShoppingList = () => {
     setSelectedRecipes([]);
     setRemovedItems([]);
+    closeSidebar(); // --- NEW: Close sidebar when cleared ---
     toast.info("Shopping list cleared.");
   };
 

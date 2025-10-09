@@ -5,16 +5,17 @@ import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import './AuthForm.css';
 import './ProfilePage.css';
+import './Page.css'; // Import the new shared styles
+
 
 const DIETARY_RESTRICTIONS = [
-  "Dairy-Free", "Egg Allergy", "Fish Allergy", "Gluten-Free", "Halal", "Keto", 
-  "Kosher", "Low-Carb", "Low-Fat", "Low-Sodium", "No Red Meat", "Paleo", 
-  "Peanut Allergy", "Pescatarian", "Shellfish Allergy", "Soy Allergy", 
+  "Dairy-Free", "Egg Allergy", "Fish Allergy", "Gluten-Free", "Halal", "Keto",
+  "Kosher", "Low-Carb", "Low-Fat", "Low-Sodium", "No Red Meat", "Paleo",
+  "Peanut Allergy", "Pescatarian", "Shellfish Allergy", "Soy Allergy",
   "Tree Nut Allergy", "Vegan", "Vegetarian", "Wheat Allergy",
 ];
 
 const ProfilePage = () => {
-  // --- UPDATED: Use userProfile from AuthContext ---
   const { userProfile, setUserProfile } = useAuth();
   const [formData, setFormData] = useState(userProfile || {
     email: '',
@@ -25,7 +26,6 @@ const ProfilePage = () => {
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Sync local form state if global profile changes
   useEffect(() => {
     setFormData(userProfile || {});
   }, [userProfile]);
@@ -57,7 +57,6 @@ const ProfilePage = () => {
 
     axios.put('http://127.0.0.1:8000/users/me', dataToUpdate)
       .then(response => {
-        // --- UPDATED: Update the global context state ---
         setUserProfile(response.data);
         setMessage('Profile updated successfully!');
       })
@@ -66,45 +65,52 @@ const ProfilePage = () => {
   };
 
   if (!userProfile) {
-    return <p>Loading profile...</p>;
+    return <div className="app-container"><p>Loading profile...</p></div>;
   }
 
   return (
-    <div className="auth-container">
-      <h1>My Profile</h1>
-      <form onSubmit={handleSubmit} className="auth-form">
-        <label htmlFor="email">Email</label>
-        <input type="email" name="email" value={formData.email} disabled />
+    <div className="app-container">
+      {/* --- Standardized page header --- */}
+      <div className="page-header">
+        <h1>My Profile</h1>
+      </div>
 
-        <label htmlFor="household_size">Household Size</label>
-        <input type="number" name="household_size" value={formData.household_size} onChange={handleInputChange} min="1" required />
+      {/* --- Form now in its own styled container --- */}
+      <div className="profile-form-container">
+        <form onSubmit={handleSubmit} className="auth-form">
+          <label htmlFor="email">Email</label>
+          <input type="email" name="email" value={formData.email} disabled />
 
-        <label htmlFor="weekly_budget">Weekly Budget ($)</label>
-        <input type="number" name="weekly_budget" placeholder="e.g., 150.00" value={formData.weekly_budget || ''} onChange={handleInputChange} min="0" step="0.01" />
+          <label htmlFor="household_size">Household Size</label>
+          <input type="number" name="household_size" value={formData.household_size} onChange={handleInputChange} min="1" required />
 
-        <fieldset>
-          <legend>Dietary Restrictions</legend>
-          <div className="checkbox-group">
-            {DIETARY_RESTRICTIONS.map(option => (
-              <label key={option} className="checkbox-label">
-                <input 
-                  type="checkbox" 
-                  name="dietary_restrictions" 
-                  value={option} 
-                  checked={(formData.dietary_restrictions || []).includes(option)} 
-                  onChange={handleCheckboxChange} 
-                />
-                {option}
-              </label>
-            ))}
-          </div>
-        </fieldset>
+          <label htmlFor="weekly_budget">Weekly Budget ($)</label>
+          <input type="number" name="weekly_budget" placeholder="e.g., 150.00" value={formData.weekly_budget || ''} onChange={handleInputChange} min="0" step="0.01" />
 
-        <button type="submit" disabled={isLoading}>
-          {isLoading ? 'Saving...' : 'Update Profile'}
-        </button>
-        {message && <p className={message.includes('success') ? 'success-message' : 'error-message'}>{message}</p>}
-      </form>
+          <fieldset>
+            <legend>Dietary Restrictions</legend>
+            <div className="checkbox-group">
+              {DIETARY_RESTRICTIONS.map(option => (
+                <label key={option} className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    name="dietary_restrictions"
+                    value={option}
+                    checked={(formData.dietary_restrictions || []).includes(option)}
+                    onChange={handleCheckboxChange}
+                  />
+                  {option}
+                </label>
+              ))}
+            </div>
+          </fieldset>
+
+          <button type="submit" disabled={isLoading}>
+            {isLoading ? 'Saving...' : 'Update Profile'}
+          </button>
+          {message && <p className={message.includes('success') ? 'success-message' : 'error-message'}>{message}</p>}
+        </form>
+      </div>
     </div>
   );
 };

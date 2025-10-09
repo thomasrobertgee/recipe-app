@@ -1,9 +1,16 @@
 /* src/pages/SpecialsPage.css */
+
+.specials-page-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
 .generate-section {
   margin-bottom: 40px;
   padding: 20px;
-  background-color: #e8f5e9;
-  border: 1px solid #c8e6c9;
+  background-color: #f8f9fa;
+  border: 1px solid #e9ecef;
   border-radius: 8px;
   text-align: center;
 }
@@ -11,7 +18,7 @@
 .generate-btn {
   padding: 15px 30px;
   border: none;
-  background-color: #66bb6a;
+  background-color: #4caf50;
   color: white;
   font-size: 1.1rem;
   font-weight: bold;
@@ -21,7 +28,7 @@
 }
 
 .generate-btn:hover {
-  background-color: #4caf50;
+  background-color: #45a049;
 }
 
 .generate-btn:disabled {
@@ -29,34 +36,91 @@
   cursor: not-allowed;
 }
 
-.list-section h2 {
-  border-bottom: 2px solid #f0f0f0;
-  padding-bottom: 10px;
+.list-section h1 {
+  text-align: center;
+  margin-bottom: 30px;
 }
 
-.list-section ul {
-  list-style: none;
-  padding: 0;
+/* --- NEW: Tab Styles --- */
+.tabs-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  border-bottom: 2px solid #e0e0e0;
+  margin-bottom: 20px;
 }
 
-.list-section li {
+.tab-btn {
+  padding: 10px 20px;
+  border: none;
+  background-color: transparent;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #555;
+  border-bottom: 3px solid transparent;
+  transition: all 0.2s ease-in-out;
+}
+
+.tab-btn:hover {
+  background-color: #f5f5f5;
+}
+
+.tab-btn.active {
+  color: #4caf50;
+  font-weight: 600;
+  border-bottom-color: #4caf50;
+}
+
+/* --- Content Styles --- */
+.tab-content {
+  /* This container is now used for the active tab's content */
+}
+
+.specials-grid {
+  display: grid;
+  grid-template-columns: 1fr; /* Default to 1 column */
+  gap: 15px;
+}
+
+/* On wider screens, use 2 columns */
+@media (min-width: 768px) {
+  .specials-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.special-card {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 15px;
-  border-bottom: 1px solid #e0e0e0;
+  background-color: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
 }
 
-.list-section li strong {
-  font-size: 1.1rem;
+.special-card-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
-.list-section li span {
+.special-card strong {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.special-card span {
+  font-size: 0.85rem;
   color: #777;
-  margin-left: 10px;
 }
 
 .special-price {
-    font-weight: bold;
-    color: #333;
+  font-weight: bold;
+  font-size: 1rem;
+  color: #333;
+  white-space: nowrap;
+  margin-left: 15px;
 }

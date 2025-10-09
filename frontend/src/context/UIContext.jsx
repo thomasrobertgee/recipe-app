@@ -1,14 +1,22 @@
 // src/context/UIContext.jsx
-import React, { createContext, useState, useContext } from 'react';
+import React, { createContext, useState, useContext, useEffect } from 'react';
 
 const UIContext = createContext();
 
 export const UIProvider = ({ children }) => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  // --- UPDATED: Initialize state from localStorage, defaulting to false ---
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
+    const storedState = localStorage.getItem('sidebarOpen');
+    return storedState ? JSON.parse(storedState) : false;
+  });
+
+  // --- NEW: Save state to localStorage whenever it changes ---
+  useEffect(() => {
+    localStorage.setItem('sidebarOpen', JSON.stringify(isSidebarOpen));
+  }, [isSidebarOpen]);
 
   const openSidebar = () => setIsSidebarOpen(true);
   const closeSidebar = () => setIsSidebarOpen(false);
-  // --- NEW ---
   const toggleSidebar = () => setIsSidebarOpen(prev => !prev);
 
 

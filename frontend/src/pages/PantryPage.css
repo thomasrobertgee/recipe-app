@@ -99,3 +99,52 @@
     padding-bottom: 8px;
     margin-bottom: 15px;
 }
+
+/* --- NEW: Styles for Quick Add Staples --- */
+
+.staples-section {
+  margin-bottom: 40px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #ddd;
+}
+
+.staples-section h2 {
+  border-bottom: 2px solid #eee;
+  padding-bottom: 10px;
+}
+
+.staple-category h3 {
+  font-size: 1rem;
+  color: #555;
+  margin-top: 20px;
+  margin-bottom: 10px;
+}
+
+.staple-items-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.staple-item-btn {
+  background-color: #e8f5e9;
+  color: #388e3c;
+  border: 1px solid #a5d6a7;
+  padding: 8px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.2s;
+}
+
+.staple-item-btn:hover {
+  background-color: #dcedc8;
+}
+
+.staple-item-btn:disabled {
+  background-color: #f0f0f0;
+  color: #aaa;
+  border-color: #ddd;
+  cursor: not-allowed;
+  text-decoration: line-through;
+}

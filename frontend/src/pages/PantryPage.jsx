@@ -4,12 +4,16 @@ import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import './PantryPage.css';
+import './Page.css'; // <-- Import the new shared styles
 
 const PantryPage = () => {
   const [pantryItems, setPantryItems] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [staples, setStaples] = useState({});
+
+  const pantryItemIds = useMemo(() => new Set(pantryItems.map(item => item.ingredient_id)), [pantryItems]);
 
   const fetchPantryItems = () => {
     axios.get('http://127.0.0.1:8000/api/pantry')
@@ -21,6 +25,10 @@ const PantryPage = () => {
   useEffect(() => {
     setIsLoading(true);
     fetchPantryItems();
+
+    axios.get('http://127.0.0.1:8000/api/ingredients/staples')
+      .then(res => setStaples(res.data))
+      .catch(err => console.error("Error fetching staples:", err));
   }, []);
 
   useEffect(() => {
@@ -30,7 +38,6 @@ const PantryPage = () => {
           .then(res => setSearchResults(res.data))
           .catch(err => console.error("Error searching ingredients:", err));
       }, 300);
-
       return () => clearTimeout(delayDebounceFn);
     } else {
       setSearchResults([]);
@@ -78,11 +85,12 @@ const PantryPage = () => {
   }, [pantryItems]);
 
   return (
-    <div className="pantry-page-container">
-      <div className="pantry-header">
+    <div className="app-container">
+      {/* --- UPDATED: Standardized page header --- */}
+      <div className="page-header">
         <h1>My Pantry</h1>
-        <p>Add ingredients you already have at home. The AI will prioritize these when generating recipes to help you save money and reduce waste.</p>
       </div>
+      <p className="page-subtitle">Add ingredients you already have at home. The AI will prioritize these when generating recipes to help you save money and reduce waste.</p>
 
       <div className="add-item-section">
         <input
@@ -101,6 +109,27 @@ const PantryPage = () => {
             ))}
           </ul>
         )}
+      </div>
+
+      <div className="staples-section">
+        <h2>Quick Add Staples</h2>
+        {Object.entries(staples).sort(([a], [b]) => a.localeCompare(b)).map(([category, items]) => (
+          <div key={category} className="staple-category">
+            <h3>{category}</h3>
+            <div className="staple-items-grid">
+              {items.sort((a, b) => a.name.localeCompare(b.name)).map(item => (
+                <button
+                  key={item.ingredient_id}
+                  onClick={() => handleAddItem(item.name)}
+                  className="staple-item-btn"
+                  disabled={pantryItemIds.has(item.ingredient_id)}
+                >
+                  {item.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
       </div>
 
       <div className="pantry-list-section">
@@ -124,7 +153,7 @@ const PantryPage = () => {
             ))}
           </div>
         ) : (
-          <p>Your pantry is empty. Add some items using the search bar above!</p>
+          <p>Your pantry is empty. Add some items using the search bar or the quick-add buttons above!</p>
         )}
       </div>
     </div>

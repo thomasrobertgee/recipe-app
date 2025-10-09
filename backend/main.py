@@ -4,14 +4,15 @@ from fastapi import FastAPI, HTTPException, Depends, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
 from contextlib import asynccontextmanager
-from typing import List, Optional
+from typing import List, Optional, Dict
 from sqlmodel import Session, select, func
+from sqlalchemy.orm import selectinload
 
 from database import engine, create_db_and_tables, get_session
 from models import User, Recipe, Ingredient, RecipeIngredientLink, Special, UserRecipeRatingLink, UserPantryLink
 from schemas import (
-    GenerateRequest, UserCreate, UserRead, UserUpdate, Token, 
-    RecipeResponse, IngredientInRecipe, RecipeCreate, SpecialCreate, 
+    GenerateRequest, UserCreate, UserRead, UserUpdate, Token,
+    RecipeResponse, IngredientInRecipe, RecipeCreate, SpecialCreate,
     SpecialRead, RecipeRating, PantryItem, PantryItemCreate
 )
 from security import get_password_hash, verify_password, create_access_token, get_current_user
@@ -35,23 +36,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-def get_or_create_ingredient(name: str, session: Session) -> Ingredient:
+# --- UPDATED: To accept and save a category ---
+def get_or_create_ingredient(name: str, session: Session, category: Optional[str] = None) -> Ingredient:
     exact_match = session.exec(select(Ingredient).where(func.lower(Ingredient.name) == name.lower())).first()
     if exact_match:
+        # If the ingredient exists but has no category, update it.
+        if category and not exact_match.category:
+            exact_match.category = category
+            session.add(exact_match)
+            session.commit()
+            session.refresh(exact_match)
         return exact_match
 
-    all_ingredients = session.exec(select(Ingredient)).all()
-    best_match = None
-    
-    for db_ing in all_ingredients:
-        if name.lower() in db_ing.name.lower():
-            best_match = db_ing
-            break
-    
-    if best_match:
-        return best_match
-
-    new_ingredient = Ingredient(name=name)
+    # If ingredient is new, create it with the category
+    new_ingredient = Ingredient(name=name, category=category)
     session.add(new_ingredient)
     session.commit()
     session.refresh(new_ingredient)
@@ -60,8 +58,8 @@ def get_or_create_ingredient(name: str, session: Session) -> Ingredient:
 
 def _save_recipe_to_db(recipe_data: RecipeCreate, session: Session) -> Recipe:
     new_recipe = Recipe(
-        title=recipe_data.title, 
-        description=recipe_data.description, 
+        title=recipe_data.title,
+        description=recipe_data.description,
         instructions=recipe_data.instructions,
         tags=recipe_data.tags
     )
@@ -115,7 +113,7 @@ def get_saved_recipes(session: Session = Depends(get_session), current_user: Use
     response_recipes = []
     for recipe in current_user.saved_recipes:
         response_ingredients = [
-            IngredientInRecipe(ingredient_id=link.ingredient.id, name=link.ingredient.name, quantity=link.quantity) 
+            IngredientInRecipe(ingredient_id=link.ingredient.id, name=link.ingredient.name, quantity=link.quantity)
             for link in recipe.links
         ]
         response_recipes.append(RecipeResponse.from_orm(recipe, update={'ingredients': response_ingredients}))
@@ -127,8 +125,6 @@ def save_a_recipe(recipe_id: int, session: Session = Depends(get_session), curre
     if not recipe:
         raise HTTPException(status_code=404, detail="Recipe not found")
     
-    session.add(current_user)
-    
     if recipe not in current_user.saved_recipes:
         current_user.saved_recipes.append(recipe)
         session.commit()
@@ -139,8 +135,6 @@ def unsave_a_recipe(recipe_id: int, session: Session = Depends(get_session), cur
     recipe = session.get(Recipe, recipe_id)
     if not recipe:
         raise HTTPException(status_code=404, detail="Recipe not found")
-
-    session.add(current_user)
     
     if recipe in current_user.saved_recipes:
         current_user.saved_recipes.remove(recipe)
@@ -161,7 +155,6 @@ def add_pantry_item(item: PantryItemCreate, session: Session = Depends(get_sessi
     current_user.pantry_items.append(ingredient)
     session.add(current_user)
     session.commit()
-    session.refresh(current_user)
     return PantryItem(ingredient_id=ingredient.id, name=ingredient.name, category=ingredient.category)
 
 @app.delete("/api/pantry/{ingredient_id}", status_code=204)
@@ -172,7 +165,6 @@ def remove_pantry_item(ingredient_id: int, session: Session = Depends(get_sessio
     
     if ingredient in current_user.pantry_items:
         current_user.pantry_items.remove(ingredient)
-        session.add(current_user)
         session.commit()
 
 @app.get("/api/ingredients/search", response_model=List[PantryItem])
@@ -192,13 +184,30 @@ def search_ingredients(q: str, session: Session = Depends(get_session)):
     
     return [PantryItem(ingredient_id=ing.id, name=ing.name) for ing in ingredients]
 
+@app.get("/api/ingredients/staples", response_model=Dict[str, List[PantryItem]])
+def get_staple_ingredients(session: Session = Depends(get_session)):
+    staples = session.exec(select(Ingredient).where(Ingredient.is_staple == True)).all()
+    
+    categorized_staples = {}
+    for staple in staples:
+        category = staple.category or "Other"
+        if category not in categorized_staples:
+            categorized_staples[category] = []
+        
+        categorized_staples[category].append(PantryItem(
+            ingredient_id=staple.id,
+            name=staple.name,
+            category=staple.category
+        ))
+    return categorized_staples
+
 @app.get("/")
 def read_root(): return {"message": "Welcome!"}
 
 @app.post("/api/generate-recipes")
 def generate_recipes_endpoint(request: GenerateRequest, session: Session = Depends(get_session)):
     ai_generated_recipes = generate_recipes_from_specials(
-        specials_list=request.specials, 
+        specials_list=request.specials,
         preferences=request.preferences,
         pantry_items=request.pantry_items
     )
@@ -212,28 +221,21 @@ def generate_recipes_endpoint(request: GenerateRequest, session: Session = Depen
             print(f"Could not validate or save AI recipe: {e}")
     return {"message": f"Successfully generated and saved {saved_recipes_count} new recipes."}
 
-@app.delete("/api/specials")
-def delete_all_specials(session: Session = Depends(get_session)):
-    """Deletes all specials from the database."""
-    try:
-        session.query(Special).delete()
-        session.commit()
-        return {"message": "All specials have been cleared."}
-    except Exception as e:
-        session.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
-    
+
 @app.get("/api/specials", response_model=List[SpecialRead])
 def get_specials(session: Session = Depends(get_session)):
-    db_specials = session.exec(select(Special)).all()
-    return [SpecialRead.from_orm(s, update={'ingredient_name': s.ingredient.name}) for s in db_specials]
+    db_specials = session.exec(select(Special).options(selectinload(Special.ingredient))).all()
+    return [
+        SpecialRead.from_orm(s, update={
+            'ingredient_name': s.ingredient.name,
+            'category': s.ingredient.category
+        }) for s in db_specials
+    ]
 
-# Add this to backend/main.py
-
+# --- UPDATED: To handle the category payload ---
 @app.post("/api/specials", response_model=SpecialRead)
 def create_special(special: SpecialCreate, session: Session = Depends(get_session)):
-    """Creates a new special after scraping."""
-    ingredient = get_or_create_ingredient(special.ingredient_name, session)
+    ingredient = get_or_create_ingredient(special.ingredient_name, session, category=special.category)
     
     new_special = Special(
         ingredient_id=ingredient.id,
@@ -244,10 +246,18 @@ def create_special(special: SpecialCreate, session: Session = Depends(get_sessio
     session.commit()
     session.refresh(new_special)
     
-    # We need to return a SpecialRead, which includes the ingredient_name
-    return SpecialRead.from_orm(new_special, update={'ingredient_name': ingredient.name})
+    return SpecialRead.from_orm(new_special, update={'ingredient_name': ingredient.name, 'category': ingredient.category})
 
-# --- NEW: Endpoint to get all unique tags ---
+@app.delete("/api/specials")
+def delete_all_specials(session: Session = Depends(get_session)):
+    try:
+        session.query(Special).delete()
+        session.commit()
+        return {"message": "All specials have been cleared."}
+    except Exception as e:
+        session.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.get("/api/tags", response_model=List[str])
 def get_all_tags(session: Session = Depends(get_session)):
     all_recipes = session.exec(select(Recipe)).all()
@@ -281,14 +291,14 @@ def get_recipes(
     if tags:
         selected_tags = {tag.strip() for tag in tags.split(',')}
         db_recipes = [
-            recipe for recipe in db_recipes 
+            recipe for recipe in db_recipes
             if selected_tags.issubset(set(recipe.tags))
         ]
 
     response_recipes = []
     for recipe in db_recipes:
         response_ingredients = [
-            IngredientInRecipe(ingredient_id=link.ingredient.id, name=link.ingredient.name, quantity=link.quantity) 
+            IngredientInRecipe(ingredient_id=link.ingredient.id, name=link.ingredient.name, quantity=link.quantity)
             for link in recipe.links
         ]
         response_recipes.append(

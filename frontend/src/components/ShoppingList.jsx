@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { getSimplePrice } from '../utils/priceUtils';
+// --- UPDATED: Import the new fuzzy matching function ---
+import { getSimplePrice, findBestSpecialMatch } from '../utils/priceUtils';
 import './ShoppingList.css';
 
 const ShoppingList = ({ allSpecials }) => {
@@ -18,7 +19,7 @@ const ShoppingList = ({ allSpecials }) => {
     useEffect(() => { localStorage.setItem('checkedItems', JSON.stringify(checkedItems)); }, [checkedItems]);
 
     const shoppingListData = useMemo(() => {
-        if (!allSpecials || !selectedRecipes || selectedRecipes.length === 0) {
+        if (!selectedRecipes || selectedRecipes.length === 0) {
             return { consolidatedItems: [], totalCost: 0 };
         }
 
@@ -26,21 +27,22 @@ const ShoppingList = ({ allSpecials }) => {
 
         selectedRecipes.forEach(({ recipe, quantity }) => {
             recipe.ingredients.forEach(ingredient => {
-                const special = allSpecials.find(s => s.ingredient_id === ingredient.ingredient_id);
-                if (special) {
-                    const existingItem = itemsMap.get(special.ingredient_id);
-                    if (existingItem) {
-                        existingItem.count += quantity;
-                        existingItem.recipeIds.add(recipe.id);
-                    } else {
-                        itemsMap.set(special.ingredient_id, {
-                            id: special.ingredient_id,
-                            name: special.ingredient_name,
-                            priceString: special.price,
-                            count: quantity,
-                            recipeIds: new Set([recipe.id]),
-                        });
-                    }
+                // --- THIS IS THE FIX ---
+                // Use our new "fuzzy match" function instead of a strict ID match.
+                const special = findBestSpecialMatch(ingredient.name, allSpecials);
+                const existingItem = itemsMap.get(ingredient.ingredient_id);
+
+                if (existingItem) {
+                    existingItem.count += quantity;
+                    existingItem.recipeIds.add(recipe.id);
+                } else {
+                    itemsMap.set(ingredient.ingredient_id, {
+                        id: ingredient.ingredient_id,
+                        name: ingredient.name,
+                        priceString: special ? special.price : null,
+                        count: quantity,
+                        recipeIds: new Set([recipe.id]),
+                    });
                 }
             });
         });
@@ -48,7 +50,10 @@ const ShoppingList = ({ allSpecials }) => {
         const consolidatedItems = Array.from(itemsMap.values());
 
         const totalCost = consolidatedItems.reduce((total, item) => {
-            return total + (getSimplePrice(item.priceString) * item.count);
+            if (item.priceString) {
+                return total + (getSimplePrice(item.priceString) * item.count);
+            }
+            return total;
         }, 0);
 
         return { consolidatedItems, totalCost };
@@ -102,9 +107,9 @@ const ShoppingList = ({ allSpecials }) => {
             ) : (
                 <>
                     <ul>
-                        {consolidatedItems.map(item => {
+                        {consolidatedItems.sort((a, b) => a.name.localeCompare(b.name)).map(item => {
                             const isChecked = checkedItems.includes(item.id);
-                            const lineItemPrice = getSimplePrice(item.priceString) * item.count;
+                            const lineItemPrice = item.priceString ? getSimplePrice(item.priceString) * item.count : 0;
                             return (
                                 <li key={item.id} className={isChecked ? 'checked' : ''}>
                                     <label className="checkbox-label">
@@ -113,7 +118,7 @@ const ShoppingList = ({ allSpecials }) => {
                                     </label>
                                     <div className="item-details">
                                       {item.count > 1 && <span className="item-quantity">({item.count})</span>}
-                                      <span className="item-price">${lineItemPrice.toFixed(2)}</span>
+                                      {lineItemPrice > 0 && <span className="item-price">${lineItemPrice.toFixed(2)}</span>}
                                       <button className="remove-item-btn" onClick={() => handleRemoveItem(item)}>×</button>
                                     </div>
                                 </li>

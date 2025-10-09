@@ -10,11 +10,12 @@ import './index.css';
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>
-      <AuthProvider>
-        <UIProvider>
+      {/* --- THIS IS THE FIX: UIProvider now wraps AuthProvider --- */}
+      <UIProvider>
+        <AuthProvider>
           <App />
-        </UIProvider>
-      </AuthProvider>
+        </AuthProvider>
+      </UIProvider>
     </BrowserRouter>
   </React.StrictMode>,
 );

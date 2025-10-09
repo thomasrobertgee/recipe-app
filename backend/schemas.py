@@ -25,7 +25,6 @@ class RecipeResponse(SQLModel):
     ingredients: List[IngredientInRecipe]
     total_rating: int
     rating_count: int
-    # --- NEW ---
     tags: List[str]
 
     @computed_field
@@ -44,7 +43,6 @@ class RecipeCreate(SQLModel):
     description: str
     instructions: str
     ingredients: List[IngredientCreate]
-    # --- NEW ---
     tags: List[str]
 
 class SpecialBase(SQLModel):
@@ -53,11 +51,12 @@ class SpecialBase(SQLModel):
     store: str
 
 class SpecialCreate(SpecialBase):
-    pass
+    category: Optional[str] = None # <-- ADD THIS LINE
 
 class SpecialRead(SpecialBase):
     id: int
     ingredient_id: int
+    category: Optional[str] = None
 
 class UserBase(SQLModel):
     email: str

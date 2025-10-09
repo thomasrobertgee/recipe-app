@@ -1,4 +1,15 @@
 /* src/pages/ProfilePage.css */
+
+/* --- NEW: Container for the profile form to give it a card-like appearance --- */
+.profile-form-container {
+  max-width: 600px; /* Wider for a better profile layout */
+  margin: 0 auto; /* Center the form card on the page */
+  padding: 2rem;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+
 .auth-form fieldset {
   border: 1px solid #ccc;
   border-radius: 4px;
@@ -12,7 +23,7 @@
 
 .checkbox-group {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 10px;
 }
 

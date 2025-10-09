@@ -22,6 +22,46 @@ The application consists of a Python backend that serves data from a database an
 
 ---
 
+## Future Development
+
+Here are some of the planned features to evolve the app from an MVP into a full-featured product.
+
+### 1. "Use It Up" - Pantry-First Recipe Generation
+* **What it is:** A new mode where a user can select 2-3 ingredients from their pantry that are about to expire. The AI's primary goal would be to generate a recipe that uses up those specific ingredients, reducing food waste.
+* **Why it's valuable:** It directly addresses the "what can I make with what I have?" problem, making the app useful even when a user doesn't plan to shop.
+* **How to implement:**
+    * **Frontend:** Add a "Use It Up" feature to the `PantryPage.jsx` that allows item selection.
+    * **Backend:** Create a new endpoint (e.g., `/api/generate-from-pantry`) and a new function in `ai_service.py` with a modified prompt emphasizing the use of specific ingredients.
+
+### 2. Meal Planner & Weekly Budgeting
+* **What it is:** A new "Meal Plan" page with a weekly calendar. Users can drag and drop recipes onto days of the week, generating a consolidated shopping list for the entire plan and tracking the total cost against their weekly budget.
+* **Why it's valuable:** This elevates the app from a simple recipe finder to a comprehensive meal planning and budgeting tool, helping users organize their entire week.
+* **How to implement:**
+    * **Frontend:** Create a `MealPlanPage.jsx` using a library like `react-beautiful-dnd` for the drag-and-drop interface.
+    * **Backend:** The existing `User` model's `weekly_budget` can be used for tracking. The core logic from `ShoppingList.jsx` can be expanded to handle a week's worth of recipes.
+
+### 3. "Cook Mode" - An Interactive Recipe Viewer
+* **What it is:** A button on the recipe detail page that launches a simplified, full-screen "Cook Mode." This interface would display one instruction at a time with large text, include a checklist for ingredients, and feature clickable timers for cooking durations.
+* **Why it's valuable:** It significantly improves the user experience of actually cooking, preventing screen-locking and keeping the user focused on the current step.
+* **How to implement:**
+    * **Frontend:** Create a `CookMode.jsx` component that takes a recipe object as a prop. This component would manage the "current step" and parse the instructions to create interactive elements.
+
+### 4. Barcode Scanning for Pantry Management
+* **What it is:** A "Scan Barcode" button on the "My Pantry" page that uses the device's camera. Scanning a product's barcode would use an open API (like Open Food Facts) to automatically identify and add the item to the user's pantry.
+* **Why it's valuable:** This makes managing the pantry faster, more accurate, and more engaging than manual data entry.
+* **How to implement:**
+    * **Frontend:** Use a library like `react-qr-scanner` or `html5-qrcode` to implement the scanning functionality.
+    * **API:** Make a `GET` request to an open food database API to fetch product information from the scanned barcode.
+
+### 5. Advanced Recipe Filtering & Sorting
+* **What it is:** Enhance the existing filter controls to allow users to filter recipes by the AI-generated tags (e.g., "Quick & Easy," "Vegan," "Spicy") and add new sorting options like "Cost: Low to High."
+* **Why it's valuable:** As the number of recipes grows, advanced filtering and sorting become essential for users to easily find the meals that best fit their needs.
+* **How to implement:**
+    * **Backend:** The `/api/recipes` endpoint already supports tag filtering. Logic would need to be added to handle sorting by calculated cost.
+    * **Frontend:** The `FilterSortControls.jsx` component would be updated to display the tag options (fetched from `/api/tags`) and the new sorting dropdown options.
+
+---
+
 ## Tech Stack
 
 ### Backend
@@ -42,8 +82,6 @@ The application consists of a Python backend that serves data from a database an
 ---
 
 ## Getting Started
-
-...(The rest of the README remains the same)...
 
 To get the application running locally, you will need to set up and run both the backend and the frontend.
 
