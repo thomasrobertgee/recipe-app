@@ -8,6 +8,19 @@ from datetime import date, timedelta
 import random
 import re # <-- NEW: Import the regular expression module
 
+STAPLES_DATA = {
+    "Oils, Fats & Vinegars": ["Olive Oil", "Vegetable Oil", "Coconut Oil", "Sesame Oil", "Butter", "Margarine", "Apple Cider Vinegar", "Balsamic Vinegar", "Red Wine Vinegar", "White Vinegar"],
+    "Grains, Flour & Carbs": ["All-Purpose Flour", "Self-Raising Flour", "Bread", "White Rice", "Brown Rice", "Pasta", "Spaghetti", "Oats", "Quinoa", "Cornstarch"],
+    "Baking": ["Baking Powder", "Baking Soda", "White Sugar", "Brown Sugar", "Icing Sugar", "Vanilla Extract", "Cocoa Powder", "Chocolate Chips", "Yeast", "Honey", "Maple Syrup"],
+    "Spices & Seasonings": ["Salt", "Black Pepper", "Garlic Powder", "Onion Powder", "Paprika", "Smoked Paprika", "Cumin", "Coriander", "Chilli Powder", "Red Pepper Flakes", "Cayenne Pepper", "Dried Oregano", "Dried Basil", "Dried Thyme", "Dried Rosemary", "Bay Leaves", "Cinnamon", "Nutmeg", "Ground Ginger", "Turmeric", "Curry Powder"],
+    "Canned Goods": ["Diced Tomatoes", "Crushed Tomatoes", "Tomato Paste", "Tomato Sauce", "Black Beans", "Kidney Beans", "Chickpeas", "Lentils", "Canned Tuna", "Canned Salmon", "Sweet Corn", "Coconut Milk", "Coconut Cream"],
+    "Condiments & Sauces": ["Ketchup", "Mayonnaise", "Dijon Mustard", "Wholegrain Mustard", "Soy Sauce", "Worcestershire Sauce", "Sweet Chilli Sauce", "Hot Sauce", "BBQ Sauce", "Peanut Butter", "Jam", "Vegemite"],
+    "Produce Staples": ["Onion", "Garlic", "Potato", "Carrot", "Celery", "Lemon", "Lime"],
+    "Dairy & Eggs": ["Milk", "Eggs", "Cheddar Cheese", "Parmesan Cheese", "Plain Yogurt", "Sour Cream", "Cream"],
+    "Broths & Stocks": ["Chicken Broth", "Beef Broth", "Vegetable Broth"],
+    "Nuts & Seeds": ["Almonds", "Walnuts", "Peanuts", "Chia Seeds", "Sesame Seeds", "Poppy Seeds"]
+}
+
 # --- A curated list of 30 meat, seafood, and produce specials ---
 SPECIALS_DATA = [
     # --- Coles (10) ---

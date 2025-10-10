@@ -5,7 +5,6 @@ import json
 import openai
 from dotenv import load_dotenv
 from typing import List
-# --- UPDATED: Import PriceHistoryRead instead of SpecialRead ---
 from schemas import UserRead, PriceHistoryRead, PantryItem
 import google.generativeai as genai
 import PIL.Image
@@ -62,7 +61,6 @@ def get_specials_from_image(image_path: str):
         print(f"An error occurred while communicating with the AI: {e}")
         return []
 
-# --- UPDATED: The function now expects a list of PriceHistoryRead objects ---
 def generate_recipes_from_specials(specials_list: List[PriceHistoryRead], preferences: UserRead, pantry_items: List[PantryItem]):
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
@@ -70,7 +68,9 @@ def generate_recipes_from_specials(specials_list: List[PriceHistoryRead], prefer
 
     client = openai.OpenAI(api_key=api_key)
 
-    specials_as_dicts = [s.model_dump() for s in specials_list]
+    # --- THIS IS THE FIX: Use model_dump(mode='json') to handle date objects ---
+    specials_as_dicts = [s.model_dump(mode='json') for s in specials_list]
+    
     pantry_as_dicts = [p.model_dump() for p in pantry_items]
 
     safety_rules = ""
