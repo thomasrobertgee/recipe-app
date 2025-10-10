@@ -4,31 +4,37 @@ import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import './PantryPage.css';
-import './Page.css'; // <-- Import the new shared styles
+import './Page.css';
 
 const PantryPage = () => {
   const [pantryItems, setPantryItems] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingPantry, setIsLoadingPantry] = useState(true);
   const [staples, setStaples] = useState({});
+  const [isLoadingStaples, setIsLoadingStaples] = useState(true);
 
   const pantryItemIds = useMemo(() => new Set(pantryItems.map(item => item.ingredient_id)), [pantryItems]);
 
   const fetchPantryItems = () => {
+    setIsLoadingPantry(true);
     axios.get('http://127.0.0.1:8000/api/pantry')
       .then(res => setPantryItems(res.data))
       .catch(err => console.error("Error fetching pantry items:", err))
-      .finally(() => setIsLoading(false));
+      .finally(() => setIsLoadingPantry(false));
+  };
+
+  const fetchStaples = () => {
+      setIsLoadingStaples(true);
+      axios.get('http://127.0.0.1:8000/api/ingredients/staples')
+        .then(res => setStaples(res.data))
+        .catch(err => console.error("Error fetching staples:", err))
+        .finally(() => setIsLoadingStaples(false));
   };
 
   useEffect(() => {
-    setIsLoading(true);
     fetchPantryItems();
-
-    axios.get('http://127.0.0.1:8000/api/ingredients/staples')
-      .then(res => setStaples(res.data))
-      .catch(err => console.error("Error fetching staples:", err));
+    fetchStaples();
   }, []);
 
   useEffect(() => {
@@ -86,7 +92,6 @@ const PantryPage = () => {
 
   return (
     <div className="app-container">
-      {/* --- UPDATED: Standardized page header --- */}
       <div className="page-header">
         <h1>My Pantry</h1>
       </div>
@@ -113,28 +118,34 @@ const PantryPage = () => {
 
       <div className="staples-section">
         <h2>Quick Add Staples</h2>
-        {Object.entries(staples).sort(([a], [b]) => a.localeCompare(b)).map(([category, items]) => (
-          <div key={category} className="staple-category">
-            <h3>{category}</h3>
-            <div className="staple-items-grid">
-              {items.sort((a, b) => a.name.localeCompare(b.name)).map(item => (
-                <button
-                  key={item.ingredient_id}
-                  onClick={() => handleAddItem(item.name)}
-                  className="staple-item-btn"
-                  disabled={pantryItemIds.has(item.ingredient_id)}
-                >
-                  {item.name}
-                </button>
-              ))}
+        {isLoadingStaples ? (
+            <p>Loading staples...</p>
+        ) : Object.keys(staples).length > 0 ? (
+            Object.entries(staples).sort(([a], [b]) => a.localeCompare(b)).map(([category, items]) => (
+            <div key={category} className="staple-category">
+                <h3>{category}</h3>
+                <div className="staple-items-grid">
+                {items.sort((a, b) => a.name.localeCompare(b.name)).map(item => (
+                    <button
+                    key={item.ingredient_id}
+                    onClick={() => handleAddItem(item.name)}
+                    className="staple-item-btn"
+                    disabled={pantryItemIds.has(item.ingredient_id)}
+                    >
+                    {item.name}
+                    </button>
+                ))}
+                </div>
             </div>
-          </div>
-        ))}
+            ))
+        ) : (
+            <p>No staple ingredients found. These can be added to the database via a seed script.</p>
+        )}
       </div>
 
       <div className="pantry-list-section">
         <h2>Current Pantry Items</h2>
-        {isLoading ? (
+        {isLoadingPantry ? (
           <p>Loading your pantry...</p>
         ) : pantryItems.length > 0 ? (
           <div className="pantry-categories">

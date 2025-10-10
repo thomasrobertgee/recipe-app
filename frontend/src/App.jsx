@@ -32,7 +32,7 @@ function App() {
 
   useEffect(() => {
     if (token) {
-      axios.get('http://127.0.0.1:8000/api/specials')
+      axios.get('http://127.0.0.1:8000/api/prices/today')
         .then(response => setAllSpecials(response.data))
         .catch(error => console.error("Could not fetch specials in App.jsx", error));
     }

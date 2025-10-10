@@ -6,7 +6,7 @@ from models import Recipe, Ingredient, RecipeIngredientLink, PriceHistory, User
 from security import get_password_hash
 from datetime import date, timedelta
 import random
-import re # <-- NEW: Import the regular expression module
+import re
 
 STAPLES_DATA = {
     "Oils, Fats & Vinegars": ["Olive Oil", "Vegetable Oil", "Coconut Oil", "Sesame Oil", "Butter", "Margarine", "Apple Cider Vinegar", "Balsamic Vinegar", "Red Wine Vinegar", "White Vinegar"],
@@ -21,9 +21,7 @@ STAPLES_DATA = {
     "Nuts & Seeds": ["Almonds", "Walnuts", "Peanuts", "Chia Seeds", "Sesame Seeds", "Poppy Seeds"]
 }
 
-# --- A curated list of 30 meat, seafood, and produce specials ---
 SPECIALS_DATA = [
-    # --- Coles (10) ---
     {"ingredient_name": "Coles Australian Lamb Loin Chops", "price": "$28.00 ($28.00 per 1kg)", "store": "Coles", "category": "Meat & Seafood"},
     {"ingredient_name": "Coles RSPCA Approved Australian Chicken Breast Fillets", "price": "$11.00 ($11.00 per 1kg)", "store": "Coles", "category": "Meat & Seafood"},
     {"ingredient_name": "Coles Australian No Added Hormones Beef Rump Steak", "price": "$22.00 ($22.00 per 1kg)", "store": "Coles", "category": "Meat & Seafood"},
@@ -34,8 +32,6 @@ SPECIALS_DATA = [
     {"ingredient_name": "Coles Australian Washed Potatoes", "price": "$4.00 ($2.00 per 1kg)", "store": "Coles", "category": "Fruit & Vegetables"},
     {"ingredient_name": "Coles Australian Zucchini", "price": "$3.90 ($3.90 per 1kg)", "store": "Coles", "category": "Fruit & Vegetables"},
     {"ingredient_name": "Coles Australian Broccoli", "price": "$3.90 ($3.90 per 1kg)", "store": "Coles", "category": "Fruit & Vegetables"},
-    
-    # --- Woolworths (10) ---
     {"ingredient_name": "Woolworths RSPCA Approved Chicken Breast Fillets", "price": "$11.00 ($11.00 per 1kg)", "store": "Woolworths", "category": "Meat & Seafood"},
     {"ingredient_name": "Woolworths Australian Lamb Forequarter Chops", "price": "$16.00 ($16.00 per 1kg)", "store": "Woolworths", "category": "Meat & Seafood"},
     {"ingredient_name": "Woolworths Australian Beef Porterhouse Steak", "price": "$30.00 ($30.00 per 1kg)", "store": "Woolworths", "category": "Meat & Seafood"},
@@ -46,8 +42,6 @@ SPECIALS_DATA = [
     {"ingredient_name": "Australian Bananas", "price": "$3.00 ($3.00 per 1kg)", "store": "Woolworths", "category": "Fruit & Vegetables"},
     {"ingredient_name": "Australian Carrots", "price": "$1.50 ($1.50 per 1kg)", "store": "Woolworths", "category": "Fruit & Vegetables"},
     {"ingredient_name": "Australian Red Onions", "price": "$2.50 ($2.50 per 1kg)", "store": "Woolworths", "category": "Fruit & Vegetables"},
-    
-    # --- Aldi (10) ---
     {"ingredient_name": "Almare Saltwater Farm Atlantic Salmon", "price": "$12.99 ($52.00 per 1kg)", "store": "Aldi", "category": "Meat & Seafood"},
     {"ingredient_name": "Brannans Butchery Chicken Breast Fillets", "price": "$9.99 ($9.99 per 1kg)", "store": "Aldi", "category": "Meat & Seafood"},
     {"ingredient_name": "Brannans Butchery Lamb Loin Chops", "price": "$24.99 ($24.99 per 1kg)", "store": "Aldi", "category": "Meat & Seafood"},
@@ -62,19 +56,19 @@ SPECIALS_DATA = [
 
 def get_simple_price(price_string):
     if not price_string: return 0
-    # --- THIS IS THE FIX: Use re.search() instead of string.match() ---
     match = re.search(r"\$(\d+\.?\d*)", price_string)
     return float(match.group(1)) if match else 0
 
 def seed_database():
-    print("🔄 Clearing and seeding database with test users and price history...")
+    print("🔄 Clearing and seeding database with test users, staples, and price history...")
     create_db_and_tables()
 
     with Session(engine) as session:
         session.query(RecipeIngredientLink).delete()
         session.query(PriceHistory).delete()
         session.query(Recipe).delete()
-        print("Old price history and recipes cleared.")
+        session.query(Ingredient).delete()
+        print("Old price history, recipes, and ingredients cleared.")
         session.commit()
         
         user_count = session.exec(select(func.count(User.id))).one()
@@ -87,6 +81,18 @@ def seed_database():
                 session.add(new_user)
             print(f"{len(alphabet)} test users created.")
             session.commit()
+
+        staples_added = 0
+        for category, items in STAPLES_DATA.items():
+            for item_name in items:
+                existing_staple = session.exec(select(Ingredient).where(func.lower(Ingredient.name) == item_name.lower())).first()
+                if not existing_staple:
+                    new_staple = Ingredient(name=item_name, is_staple=True, category=category)
+                    session.add(new_staple)
+                    staples_added += 1
+        session.commit()
+        print(f"{staples_added} new staple ingredients created.")
+
 
         total_records = 0
         for special_data in SPECIALS_DATA:
