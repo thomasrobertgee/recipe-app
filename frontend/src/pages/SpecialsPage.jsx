@@ -4,8 +4,9 @@ import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import { useAuth } from '../context/AuthContext';
+import PriceHistoryChart from '../components/PriceHistoryChart';
 import './SpecialsPage.css';
-import './Page.css'; // <-- Import the new shared styles
+import './Page.css';
 
 const SpecialsPage = () => {
   const [specials, setSpecials] = useState([]);
@@ -13,11 +14,12 @@ const SpecialsPage = () => {
   const { token, isLoading: authIsLoading, userProfile } = useAuth();
   
   const [activeTab, setActiveTab] = useState('');
+  const [selectedIngredient, setSelectedIngredient] = useState(null);
 
   useEffect(() => {
     if (token && !authIsLoading) {
       const fetchSpecials = () => {
-        axios.get('http://127.0.0.1:8000/api/specials')
+        axios.get('http://127.0.0.1:8000/api/prices/today')
           .then(response => setSpecials(response.data))
           .catch(error => {
             console.error("Error fetching specials:", error);
@@ -78,9 +80,31 @@ const SpecialsPage = () => {
     }
   };
 
+  const parsePrice = (priceString) => {
+    if (!priceString) return { main: '', unit: '' };
+    const match = priceString.match(/(.+?)\s*\((.+)\)/);
+    if (match) {
+      return { main: match[1].trim(), unit: `(${match[2]})` };
+    }
+    return { main: priceString, unit: '' };
+  };
+
+  // --- NEW: Helper function to get the CSS class for the store name ---
+  const getStoreClass = (storeName) => {
+    switch (storeName.toLowerCase()) {
+      case 'coles':
+        return 'store-coles';
+      case 'woolworths':
+        return 'store-woolworths';
+      case 'aldi':
+        return 'store-aldi';
+      default:
+        return '';
+    }
+  };
+
   return (
-    <div className="app-container">
-      {/* --- UPDATED: Standardized page header --- */}
+    <div className="specials-page-container">
       <div className="page-header">
         <h1>Weekly Specials</h1>
       </div>
@@ -108,20 +132,42 @@ const SpecialsPage = () => {
       <div className="tab-content">
         {activeTab && categorizedSpecials[activeTab] ? (
           <div className="specials-grid">
-            {categorizedSpecials[activeTab].sort((a,b) => a.ingredient_name.localeCompare(b.ingredient_name)).map(special => (
-              <div key={special.id} className="special-card">
-                <div className="special-card-content">
-                  <strong>{special.ingredient_name}</strong>
-                  <span>at {special.store}</span>
+            {categorizedSpecials[activeTab].sort((a,b) => a.ingredient_name.localeCompare(b.ingredient_name)).map(special => {
+              const { main, unit } = parsePrice(special.price);
+              return (
+                <div key={special.id} className="special-card" onClick={() => setSelectedIngredient(special)}>
+                  <div className="special-card-content">
+                    <strong>{special.ingredient_name}</strong>
+                    {/* --- UPDATED: Dynamically apply the store class --- */}
+                    <span className={`store-name ${getStoreClass(special.store)}`}>
+                      at {special.store}
+                    </span>
+                  </div>
+                  <div className="price-section">
+                    <div className="special-price">
+                      <span className="main-price">{main}</span>
+                      {unit && <span className="unit-price">{unit}</span>}
+                    </div>
+                    <div className="price-chart-indicator">
+                      <span className="chart-icon">📊</span>
+                      <span>Price Chart</span>
+                    </div>
+                  </div>
                 </div>
-                <span className="special-price">{special.price}</span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
           <p>No specials in this category.</p>
         )}
       </div>
+
+      {selectedIngredient && (
+        <PriceHistoryChart 
+          ingredient={selectedIngredient}
+          onClose={() => setSelectedIngredient(null)}
+        />
+      )}
     </div>
   );
 };

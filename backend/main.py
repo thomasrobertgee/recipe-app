@@ -7,13 +7,14 @@ from contextlib import asynccontextmanager
 from typing import List, Optional, Dict
 from sqlmodel import Session, select, func
 from sqlalchemy.orm import selectinload
+from datetime import date
 
 from database import engine, create_db_and_tables, get_session
-from models import User, Recipe, Ingredient, RecipeIngredientLink, Special, UserRecipeRatingLink, UserPantryLink
+from models import User, Recipe, Ingredient, RecipeIngredientLink, PriceHistory, UserRecipeRatingLink, UserPantryLink
 from schemas import (
     GenerateRequest, UserCreate, UserRead, UserUpdate, Token,
-    RecipeResponse, IngredientInRecipe, RecipeCreate, SpecialCreate,
-    SpecialRead, RecipeRating, PantryItem, PantryItemCreate
+    RecipeResponse, IngredientInRecipe, RecipeCreate, PriceHistoryCreate,
+    PriceHistoryRead, RecipeRating, PantryItem, PantryItemCreate
 )
 from security import get_password_hash, verify_password, create_access_token, get_current_user
 from ai_service import generate_recipes_from_specials
@@ -36,11 +37,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# --- UPDATED: To accept and save a category ---
 def get_or_create_ingredient(name: str, session: Session, category: Optional[str] = None) -> Ingredient:
     exact_match = session.exec(select(Ingredient).where(func.lower(Ingredient.name) == name.lower())).first()
     if exact_match:
-        # If the ingredient exists but has no category, update it.
         if category and not exact_match.category:
             exact_match.category = category
             session.add(exact_match)
@@ -48,7 +47,6 @@ def get_or_create_ingredient(name: str, session: Session, category: Optional[str
             session.refresh(exact_match)
         return exact_match
 
-    # If ingredient is new, create it with the category
     new_ingredient = Ingredient(name=name, category=category)
     session.add(new_ingredient)
     session.commit()
@@ -206,6 +204,7 @@ def read_root(): return {"message": "Welcome!"}
 
 @app.post("/api/generate-recipes")
 def generate_recipes_endpoint(request: GenerateRequest, session: Session = Depends(get_session)):
+    # --- UPDATED: Use the specials list sent from the frontend request body ---
     ai_generated_recipes = generate_recipes_from_specials(
         specials_list=request.specials,
         preferences=request.preferences,
@@ -222,41 +221,69 @@ def generate_recipes_endpoint(request: GenerateRequest, session: Session = Depen
     return {"message": f"Successfully generated and saved {saved_recipes_count} new recipes."}
 
 
-@app.get("/api/specials", response_model=List[SpecialRead])
-def get_specials(session: Session = Depends(get_session)):
-    db_specials = session.exec(select(Special).options(selectinload(Special.ingredient))).all()
+@app.get("/api/prices/today", response_model=List[PriceHistoryRead])
+def get_todays_prices(session: Session = Depends(get_session)):
+    """Gets all the price records recorded today (i.e., the current specials)."""
+    today = date.today()
+    db_prices = session.exec(
+        select(PriceHistory)
+        .where(PriceHistory.date_recorded == today)
+        .options(selectinload(PriceHistory.ingredient))
+    ).all()
+    
     return [
-        SpecialRead.from_orm(s, update={
-            'ingredient_name': s.ingredient.name,
-            'category': s.ingredient.category
-        }) for s in db_specials
+        PriceHistoryRead.from_orm(p, update={
+            'ingredient_name': p.ingredient.name,
+            'category': p.ingredient.category
+        }) for p in db_prices
     ]
 
-# --- UPDATED: To handle the category payload ---
-@app.post("/api/specials", response_model=SpecialRead)
-def create_special(special: SpecialCreate, session: Session = Depends(get_session)):
-    ingredient = get_or_create_ingredient(special.ingredient_name, session, category=special.category)
+@app.post("/api/prices", response_model=PriceHistoryRead)
+def create_price_record(price_data: PriceHistoryCreate, session: Session = Depends(get_session)):
+    """Creates a new price history record."""
+    ingredient = get_or_create_ingredient(price_data.ingredient_name, session, category=price_data.category)
     
-    new_special = Special(
+    new_price_record = PriceHistory(
         ingredient_id=ingredient.id,
-        price=special.price,
-        store=special.store
+        price=price_data.price,
+        store=price_data.store
     )
-    session.add(new_special)
+    session.add(new_price_record)
     session.commit()
-    session.refresh(new_special)
+    session.refresh(new_price_record)
     
-    return SpecialRead.from_orm(new_special, update={'ingredient_name': ingredient.name, 'category': ingredient.category})
+    return PriceHistoryRead.from_orm(new_price_record, update={'ingredient_name': ingredient.name, 'category': ingredient.category})
 
-@app.delete("/api/specials")
-def delete_all_specials(session: Session = Depends(get_session)):
+@app.delete("/api/prices/today")
+def delete_todays_prices(session: Session = Depends(get_session)):
+    """Deletes all price records from today before a new scrape."""
+    today = date.today()
     try:
-        session.query(Special).delete()
+        prices_to_delete = session.exec(select(PriceHistory).where(PriceHistory.date_recorded == today)).all()
+        for price in prices_to_delete:
+            session.delete(price)
         session.commit()
-        return {"message": "All specials have been cleared."}
+        return {"message": "Today's price records have been cleared."}
     except Exception as e:
         session.rollback()
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/ingredient/{ingredient_id}/price-history", response_model=List[PriceHistoryRead])
+def get_price_history_for_ingredient(ingredient_id: int, session: Session = Depends(get_session)):
+    """Gets the full price history for a single ingredient."""
+    history = session.exec(
+        select(PriceHistory)
+        .where(PriceHistory.ingredient_id == ingredient_id)
+        .order_by(PriceHistory.date_recorded.desc())
+        .options(selectinload(PriceHistory.ingredient))
+    ).all()
+
+    if not history:
+        raise HTTPException(status_code=404, detail="No price history found for this ingredient.")
+        
+    return [
+        PriceHistoryRead.from_orm(h, update={'ingredient_name': h.ingredient.name}) for h in history
+    ]
 
 @app.get("/api/tags", response_model=List[str])
 def get_all_tags(session: Session = Depends(get_session)):

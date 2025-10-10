@@ -3,6 +3,7 @@
 from sqlmodel import SQLModel
 from typing import List, Optional
 from pydantic import Field, computed_field
+from datetime import date # <-- NEW
 
 class PantryItem(SQLModel):
     ingredient_id: int
@@ -45,18 +46,22 @@ class RecipeCreate(SQLModel):
     ingredients: List[IngredientCreate]
     tags: List[str]
 
-class SpecialBase(SQLModel):
+# --- RENAMED: From SpecialBase to PriceHistoryBase ---
+class PriceHistoryBase(SQLModel):
     ingredient_name: str
     price: str
     store: str
 
-class SpecialCreate(SpecialBase):
-    category: Optional[str] = None # <-- ADD THIS LINE
+# --- RENAMED: From SpecialCreate to PriceHistoryCreate ---
+class PriceHistoryCreate(PriceHistoryBase):
+    category: Optional[str] = None
 
-class SpecialRead(SpecialBase):
+# --- RENAMED: From SpecialRead to PriceHistoryRead ---
+class PriceHistoryRead(PriceHistoryBase):
     id: int
     ingredient_id: int
     category: Optional[str] = None
+    date_recorded: date # <-- NEW
 
 class UserBase(SQLModel):
     email: str
@@ -80,7 +85,7 @@ class Token(SQLModel):
     token_type: str
 
 class GenerateRequest(SQLModel):
-    specials: List[SpecialRead]
+    specials: List[PriceHistoryRead] # <-- UPDATED
     preferences: UserRead
     pantry_items: List[PantryItem]
 

@@ -41,7 +41,6 @@
   margin-bottom: 30px;
 }
 
-/* --- NEW: Tab Styles --- */
 .tabs-container {
   display: flex;
   flex-wrap: wrap;
@@ -72,18 +71,16 @@
   border-bottom-color: #4caf50;
 }
 
-/* --- Content Styles --- */
 .tab-content {
   /* This container is now used for the active tab's content */
 }
 
 .specials-grid {
   display: grid;
-  grid-template-columns: 1fr; /* Default to 1 column */
+  grid-template-columns: 1fr;
   gap: 15px;
 }
 
-/* On wider screens, use 2 columns */
 @media (min-width: 768px) {
   .specials-grid {
     grid-template-columns: 1fr 1fr;
@@ -91,6 +88,8 @@
 }
 
 .special-card {
+  position: relative; 
+  overflow: hidden; 
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -99,6 +98,13 @@
   border: 1px solid #e0e0e0;
   border-radius: 8px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  cursor: pointer;
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.special-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 12px rgba(0,0,0,0.08);
 }
 
 .special-card-content {
@@ -112,15 +118,76 @@
   font-weight: 600;
 }
 
-.special-card span {
+.store-name {
   font-size: 0.85rem;
   color: #777;
+  font-weight: 500;
+}
+
+.price-section {
+  display: flex;
+  align-items: center;
+  margin-left: 15px;
 }
 
 .special-price {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  white-space: nowrap;
+  transition: transform 0.3s ease-in-out;
+}
+
+.main-price {
   font-weight: bold;
   font-size: 1rem;
   color: #333;
+}
+
+.unit-price {
+  font-size: 0.8rem;
+  color: #777;
+}
+
+.price-chart-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #e8f5e9;
+  color: #2e7d32;
+  padding: 8px 12px;
+  border-radius: 6px;
   white-space: nowrap;
-  margin-left: 15px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translate(100%, -50%);
+  transition: transform 0.3s ease-in-out;
+}
+
+.chart-icon {
+  font-size: 1rem;
+}
+
+.special-card:hover .special-price {
+  transform: translateX(-110px);
+}
+
+.special-card:hover .price-chart-indicator {
+  transform: translate(0, -50%);
+}
+
+/* --- NEW: Brand color styles --- */
+.store-coles {
+  color: #E5242A !important; /* Red */
+}
+
+.store-woolworths {
+  color: #1A7A3A !important; /* Green */
+}
+
+.store-aldi {
+  color: #0050AA !important; /* Blue */
 }

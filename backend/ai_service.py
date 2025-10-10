@@ -4,8 +4,9 @@ import os
 import json
 import openai
 from dotenv import load_dotenv
-from schemas import UserRead, SpecialRead, PantryItem
 from typing import List
+# --- UPDATED: Import PriceHistoryRead instead of SpecialRead ---
+from schemas import UserRead, PriceHistoryRead, PantryItem
 import google.generativeai as genai
 import PIL.Image
 
@@ -36,15 +37,12 @@ def get_specials_from_image(image_path: str):
     try:
         response = model.generate_content([prompt, image])
         
-        # --- DEBUGGING: Print the raw response from the AI ---
         print("--- Raw AI Response ---")
         print(response.text)
         print("-----------------------")
         
-        # Clean up the response to extract only the JSON
         cleaned_response = response.text.strip().replace("```json", "").replace("```", "")
         
-        # --- ROBUST PARSING: Handle empty or invalid JSON ---
         if not cleaned_response:
             print("AI returned an empty response.")
             return []
@@ -64,9 +62,8 @@ def get_specials_from_image(image_path: str):
         print(f"An error occurred while communicating with the AI: {e}")
         return []
 
-
-def generate_recipes_from_specials(specials_list: List[SpecialRead], preferences: UserRead, pantry_items: List[PantryItem]):
-    # ... (the rest of this function remains the same)
+# --- UPDATED: The function now expects a list of PriceHistoryRead objects ---
+def generate_recipes_from_specials(specials_list: List[PriceHistoryRead], preferences: UserRead, pantry_items: List[PantryItem]):
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
         raise ValueError("OPENAI_API_KEY not found in .env file")

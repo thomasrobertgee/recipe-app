@@ -6,10 +6,10 @@ from dotenv import load_dotenv
 from bs4 import BeautifulSoup
 import time
 
-API_URL = "http://127.0.0.1:8000/api/specials"
+# --- UPDATED: API URL for prices ---
+API_URL = "http://127.0.0.1:8000/api/prices"
 load_dotenv()
 
-# --- NEW: Mapping URL slugs to user-friendly category names ---
 CATEGORY_MAP = {
     "meat-seafood": "Meat & Seafood",
     "fruit-vegetables": "Fruit & Vegetables"
@@ -20,21 +20,21 @@ CATEGORIES_TO_SCRAPE = [
     "https://www.coles.com.au/on-special/fruit-vegetables",
 ]
 
-def clear_old_specials():
-    """Clears all existing specials from the database."""
-    print("--- Clearing old specials ---")
+def clear_old_prices():
+    """Clears today's price records before starting a new scrape."""
+    print("--- Clearing today's price records ---")
     try:
-        response = requests.delete(API_URL)
+        # --- UPDATED: Endpoint for deleting today's prices ---
+        response = requests.delete(f"{API_URL}/today")
         response.raise_for_status()
-        print("Old specials cleared successfully.")
+        print("Today's price records cleared successfully.")
         return True
     except requests.exceptions.RequestException as e:
-        print(f"Error clearing old specials: {e}")
+        print(f"Error clearing price records: {e}")
         return False
 
-# --- UPDATED: To accept and send a category ---
-def save_special(ingredient_name, price, store, category):
-    """Saves a single special to the database via the API."""
+def save_price_record(ingredient_name, price, store, category):
+    """Saves a single price record to the database."""
     payload = {
         "ingredient_name": ingredient_name,
         "price": price,
@@ -47,15 +47,15 @@ def save_special(ingredient_name, price, store, category):
             print(f"Failed to save '{ingredient_name}': {response.status_code} {response.text}")
         return response.status_code == 200
     except requests.exceptions.RequestException as e:
-        print(f"Error saving special: {e}")
+        print(f"Error saving price record: {e}")
         return False
 
 def scrape_coles_specials():
     """
-    Scrapes specified categories from Coles, handling pagination dynamically
-    and extracting detailed price information.
+    Scrapes specified categories from Coles and saves each item as a
+    price history record for the current day.
     """
-    print("\n--- Starting targeted category scrape for Coles specials ---")
+    print("\n--- Starting targeted category scrape for Coles ---")
     
     api_key = os.getenv("SCRAPINGBEE_API_KEY")
     if not api_key:
@@ -64,14 +64,12 @@ def scrape_coles_specials():
 
     all_products_to_save = []
 
-    # Loop through each category URL
     for base_url in CATEGORIES_TO_SCRAPE:
         page_num = 1
         category_slug = base_url.split('/')[-1]
         category_name = CATEGORY_MAP.get(category_slug, "Other Specials")
         print(f"\n--- Scraping Category: {category_name} ---")
 
-        # Loop through pages until no more products are found
         while True:
             page_url = f"{base_url}?page={page_num}"
             print(f"Scraping Page {page_num}: {page_url}")
@@ -137,7 +135,7 @@ def scrape_coles_specials():
     print(f"\n--- All pages scraped. Found a total of {len(all_products_to_save)} products. Processing and saving... ---")
     total_saved_count = 0
     for special in all_products_to_save:
-        if save_special(
+        if save_price_record(
             ingredient_name=special["name"],
             price=special["price"],
             store=special["store"],
@@ -145,8 +143,8 @@ def scrape_coles_specials():
         ):
             total_saved_count += 1
     
-    print(f"\n--- Scraping complete! A total of {total_saved_count} unique specials were saved. ---")
+    print(f"\n--- Scraping complete! A total of {total_saved_count} price records were saved. ---")
 
 if __name__ == "__main__":
-    if clear_old_specials():
+    if clear_old_prices():
         scrape_coles_specials()
