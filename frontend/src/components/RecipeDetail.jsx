@@ -1,17 +1,24 @@
 // src/components/RecipeDetail.jsx
 import React, { useState } from 'react';
+import { useCookMode } from '../context/CookModeContext';
 import RatingModal from './RatingModal';
 import StarRating from './StarRating';
 import './RecipeDetail.css';
 
 const RecipeDetail = ({ recipe, onClose, allSpecials, onRate }) => {
   const [isRatingModalOpen, setIsRatingModalOpen] = useState(false);
+  const { startCooking } = useCookMode();
 
   const handleSubmitRating = (rating) => {
     if (onRate) {
       onRate(recipe.id, rating);
     }
     setIsRatingModalOpen(false);
+  };
+
+  const handleStartCooking = () => {
+    startCooking(recipe);
+    onClose(); // Close the detail modal
   };
 
   return (
@@ -23,7 +30,6 @@ const RecipeDetail = ({ recipe, onClose, allSpecials, onRate }) => {
           <div className="recipe-detail-header">
             <h2>{recipe.title}</h2>
             <div className="rating-section">
-              {/* --- UPDATED --- */}
               <div className="rating-display">
                 <StarRating rating={recipe.average_rating} readOnly={true} />
                 {recipe.rating_count > 0 && (
@@ -54,9 +60,16 @@ const RecipeDetail = ({ recipe, onClose, allSpecials, onRate }) => {
           </ul>
           <h3>Instructions</h3>
           <div className="instructions">
-            {recipe.instructions.split('\n').map((step, index) => (
+            {recipe.instructions.split('\n').filter(step => step.trim() !== '').map((step, index) => (
               <p key={index}>{step}</p>
             ))}
+          </div>
+
+          {/* --- Start Cooking Button --- */}
+          <div className="modal-footer">
+            <button className="start-cooking-btn" onClick={handleStartCooking}>
+              🍳 Start Cooking
+            </button>
           </div>
         </div>
       </div>

@@ -8,8 +8,10 @@ import 'react-toastify/dist/ReactToastify.css';
 import Navbar from './components/Navbar';
 import ProtectedRoute from './components/ProtectedRoute';
 import ShoppingList from './components/ShoppingList';
+import CookMode from './components/CookMode'; // <-- NEW
 import { useAuth } from './context/AuthContext';
 import { useUI } from './context/UIContext';
+import { useCookMode } from './context/CookModeContext'; // <-- NEW
 import HomePage from './pages/HomePage';
 import SpecialsPage from './pages/SpecialsPage';
 import MySavedRecipesPage from './pages/MySavedRecipesPage';
@@ -18,12 +20,13 @@ import LoginPage from './pages/LoginPage';
 import ProfilePage from './pages/ProfilePage';
 import DashboardPage from './pages/DashboardPage';
 import AllRecipesPage from './pages/AllRecipesPage';
-import PantryPage from './pages/PantryPage'; // --- NEW ---
+import PantryPage from './pages/PantryPage';
 import './App.css';
 
 function App() {
   const { token, logout } = useAuth();
   const { isSidebarOpen } = useUI();
+  const { activeRecipe } = useCookMode(); // <-- NEW
   const [allSpecials, setAllSpecials] = useState([]);
   const navigate = useNavigate();
 
@@ -70,7 +73,7 @@ function App() {
               <Route path="/specials" element={<SpecialsPage />} />
               <Route path="/saved-recipes" element={<MySavedRecipesPage allSpecials={allSpecials} />} />
               <Route path="/profile" element={<ProfilePage />} />
-              <Route path="/pantry" element={<PantryPage />} /> {/* --- NEW --- */}
+              <Route path="/pantry" element={<PantryPage />} />
             </Route>
           </Routes>
         </main>
@@ -80,6 +83,8 @@ function App() {
           </aside>
         )}
       </div>
+      {/* --- NEW: Render CookMode if there is an active recipe --- */}
+      {activeRecipe && <CookMode />}
     </div>
   );
 }

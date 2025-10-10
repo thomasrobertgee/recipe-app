@@ -100,10 +100,6 @@
   font-size: 0.9rem;
 }
 
-/* src/components/RecipeDetail.css */
-/* (Existing styles remain the same) */
-
-/* --- ADD TO BOTTOM OF FILE (or update existing if they conflict) --- */
 .rating-display {
   display: flex;
   align-items: center;
@@ -114,4 +110,27 @@
   font-size: 0.9rem;
   color: #777;
   font-weight: 500;
+}
+
+.modal-footer {
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid #f0f0f0;
+  text-align: center;
+}
+
+.start-cooking-btn {
+  background-color: #ff9800;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.start-cooking-btn:hover {
+  background-color: #f57c00;
 }

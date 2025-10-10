@@ -1,0 +1,16 @@
+.recipe-list-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+    padding: 1rem 0;
+}
+
+.error-message {
+    color: #dc3545;
+    font-size: 1.2rem;
+    text-align: center;
+    padding: 2rem;
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    border-radius: 5px;
+}

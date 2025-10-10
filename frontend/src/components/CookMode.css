@@ -1,0 +1,95 @@
+/* src/components/CookMode.css */
+
+.cook-mode-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 400px;
+  max-width: 90vw;
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.3s ease-in-out, height 0.3s ease-in-out;
+  overflow: hidden;
+}
+
+.cook-mode-container.minimized {
+  transform: translateY(calc(100% - 60px));
+}
+
+.cook-mode-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  background-color: #4caf50;
+  color: white;
+  cursor: pointer;
+}
+
+.cook-mode-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.cook-mode-header-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.minimize-btn, .close-cook-mode-btn {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.5rem;
+  font-weight: bold;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.cook-mode-content {
+  padding: 20px;
+  text-align: center;
+}
+
+.step-counter {
+  font-size: 0.9rem;
+  color: #888;
+  margin-bottom: 15px;
+}
+
+.instruction-text {
+  font-size: 1.25rem;
+  line-height: 1.6;
+  min-height: 100px;
+}
+
+.instruction-timer {
+  margin-top: 20px;
+}
+
+.cook-mode-footer {
+  display: flex;
+  justify-content: space-between;
+  padding: 15px 20px;
+  border-top: 1px solid #f0f0f0;
+  background-color: #fcfcfc;
+}
+
+.cook-mode-footer button {
+  padding: 10px 20px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: #f9f9f9;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.cook-mode-footer button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
