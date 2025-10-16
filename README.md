@@ -140,6 +140,28 @@ For the app to work, both servers must be running simultaneously.
 
 ---
 
+## Testing with Playwright
+
+This project uses **Playwright** for end-to-end (E2E) testing to simulate real user interactions and verify application functionality.
+
+### Running Tests
+1.  Ensure both the frontend and backend servers are running.
+2.  In a new terminal, navigate to the `frontend` directory.
+3.  Run all tests in headless mode:
+    ```sh
+    npx playwright test
+    ```
+4.  To watch the tests run in a visible browser window, use the `--headed` flag:
+    ```sh
+    npx playwright test --headed
+    ```
+5.  After a test run, you can view a detailed HTML report:
+    ```sh
+    npx playwright show-report
+    ```
+
+---
+
 ## API Endpoints
 - **`GET /api/recipes`**: Retrieves a list of all recipes in the database.
 - **`GET /docs`**: View the interactive API documentation (Swagger UI).

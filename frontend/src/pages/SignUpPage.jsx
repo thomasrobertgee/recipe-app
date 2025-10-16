@@ -1,69 +1,78 @@
 // src/pages/SignUpPage.jsx
 import React, { useState } from 'react';
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { toast } from 'react-toastify';
+import api from '../api'; // Import the api instance
 import './AuthForm.css';
 
 const SignUpPage = () => {
-  const [formData, setFormData] = useState({ email: '', password: '' });
-  const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate();
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const { login } = useAuth(); // We only need the login function from context
+    const navigate = useNavigate();
 
-  const handleInputChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            // Step 1: Register the new user
+            await api.post('/register', { email, password });
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError('');
+            // Step 2: Immediately log the new user in to get a token
+            const formData = new URLSearchParams();
+            formData.append('username', email);
+            formData.append('password', password);
 
-    axios.post('http://127.0.0.1:8000/register', formData)
-      .then(response => {
-        setIsLoading(false);
-        // Replace alert with toast.success
-        toast.success('Registration successful! Please log in.');
-        navigate('/login');
-      })
-      .catch(err => {
-        setIsLoading(false);
-        if (err.response && err.response.data && err.response.data.detail) {
-          setError(err.response.data.detail);
-        } else {
-          setError('An unexpected error occurred. Please try again.');
+            const tokenResponse = await api.post('/token', formData, {
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            });
+
+            // Step 3: Use the context's login function to set the token globally
+            if (tokenResponse.data.access_token) {
+                login(tokenResponse.data.access_token);
+                navigate('/dashboard');
+                toast.success('Sign up successful! Welcome!');
+            } else {
+                // This case should ideally not be hit if registration works
+                throw new Error("Signup succeeded but failed to log in.");
+            }
+
+        } catch (error) {
+            const errorMessage = error.response?.data?.detail || 'An error occurred during sign up.';
+            toast.error(errorMessage);
         }
-      });
-  };
+    };
 
-  return (
-    <div className="auth-container">
-      <h1>Sign Up</h1>
-      <form onSubmit={handleSubmit} className="auth-form">
-        <input
-          type="email"
-          name="email"
-          placeholder="Email Address"
-          value={formData.email}
-          onChange={handleInputChange}
-          required
-        />
-        <input
-          type="password"
-          name="password"
-          placeholder="Password"
-          value={formData.password}
-          onChange={handleInputChange}
-          required
-        />
-        <button type="submit" disabled={isLoading}>
-          {isLoading ? 'Signing Up...' : 'Sign Up'}
-        </button>
-        {error && <p className="error-message">{error}</p>}
-      </form>
-    </div>
-  );
+    return (
+        <div className="auth-container">
+            <form onSubmit={handleSubmit} className="auth-form">
+                <h2>Sign Up</h2>
+                <div className="form-group">
+                    <label htmlFor="email">Email</label>
+                    <input
+                        id="email"
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="Enter your email"
+                        required
+                    />
+                </div>
+                <div className="form-group">
+                    <label htmlFor="password">Password</label>
+                    <input
+                        id="password"
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="Enter your password"
+                        required
+                    />
+                </div>
+                <button type="submit">Sign Up</button>
+            </form>
+        </div>
+    );
 };
 
 export default SignUpPage;

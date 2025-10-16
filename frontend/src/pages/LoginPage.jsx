@@ -1,56 +1,73 @@
 // src/pages/LoginPage.jsx
 import React, { useState } from 'react';
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { toast } from 'react-toastify';
+import api from '../api'; // Import the api instance
 import './AuthForm.css';
 
 const LoginPage = () => {
-  const [formData, setFormData] = useState({ username: '', password: '' });
-  const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate();
-  const { login } = useAuth();
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const { login } = useAuth();
+    const navigate = useNavigate();
 
-  const handleInputChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            // Create the form data for the token request
+            const formData = new URLSearchParams();
+            formData.append('username', email);
+            formData.append('password', password);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError('');
-    const params = new URLSearchParams();
-    params.append('username', formData.username);
-    params.append('password', formData.password);
-    axios.post('http://127.0.0.1:8000/token', params)
-      .then(response => {
-        setIsLoading(false);
-        login(response.data.access_token);
-        navigate('/dashboard'); // Redirect to dashboard
-      })
-      .catch(err => {
-        setIsLoading(false);
-        if (err.response?.data?.detail) {
-          setError(err.response.data.detail);
-        } else {
-          setError('An unexpected error occurred. Please try again.');
+            const response = await api.post('/token', formData, {
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            });
+
+            if (response.data.access_token) {
+                const token = response.data.access_token;
+                login(token); // Set the token in the context
+                
+                // --- THE FIX: Navigate to the dashboard after successful login ---
+                navigate('/dashboard');
+                toast.success('Login successful!');
+            }
+        } catch (error) {
+            const errorMessage = error.response?.data?.detail || 'An error occurred during login.';
+            toast.error(errorMessage);
         }
-      });
-  };
+    };
 
-  return (
-    <div className="auth-container">
-      <h1>Log In</h1>
-      <form onSubmit={handleSubmit} className="auth-form">
-        <input type="email" name="username" placeholder="Email Address" value={formData.username} onChange={handleInputChange} required />
-        <input type="password" name="password" placeholder="Password" value={formData.password} onChange={handleInputChange} required />
-        <button type="submit" disabled={isLoading}>
-          {isLoading ? 'Logging In...' : 'Log In'}
-        </button>
-        {error && <p className="error-message">{error}</p>}
-      </form>
-    </div>
-  );
+    return (
+        <div className="auth-container">
+            <form onSubmit={handleSubmit} className="auth-form">
+                <h2>Login</h2>
+                <div className="form-group">
+                    <label htmlFor="email">Email</label>
+                    <input
+                        id="email"
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="Enter your email"
+                        required
+                    />
+                </div>
+                <div className="form-group">
+                    <label htmlFor="password">Password</label>
+                    <input
+                        id="password"
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="Enter your password"
+                        required
+                    />
+                </div>
+                <button type="submit">Login</button>
+            </form>
+        </div>
+    );
 };
+
 export default LoginPage;
