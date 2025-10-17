@@ -25,8 +25,8 @@
 
 .card-header-actions {
   position: absolute;
-  top: 10px;
-  right: 10px;
+  top: 0px; /* MOVED UP FURTHER */
+  right: 0px; /* MOVED RIGHT FURTHER */
   z-index: 10;
 }
 
@@ -64,7 +64,7 @@
   font-size: 1.2rem;
   font-weight: 600;
   color: #333;
-  margin-bottom: 0; 
+  margin-bottom: 0;
 }
 
 /* --- NEW: Style for the cost display --- */

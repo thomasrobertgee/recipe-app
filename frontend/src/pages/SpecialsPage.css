@@ -1,9 +1,7 @@
 /* src/pages/SpecialsPage.css */
 
 .specials-page-container {
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 20px;
+  /* max-width, margin, and padding are now handled by the .page-container class */
 }
 
 .generate-section {

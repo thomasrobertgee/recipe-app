@@ -59,7 +59,11 @@ function App() {
 
   return (
     <div>
-      <ToastContainer position="top-center" autoClose={3000} />
+      <ToastContainer
+        position="top-center"
+        autoClose={3000}
+        className="app-toast-container"
+      />
       <Navbar />
       <div className="app-layout">
         <main className="main-content">

@@ -89,7 +89,6 @@ const SpecialsPage = () => {
     return { main: priceString, unit: '' };
   };
 
-  // --- NEW: Helper function to get the CSS class for the store name ---
   const getStoreClass = (storeName) => {
     switch (storeName.toLowerCase()) {
       case 'coles':
@@ -104,7 +103,7 @@ const SpecialsPage = () => {
   };
 
   return (
-    <div className="specials-page-container">
+    <div className="app-container">
       <div className="page-header">
         <h1>Weekly Specials</h1>
       </div>
@@ -138,7 +137,6 @@ const SpecialsPage = () => {
                 <div key={special.id} className="special-card" onClick={() => setSelectedIngredient(special)}>
                   <div className="special-card-content">
                     <strong>{special.ingredient_name}</strong>
-                    {/* --- UPDATED: Dynamically apply the store class --- */}
                     <span className={`store-name ${getStoreClass(special.store)}`}>
                       at {special.store}
                     </span>
