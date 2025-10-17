@@ -29,23 +29,18 @@ The application consists of a Python backend that serves data from a database an
 Here are some of the planned features to evolve the app from an MVP into a full-featured product.
 
 ### Core App Enhancements
-1.  **"Use It Up" - Pantry-First Recipe Generation:** A new mode where a user can select 2-3 ingredients from their pantry. The AI's primary goal would be to generate a recipe that uses up those specific ingredients, reducing food waste.
+1.  **Meal Planner & Weekly Budgeting:** A new "Meal Plan" page with a weekly calendar. Users can drag and drop recipes onto days of the week, generating a consolidated shopping list for the entire plan and tracking the total cost against their weekly budget.
 
-2.  **Meal Planner & Weekly Budgeting:** A new "Meal Plan" page with a weekly calendar. Users can drag and drop recipes onto days of the week, generating a consolidated shopping list for the entire plan and tracking the total cost against their weekly budget.
-
-3.  **Barcode Scanning for Pantry Management:** A "Scan Barcode" button on the "My Pantry" page that uses the device's camera. Scanning a product's barcode would use an open API (like Open Food Facts) to automatically identify and add the item to the user's pantry.
-
-4.  **Advanced Recipe Filtering & Sorting:** Enhance the existing filter controls to allow users to filter recipes by the AI-generated tags (e.g., "Quick & Easy," "Vegan," "Spicy") and add new sorting options like "Cost: Low to High."
+2.  **Barcode Scanning for Pantry Management:** A "Scan Barcode" button on the "My Pantry" page that uses the device's camera. Scanning a product's barcode would use an open API (like Open Food Facts) to automatically identify and add the item to the user's pantry.
 
 ### Community & Engagement Features
-5.  **Community Recipes & Recipe Sharing:** Allow users to submit their own favorite recipes. Other users could then search, view, save, and rate these community-submitted meals. A "Share" button would also generate a unique, shareable link for any recipe.
+3.  **Community Recipes & Recipe Sharing:** Allow users to submit their own favorite recipes. Other users could then search, view, save, and rate these community-submitted meals. A "Share" button would also generate a unique, shareable link for any recipe.
 
-6.  **"Cooking Streak" & Achievements:** Gamify the cooking experience by adding a "I Made This!" button to Cook Mode. This would contribute to a "Weekly Cooking Streak" and unlock badges for achievements like staying under budget or using up pantry items.
+4.  **"Cooking Streak" & Achievements:** Gamify the cooking experience by adding a "I Made This!" button to Cook Mode. This would contribute to a "Weekly Cooking Streak" and unlock badges for achievements like staying under budget or using up pantry items.
 
 ### Advanced Data & AI Features
-7.  **Price Fluctuation Tracker:** For any given ingredient, track its price over time whenever it's captured by the web scraper. Display a simple chart showing its price history to help users identify if a "special" is a good deal.
 
-8.  **Integration with Local Suppliers:** Create a portal for local butchers and greengrocers to upload their weekly specials. These would then appear in the app, promoting local businesses and providing users with unique deals.
+5.  **Integration with Local Suppliers:** Create a portal for local butchers and greengrocers to upload their weekly specials. These would then appear in the app, promoting local businesses and providing users with unique deals.
 
 ---
 
