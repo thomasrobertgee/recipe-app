@@ -97,7 +97,33 @@ const PantryPage = () => {
       </div>
       <p className="page-subtitle">Add ingredients you already have at home. The AI will prioritize these when generating recipes to help you save money and reduce waste.</p>
 
+      <div className="pantry-list-section">
+        <h2>Current Pantry Items</h2>
+        {isLoadingPantry ? (
+          <p>Loading your pantry...</p>
+        ) : pantryItems.length > 0 ? (
+          <div className="pantry-grid"> {/* --- APPLY THE NEW CLASS HERE --- */}
+            {Object.entries(categorizedItems).sort(([a], [b]) => a.localeCompare(b)).map(([category, items]) => (
+              <div key={category} className="pantry-category">
+                <h3>{category}</h3>
+                <ul className="pantry-list">
+                  {items.map(item => (
+                    <li key={item.ingredient_id}>
+                      <span>{item.name}</span>
+                      <button onClick={() => handleRemoveItem(item)} className="remove-item-btn">×</button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p>Your pantry is empty. Add some items using the search bar or the quick-add buttons below!</p>
+        )}
+      </div>
+
       <div className="add-item-section">
+        <h2>Add to Your Pantry</h2>
         <input
           type="text"
           placeholder="Search for an ingredient to add..."
@@ -140,31 +166,6 @@ const PantryPage = () => {
             ))
         ) : (
             <p>No staple ingredients found. These can be added to the database via a seed script.</p>
-        )}
-      </div>
-
-      <div className="pantry-list-section">
-        <h2>Current Pantry Items</h2>
-        {isLoadingPantry ? (
-          <p>Loading your pantry...</p>
-        ) : pantryItems.length > 0 ? (
-          <div className="pantry-categories">
-            {Object.entries(categorizedItems).sort(([a], [b]) => a.localeCompare(b)).map(([category, items]) => (
-              <div key={category} className="pantry-category">
-                <h3>{category}</h3>
-                <ul className="pantry-list">
-                  {items.map(item => (
-                    <li key={item.ingredient_id}>
-                      <span>{item.name}</span>
-                      <button onClick={() => handleRemoveItem(item)} className="remove-item-btn">×</button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p>Your pantry is empty. Add some items using the search bar or the quick-add buttons above!</p>
         )}
       </div>
     </div>

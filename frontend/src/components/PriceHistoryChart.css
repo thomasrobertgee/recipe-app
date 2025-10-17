@@ -1,11 +1,43 @@
-/* frontend/src/components/PriceHistoryChart.css */
+/* src/components/PriceHistoryChart.css */
 
-.price-history-modal {
-  background-color: white;
-  padding: 20px 40px;
+.chart-modal-overlay {
+  position: fixed;
+  top: 72px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1001;
+}
+
+.chart-modal-content {
+  background: #ffffff;
+  padding: 2rem;
   border-radius: 8px;
-  max-width: 700px;
   width: 90%;
+  max-width: 700px;
+  max-height: 85vh;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
   position: relative;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+  color: #333;
+}
+
+.chart-modal-content h2 {
+  margin-top: 0;
+  text-align: center;
+  color: #2c3e50;
+}
+
+.chart-modal-close-btn {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: transparent;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #7f8c8d;
 }

@@ -2,144 +2,117 @@
 
 import os
 import json
-import openai
 from dotenv import load_dotenv
-from typing import List
-from schemas import UserRead, PriceHistoryRead, PantryItem
-import google.generativeai as genai
-import PIL.Image
+from typing import List, Dict, Union
+import openai
 
 load_dotenv()
 
-def get_specials_from_image(image_path: str):
+# Initialize the OpenAI client
+client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+def generate_recipes_from_specials(specials_list: List, preferences: object, pantry_items: List) -> List[Dict]:
     """
-    Uses a multimodal AI to extract specials from an image.
+    Generates recipes from a list of specials using the OpenAI API.
     """
-    api_key = os.getenv("GEMINI_API_KEY")
-    if not api_key:
-        raise ValueError("GEMINI_API_KEY not found in .env file")
+    specials_str = ", ".join([f"{item.ingredient_name} at {item.store} for {item.price}" for item in specials_list])
+    pantry_str = ", ".join([item.name for item in pantry_items]) if pantry_items else "empty"
+    preferences_str = (
+        f"Household Size: {preferences.household_size}, "
+        f"Dietary Restrictions: {', '.join(preferences.dietary_restrictions) or 'none'}"
+    )
 
-    genai.configure(api_key=api_key)
+    prompt = f"""
+    You are a creative chef specializing in budget-friendly meals. Based on the following supermarket specials, user preferences, and pantry items, generate 3 unique dinner recipes.
 
-    model = genai.GenerativeModel('models/gemini-2.5-flash-image-preview')
-    image = PIL.Image.open(image_path)
+    **Supermarket Specials:**
+    {specials_str}
 
-    prompt = """
-    Analyze the provided screenshot of a supermarket's specials page.
-    Extract all product names and their corresponding prices.
-    Provide the output as a single, valid JSON object. This object must have a key named "specials", which contains an array of objects.
-    Each object in the "specials" array should have two keys: "ingredient_name" (a string) and "price" (a string).
-    Do not include any text, titles, markdown formatting like ```json, or any other characters before or after the JSON object.
-    Your entire response must be only the JSON object itself.
+    **User Preferences:**
+    {preferences_str}
+
+    **User's Pantry Contains:**
+    {pantry_str}
+
+    **RESPONSE FORMAT:**
+    - The output must be a single, valid JSON array of 3 recipe objects. Do not include any text or formatting outside of the JSON array.
+    - Each recipe object in the array must have the following keys: "title", "description", "instructions", "ingredients", and "tags".
+    - The "ingredients" key must be an array of objects, where each object has "name" and "quantity" keys (e.g., {{"name": "Chicken Breast", "quantity": "500g"}}).
+    - The "tags" key should be an array of 3-5 strings that describe the recipe (e.g., "Quick & Easy", "Vegan", "High-Protein").
     """
-
-    try:
-        response = model.generate_content([prompt, image])
-        
-        print("--- Raw AI Response ---")
-        print(response.text)
-        print("-----------------------")
-        
-        cleaned_response = response.text.strip().replace("```json", "").replace("```", "")
-        
-        if not cleaned_response:
-            print("AI returned an empty response.")
-            return []
-
-        specials_data = json.loads(cleaned_response)
-
-        if "specials" in specials_data and isinstance(specials_data["specials"], list):
-            return specials_data["specials"]
-        else:
-            print("AI response did not contain a 'specials' key with a list.")
-            return []
-
-    except json.JSONDecodeError:
-        print("Failed to decode JSON from the AI's response. The response may not be in the correct format.")
-        return []
-    except Exception as e:
-        print(f"An error occurred while communicating with the AI: {e}")
-        return []
-
-def generate_recipes_from_specials(specials_list: List[PriceHistoryRead], preferences: UserRead, pantry_items: List[PantryItem]):
-    api_key = os.getenv("OPENAI_API_KEY")
-    if not api_key:
-        raise ValueError("OPENAI_API_KEY not found in .env file")
-
-    client = openai.OpenAI(api_key=api_key)
-
-    # --- THIS IS THE FIX: Use model_dump(mode='json') to handle date objects ---
-    specials_as_dicts = [s.model_dump(mode='json') for s in specials_list]
     
-    pantry_as_dicts = [p.model_dump() for p in pantry_items]
+    try:
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": prompt}],
+            # Using response_format is good, but we still need robust parsing
+        )
+        response_content = response.choices[0].message.content
+        data = json.loads(response_content)
+        
+        # More robust parsing logic
+        # Case 1: The AI returned the array directly.
+        if isinstance(data, list):
+            return data
+        
+        # Case 2: The AI wrapped the array in an object (e.g., {"recipes": [...]}).
+        # Find the first value in the JSON object that is a list.
+        if isinstance(data, dict):
+            for value in data.values():
+                if isinstance(value, list):
+                    return value
+        
+        # If neither of the above, something is wrong with the format.
+        print("AI response was valid JSON but did not contain a recipe list.")
+        return []
 
-    safety_rules = ""
-    if preferences.dietary_restrictions:
-        safety_rules = f"The user has critical dietary restrictions: {', '.join(preferences.dietary_restrictions)}. Do not include these ingredients or their derivatives."
-    else:
-        safety_rules = "The user has specified no dietary restrictions."
+    except Exception as e:
+        print(f"An unexpected error occurred during recipe generation: {e}")
+        return []
 
-    preference_text = ""
-    if preferences.household_size:
-        preference_text += f"The recipes should be suitable for a household of {preferences.household_size} people."
-
-    pantry_text = "The user has no items in their pantry."
-    if pantry_items:
-        pantry_list_str = ", ".join([item.name for item in pantry_items])
-        pantry_text = f"The user has the following items in their pantry: {pantry_list_str}. You should prioritize creating recipes that use these ingredients to help reduce food waste."
-
-
-    system_prompt = f"""
-    You are a helpful and extremely cautious recipe assistant. Your primary goal is to generate 5 unique dinner recipes based on user preferences, a list of on-special ingredients, and a list of ingredients the user already has in their pantry.
-
-    ---
-    **CRITICAL DIETARY RULES:**
-    - {safety_rules}
-    - You MUST also add any applicable dietary restrictions (e.g., "Vegan", "Gluten-Free") to the "tags" array for each recipe.
-    - YOU MUST NOT include any ingredients that violate the user's dietary restrictions.
-    - Before providing your final answer, you MUST double-check every ingredient and tag in every generated recipe to ensure it strictly complies with ALL of the above rules. This is the most important instruction.
-    ---
-
-    **PANTRY INGREDIENTS:**
-    {pantry_text}
-
-    **Other User Preferences:**
-    {preference_text if preference_text else "The user has no other specific preferences."}
-
-    **Output Rules:**
-    - You must provide the output as a single JSON object with a key named "recipes", which contains an array of recipe objects. Do not include any text, titles, or markdown formatting like ```json before or after the JSON object.
-    - Each recipe object must have the keys: "title", "description", "instructions", "ingredients", and "tags".
-    - The "instructions" must be a single string with steps separated by newline characters (\\n).
-    - The "ingredients" must be an array of objects, each with "name" and "quantity" keys.
-    - The "tags" must be an array of 3-5 strings. These tags should be descriptive and helpful for filtering, for example: "Quick & Easy", "Family Friendly", "Under 30 Minutes", "Spicy", "Healthy", "Comfort Food". YOU MUST also include any relevant dietary tags from the user's restrictions list.
+def modify_recipe_with_ai(original_recipe: Dict, modification_prompt: str) -> Dict:
     """
+    Takes an existing recipe and a user's modification instruction,
+    and returns a new, modified recipe dictionary using the OpenAI API.
+    """
+    ingredients_str = "\n".join([f"- {ing['quantity']} {ing['name']}" for ing in original_recipe['ingredients']])
+    original_recipe_str = (
+        f"Title: {original_recipe['title']}\n"
+        f"Description: {original_recipe['description']}\n"
+        f"Ingredients:\n{ingredients_str}\n"
+        f"Instructions: {original_recipe['instructions']}"
+    )
 
-    user_prompt = f"""
-    Here are this week's on-special ingredients:
-    {json.dumps(specials_as_dicts, indent=2)}
+    prompt = f"""
+    You are a helpful cooking assistant. A user wants to modify an existing recipe.
+    Your task is to take the original recipe and the user's request, and generate a NEW, complete recipe that incorporates the changes.
 
-    Please generate 5 recipes based on these specials, my pantry items, and my safety/dietary rules and preferences. Provide them in the specified JSON format.
+    **USER'S REQUEST:** "{modification_prompt}"
+
+    **ORIGINAL RECIPE:**
+    ---
+    {original_recipe_str}
+    ---
+
+    **RESPONSE FORMAT:**
+    Generate the modified recipe as a single, valid JSON object. Do NOT include any text or formatting outside of the JSON object.
+    The JSON object must have the following keys: "title", "description", "instructions", "ingredients", and "tags".
+    The "ingredients" key must be an array of objects, where each object has "name" and "quantity" keys.
+    --- FIX: Be explicit about the quantity's data type ---
+    The "quantity" key MUST be a string that includes the unit (e.g., "1 cup", "200g", "2 cloves").
+    The "tags" key should be an array of strings that describe the new recipe (e.g., "Vegan", "Gluten-Free", "Quick & Easy").
+    Ensure the new title reflects the modification (e.g., "Vegan Lentil Bolognese" instead of "Classic Beef Bolognese").
     """
 
     try:
-        completion = client.chat.completions.create(
+        response = client.chat.completions.create(
             model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt}
-            ],
+            messages=[{"role": "user", "content": prompt}],
             response_format={"type": "json_object"}
         )
-
-        response_content = completion.choices[0].message.content
-        response_data = json.loads(response_content)
-
-        if "recipes" in response_data and isinstance(response_data["recipes"], list):
-            return response_data["recipes"]
-        else:
-            print("AI response did not contain a 'recipes' key with a list.")
-            return []
-
+        response_content = response.choices[0].message.content
+        modified_recipe_data = json.loads(response_content)
+        return modified_recipe_data
     except Exception as e:
-        print(f"An error occurred while communicating with OpenAI: {e}")
-        return []
+        print(f"An error occurred during AI recipe modification: {e}")
+        return {"error": "Could not modify the recipe. Please try again."}

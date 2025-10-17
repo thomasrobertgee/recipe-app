@@ -1,150 +1,131 @@
 /* src/pages/PantryPage.css */
 
-.pantry-page-container {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 20px;
-}
-
-.pantry-header {
-  text-align: center;
-  margin-bottom: 30px;
-}
-
-.pantry-header h1 {
-  margin-bottom: 10px;
-}
-
-.pantry-header p {
-  font-size: 1rem;
-  color: #555;
-}
-
-.add-item-section {
-  position: relative;
-  margin-bottom: 40px;
+.pantry-list-section, .add-item-section, .staples-section {
+    background-color: #fff;
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
 .pantry-search-input {
-  width: 100%;
-  padding: 15px;
-  font-size: 1.1rem;
-  border: 1px solid #ccc;
-  border-radius: 8px;
+    width: 100%;
+    padding: 12px 15px;
+    font-size: 1rem;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+    margin-bottom: 0.5rem;
 }
 
 .search-results-list {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  background: white;
-  border: 1px solid #ccc;
-  border-top: none;
-  border-radius: 0 0 8px 8px;
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  max-height: 300px;
-  overflow-y: auto;
-  z-index: 100;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    border: 1px solid #ddd;
+    border-top: none;
+    border-radius: 0 0 5px 5px;
+    max-height: 200px;
+    overflow-y: auto;
 }
 
 .search-results-list li {
-  padding: 15px;
-  cursor: pointer;
+    padding: 10px 15px;
+    cursor: pointer;
 }
 
 .search-results-list li:hover {
-  background-color: #f0f0f0;
+    background-color: #f7f7f7;
 }
 
-.pantry-list-section h2 {
-  border-bottom: 2px solid #eee;
-  padding-bottom: 10px;
+.staple-category {
+    margin-bottom: 1.5rem;
 }
-
-.pantry-list {
-  list-style: none;
-  padding: 0;
-}
-
-.pantry-list li {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 15px 10px;
-  border-bottom: 1px solid #eee;
-  font-size: 1.1rem;
-}
-
-.remove-item-btn {
-  background: none;
-  border: none;
-  color: #d32f2f;
-  font-size: 1.8rem;
-  font-weight: bold;
-  cursor: pointer;
-  line-height: 1;
-}
-
-.pantry-category {
-    margin-bottom: 30px;
-}
-
-.pantry-category h3 {
-    font-size: 1.2rem;
-    color: #333;
-    border-bottom: 2px solid #4caf50;
-    padding-bottom: 8px;
-    margin-bottom: 15px;
-}
-
-/* --- NEW: Styles for Quick Add Staples --- */
-
-.staples-section {
-  margin-bottom: 40px;
-  padding-bottom: 20px;
-  border-bottom: 1px solid #ddd;
-}
-
-.staples-section h2 {
-  border-bottom: 2px solid #eee;
-  padding-bottom: 10px;
+.staple-category:last-child {
+    margin-bottom: 0;
 }
 
 .staple-category h3 {
-  font-size: 1rem;
-  color: #555;
-  margin-top: 20px;
-  margin-bottom: 10px;
+    margin-top: 0;
+    margin-bottom: 0.75rem;
+    font-size: 1.1rem;
+    color: #34495e;
+    border-bottom: 1px solid #ecf0f1;
+    padding-bottom: 0.5rem;
 }
 
 .staple-items-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
 }
 
 .staple-item-btn {
-  background-color: #e8f5e9;
-  color: #388e3c;
-  border: 1px solid #a5d6a7;
-  padding: 8px 12px;
-  border-radius: 20px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  transition: background-color 0.2s;
+    background-color: #ecf0f1;
+    color: #34495e;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s;
 }
 
 .staple-item-btn:hover {
-  background-color: #dcedc8;
+    background-color: #3498db;
+    color: white;
 }
 
 .staple-item-btn:disabled {
-  background-color: #f0f0f0;
-  color: #aaa;
-  border-color: #ddd;
-  cursor: not-allowed;
-  text-decoration: line-through;
+    background-color: #bdc3c7;
+    color: #7f8c8d;
+    cursor: not-allowed;
+}
+
+/* --- FIX: Use a grid for the pantry categories --- */
+.pantry-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1.5rem;
+}
+
+.pantry-category h3 {
+    font-size: 1.1rem;
+    color: #34495e;
+    margin-top: 0;
+    margin-bottom: 0.75rem;
+    border-bottom: 1px solid #ecf0f1;
+    padding-bottom: 0.5rem;
+}
+
+.pantry-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.pantry-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #f9f9f9;
+}
+
+.pantry-list li:last-child {
+    border-bottom: none;
+}
+
+.remove-item-btn {
+    background: transparent;
+    border: none;
+    color: #e74c3c;
+    font-size: 1.2rem;
+    font-weight: bold;
+    cursor: pointer;
+    padding: 0 5px;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+}
+
+.remove-item-btn:hover {
+    opacity: 1;
 }

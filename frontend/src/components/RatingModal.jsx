@@ -1,36 +1,34 @@
 // src/components/RatingModal.jsx
 import React, { useState } from 'react';
 import StarRating from './StarRating';
-import './RatingModal.css';
+import './RatingModal.css'; // Ensure the CSS is imported
 
-const RatingModal = ({ recipeTitle, onClose, onSubmitRating }) => {
-  const [currentRating, setCurrentRating] = useState(0);
+const RatingModal = ({ recipeTitle, onClose, onSubmit }) => {
+    const [rating, setRating] = useState(0);
 
-  const handleRate = (rating) => {
-    setCurrentRating(rating);
-  };
+    const handleSubmit = () => {
+        if (rating > 0) {
+            onSubmit(rating);
+        }
+    };
 
-  const handleSubmit = () => {
-    if (currentRating > 0) {
-      onSubmitRating(currentRating);
-    }
-    onClose();
-  };
-
-  return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="rating-modal-content" onClick={(e) => e.stopPropagation()}>
-        <button className="close-button" onClick={onClose}>×</button>
-        <h3>Rate "{recipeTitle}"</h3>
-        <div className="rating-stars-container">
-          <StarRating rating={currentRating} onRate={handleRate} />
+    return (
+        <div className="rating-modal-overlay" onClick={onClose}>
+            <div className="rating-modal-content" onClick={(e) => e.stopPropagation()}>
+                <h3>Rate this recipe</h3>
+                <p>{recipeTitle}</p>
+                <div className="rating-modal-stars">
+                    <StarRating rating={rating} onRate={setRating} />
+                </div>
+                <div className="rating-modal-actions">
+                    <button onClick={onClose} className="cancel-rating-btn">Cancel</button>
+                    <button onClick={handleSubmit} className="submit-rating-btn" disabled={rating === 0}>
+                        Submit Rating
+                    </button>
+                </div>
+            </div>
         </div>
-        <button className="submit-rating-btn" onClick={handleSubmit}>
-          Submit Rating
-        </button>
-      </div>
-    </div>
-  );
+    );
 };
 
 export default RatingModal;

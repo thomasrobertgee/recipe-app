@@ -1,65 +1,49 @@
 // src/pages/MySavedRecipesPage.jsx
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { toast } from 'react-toastify';
 import RecipeCard from '../components/RecipeCard';
 import RecipeDetail from '../components/RecipeDetail';
 import { useAuth } from '../context/AuthContext';
-import FilterSortControls from '../components/FilterSortControls';
+import { toast } from 'react-toastify'; // Import toast
+import './Page.css';
 
-const MySavedRecipesPage = () => {
+const MySavedRecipesPage = ({ allSpecials }) => {
   const [savedRecipes, setSavedRecipes] = useState([]);
-  const [allSpecials, setAllSpecials] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedRecipe, setSelectedRecipe] = useState(null);
-  const { token } = useAuth();
-  const [minRating, setMinRating] = useState('');
-  const [sortBy, setSortBy] = useState('');
+  const { savedRecipeIds } = useAuth();
 
   const fetchSavedRecipes = () => {
-    if (token) {
-      setLoading(true);
-      Promise.all([
-        axios.get('http://127.0.0.1:8000/api/users/me/saved-recipes'),
-        axios.get('http://127.0.0.1:8000/api/specials')
-      ]).then(([recipesRes, specialsRes]) => {
-        let filteredRecipes = recipesRes.data;
+    setLoading(true);
+    axios.get('http://127.0.0.1:8000/api/users/me/saved-recipes')
+      .then(res => {
+        setSavedRecipes(res.data);
+      })
+      .catch(err => {
+        console.error("Failed to fetch saved recipes", err);
+        setSavedRecipes([]);
+      })
+      .finally(() => setLoading(false));
+  };
 
-        if (minRating) {
-            filteredRecipes = filteredRecipes.filter(r => r.average_rating >= minRating);
-        }
-        if (sortBy === 'rating_asc') {
-            filteredRecipes.sort((a, b) => a.average_rating - b.average_rating);
-        } else if (sortBy === 'rating_desc') {
-            filteredRecipes.sort((a, b) => b.average_rating - a.average_rating);
-        }
-        
-        setSavedRecipes(filteredRecipes);
-        setAllSpecials(specialsRes.data);
-
-      }).catch(error => {
-        console.error("Error fetching data for saved recipes page:", error);
-      }).finally(() => {
-        setLoading(false);
-      });
-    }
-  }
-
+  // Fetch recipes on mount and when the user saves/unsaves something
   useEffect(() => {
-    fetchSavedRecipes()
-  }, [token, minRating, sortBy]);
+    fetchSavedRecipes();
+  }, [savedRecipeIds]);
 
-  const placeholderFunc = () => {};
-
+  const handleDeleteRecipe = (recipeId) => {
+    // This is a client-side delete for now, which is fine as it will be unsaved
+    const newSaved = savedRecipes.filter(r => r.id !== recipeId);
+    setSavedRecipes(newSaved);
+  };
+  
+  // --- FIX: Re-implement the rating function ---
   const handleRateRecipe = (recipeId, rating) => {
     axios.post(`http://127.0.0.1:8000/api/recipes/${recipeId}/rate`, { rating })
       .then(() => {
         toast.success("Recipe rated!");
+        // Re-fetch the saved recipes to get the updated rating info
         fetchSavedRecipes();
-         if(selectedRecipe && selectedRecipe.id === recipeId) {
-            const updatedRecipe = { ...selectedRecipe, average_rating: rating, rating_count: selectedRecipe.rating_count + 1 };
-            setSelectedRecipe(updatedRecipe);
-        }
       })
       .catch(error => {
         console.error("Error rating recipe:", error);
@@ -69,42 +53,34 @@ const MySavedRecipesPage = () => {
 
   return (
     <div className="app-container">
-      <div className="page-header"><h1>My Saved Recipes</h1></div>
-      {/* --- UPDATED: Pass empty/dummy props for tags --- */}
-      <FilterSortControls
-        minRating={minRating}
-        setMinRating={setMinRating}
-        sortBy={sortBy}
-        setSortBy={setSortBy}
-        availableTags={[]}
-        selectedTags={[]}
-        handleTagClick={() => {}}
-      />
-      <div className="recipe-grid">
-        {loading ? (
-          <p>Loading your saved recipes...</p>
-        ) : savedRecipes.length > 0 ? (
-          savedRecipes.map(recipe => (
+      <div className="page-header">
+        <h1>My Saved Recipes</h1>
+      </div>
+      
+      {loading ? (
+        <p>Loading your saved recipes...</p>
+      ) : savedRecipes.length > 0 ? (
+        <div className="recipe-grid">
+          {savedRecipes.map(recipe => (
             <RecipeCard
               key={recipe.id}
               recipe={recipe}
               allSpecials={allSpecials}
-              onSelect={placeholderFunc}
-              onDelete={placeholderFunc}
+              onDelete={handleDeleteRecipe}
               onClick={() => setSelectedRecipe(recipe)}
-              isSelected={false}
             />
-          ))
-        ) : (
-          <p>You haven't saved any recipes yet. Click the heart icon on a recipe to save it!</p>
-        )}
-      </div>
-      
+          ))}
+        </div>
+      ) : (
+        <p className="empty-message">You haven't saved any recipes yet. Explore the dashboard to find some you like!</p>
+      )}
+
       {selectedRecipe && (
-        <RecipeDetail 
-          recipe={selectedRecipe} 
+        <RecipeDetail
+          recipe={selectedRecipe}
           onClose={() => setSelectedRecipe(null)}
           allSpecials={allSpecials}
+          // --- FIX: Pass the real rating function ---
           onRate={handleRateRecipe}
         />
       )}

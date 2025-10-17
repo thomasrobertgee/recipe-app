@@ -1,0 +1,146 @@
+/* src/components/RecipeModificationModal.css */
+
+.modification-modal-overlay {
+    position: fixed;
+    top: 72px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1001;
+}
+
+.modification-modal-content {
+    background: #ffffff;
+    padding: 2rem;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    position: relative;
+    color: #333;
+}
+
+.modification-modal-content h2 {
+    margin-top: 0;
+    color: #2c3e50;
+    border-bottom: 2px solid #eee;
+    padding-bottom: 0.5rem;
+}
+
+.modification-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.modification-form textarea {
+    width: 100%;
+    min-height: 80px;
+    padding: 0.75rem;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    font-size: 1rem;
+    resize: vertical;
+}
+
+.modification-form button {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    background-color: #3498db;
+    color: white;
+    font-size: 1rem;
+    font-weight: bold;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.modification-form button:hover {
+    background-color: #2980b9;
+}
+
+.modification-form button:disabled {
+    background-color: #bdc3c7;
+    cursor: not-allowed;
+}
+
+.loading-message {
+    text-align: center;
+    padding: 2rem;
+    font-style: italic;
+    color: #7f8c8d;
+}
+
+.modified-recipe-display h3 {
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+}
+
+.modified-recipe-display p {
+    line-height: 1.6;
+}
+
+.modified-recipe-display ul,
+.modified-recipe-display ol {
+    padding-left: 20px;
+}
+
+.modified-recipe-display ul li,
+.modified-recipe-display ol li {
+    margin-bottom: 0.5rem;
+}
+
+.modal-close-btn {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: transparent;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #7f8c8d;
+}
+
+.modified-recipe-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #eee;
+}
+
+.modified-recipe-actions button {
+    flex-grow: 1;
+    padding: 0.75rem 1rem;
+    border: none;
+    border-radius: 4px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.modify-further-btn {
+    background-color: #f1c40f;
+    color: #333;
+}
+
+.modify-further-btn:hover {
+    background-color: #f39c12;
+}
+
+.save-modified-btn {
+    background-color: #2ecc71;
+    color: white;
+}
+
+.save-modified-btn:hover {
+    background-color: #27ae60;
+}

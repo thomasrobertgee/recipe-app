@@ -14,10 +14,11 @@ from models import User, Recipe, Ingredient, RecipeIngredientLink, PriceHistory,
 from schemas import (
     GenerateRequest, UserCreate, UserRead, UserUpdate, Token,
     RecipeResponse, IngredientInRecipe, RecipeCreate, PriceHistoryCreate,
-    PriceHistoryRead, RecipeRating, PantryItem, PantryItemCreate
+    PriceHistoryRead, RecipeRating, PantryItem, PantryItemCreate,
+    RecipeModificationRequest
 )
 from security import get_password_hash, verify_password, create_access_token, get_current_user
-from ai_service import generate_recipes_from_specials
+from ai_service import generate_recipes_from_specials, modify_recipe_with_ai
 
 origins = ["http://localhost:5173"]
 
@@ -204,7 +205,6 @@ def read_root(): return {"message": "Welcome!"}
 
 @app.post("/api/generate-recipes")
 def generate_recipes_endpoint(request: GenerateRequest, session: Session = Depends(get_session)):
-    # --- UPDATED: Use the specials list sent from the frontend request body ---
     ai_generated_recipes = generate_recipes_from_specials(
         specials_list=request.specials,
         preferences=request.preferences,
@@ -223,7 +223,6 @@ def generate_recipes_endpoint(request: GenerateRequest, session: Session = Depen
 
 @app.get("/api/prices/today", response_model=List[PriceHistoryRead])
 def get_todays_prices(session: Session = Depends(get_session)):
-    """Gets all the price records recorded today (i.e., the current specials)."""
     today = date.today()
     db_prices = session.exec(
         select(PriceHistory)
@@ -240,7 +239,6 @@ def get_todays_prices(session: Session = Depends(get_session)):
 
 @app.post("/api/prices", response_model=PriceHistoryRead)
 def create_price_record(price_data: PriceHistoryCreate, session: Session = Depends(get_session)):
-    """Creates a new price history record."""
     ingredient = get_or_create_ingredient(price_data.ingredient_name, session, category=price_data.category)
     
     new_price_record = PriceHistory(
@@ -256,7 +254,6 @@ def create_price_record(price_data: PriceHistoryCreate, session: Session = Depen
 
 @app.delete("/api/prices/today")
 def delete_todays_prices(session: Session = Depends(get_session)):
-    """Deletes all price records from today before a new scrape."""
     today = date.today()
     try:
         prices_to_delete = session.exec(select(PriceHistory).where(PriceHistory.date_recorded == today)).all()
@@ -270,7 +267,6 @@ def delete_todays_prices(session: Session = Depends(get_session)):
 
 @app.get("/api/ingredient/{ingredient_id}/price-history", response_model=List[PriceHistoryRead])
 def get_price_history_for_ingredient(ingredient_id: int, session: Session = Depends(get_session)):
-    """Gets the full price history for a single ingredient."""
     history = session.exec(
         select(PriceHistory)
         .where(PriceHistory.ingredient_id == ingredient_id)
@@ -333,6 +329,27 @@ def get_recipes(
         )
     return response_recipes
 
+# --- FIX: Link the newly created recipe to the user who created it ---
+@app.post("/api/recipes", response_model=RecipeResponse)
+def create_recipe(recipe_data: RecipeCreate, session: Session = Depends(get_session), current_user: User = Depends(get_current_user)):
+    """Creates and saves a single new recipe, and links it to the current user."""
+    try:
+        new_recipe = _save_recipe_to_db(recipe_data, session)
+        
+        # Link the new recipe to the user's saved recipes
+        current_user.saved_recipes.append(new_recipe)
+        session.add(current_user)
+        session.commit()
+        
+        response_ingredients = [
+            IngredientInRecipe(ingredient_id=link.ingredient.id, name=link.ingredient.name, quantity=link.quantity)
+            for link in new_recipe.links
+        ]
+        return RecipeResponse.from_orm(new_recipe, update={'ingredients': response_ingredients})
+    except Exception as e:
+        print(f"Could not save new recipe: {e}")
+        raise HTTPException(status_code=500, detail="Failed to save the new recipe.")
+
 @app.post("/api/recipes/{recipe_id}/rate", status_code=200)
 def rate_recipe(
     recipe_id: int,
@@ -366,6 +383,32 @@ def rate_recipe(
     session.commit()
     session.refresh(recipe)
     return {"message": "Recipe rated successfully"}
+
+
+@app.post("/api/recipes/modify", response_model=RecipeCreate)
+def modify_recipe_endpoint(request: RecipeModificationRequest, session: Session = Depends(get_session)):
+    """
+    Receives an original recipe and a modification prompt,
+    and returns a new, AI-modified recipe.
+    This new recipe is NOT saved to the database.
+    """
+    try:
+        original_recipe_dict = request.original_recipe.model_dump()
+        
+        modified_recipe_data = modify_recipe_with_ai(
+            original_recipe=original_recipe_dict,
+            modification_prompt=request.modification_prompt
+        )
+
+        if "error" in modified_recipe_data:
+            raise HTTPException(status_code=500, detail=modified_recipe_data["error"])
+
+        validated_recipe = RecipeCreate(**modified_recipe_data)
+        return validated_recipe
+
+    except Exception as e:
+        print(f"Error in modification endpoint: {e}")
+        raise HTTPException(status_code=500, detail="Failed to process recipe modification.")
 
 
 @app.delete("/api/recipes/{recipe_id}")

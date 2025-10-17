@@ -15,6 +15,7 @@ The application consists of a Python backend that serves data from a database an
     - **Dynamically handles pagination**, scraping all available pages for each category automatically.
     - Extracts detailed price information, including unit prices (e.g., per kg).
 - **AI-powered recipe generation** that uses a user's saved preferences and pantry items to create tailored recipes.
+- **AI-powered Recipe Modification:** Users can request modifications to any recipe (e.g., "make this vegan", "double the servings"), and the AI will generate a new, updated version.
 - **My Pantry Feature:** Users can add from a categorized list of staple ingredients to their personal pantry.
 - **Recipe Ratings & Filtering:** Users can rate recipes and filter/sort them.
 - **Intelligent Shopping List:** A dynamic list that consolidates ingredients, calculates costs, and tracks spending against a user's budget.
@@ -44,9 +45,7 @@ Here are some of the planned features to evolve the app from an MVP into a full-
 ### Advanced Data & AI Features
 7.  **Price Fluctuation Tracker:** For any given ingredient, track its price over time whenever it's captured by the web scraper. Display a simple chart showing its price history to help users identify if a "special" is a good deal.
 
-8.  **AI-Powered Recipe Modification:** An "Modify this Recipe" button that opens a chat-like interface. Users could ask the AI to alter the current recipe (e.g., "make this gluten-free," "substitute the chicken for chickpeas," or "double the servings").
-
-9.  **Integration with Local Suppliers:** Create a portal for local butchers and greengrocers to upload their weekly specials. These would then appear in the app, promoting local businesses and providing users with unique deals.
+8.  **Integration with Local Suppliers:** Create a portal for local butchers and greengrocers to upload their weekly specials. These would then appear in the app, promoting local businesses and providing users with unique deals.
 
 ---
 
@@ -137,28 +136,6 @@ For the app to work, both servers must be running simultaneously.
     npm run dev
     ```
     The frontend will be available at `http://localhost:5173`.
-
----
-
-## Testing with Playwright
-
-This project uses **Playwright** for end-to-end (E2E) testing to simulate real user interactions and verify application functionality.
-
-### Running Tests
-1.  Ensure both the frontend and backend servers are running.
-2.  In a new terminal, navigate to the `frontend` directory.
-3.  Run all tests in headless mode:
-    ```sh
-    npx playwright test
-    ```
-4.  To watch the tests run in a visible browser window, use the `--headed` flag:
-    ```sh
-    npx playwright test --headed
-    ```
-5.  After a test run, you can view a detailed HTML report:
-    ```sh
-    npx playwright show-report
-    ```
 
 ---
 

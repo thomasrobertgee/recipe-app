@@ -1,88 +1,135 @@
 // src/components/RecipeDetail.jsx
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
+import { useAuth } from '../context/AuthContext';
 import { useCookMode } from '../context/CookModeContext';
-import RatingModal from './RatingModal';
+import { toast } from 'react-toastify';
 import StarRating from './StarRating';
+import RecipeModificationModal from './RecipeModificationModal';
+import RatingModal from './RatingModal'; // --- NEW: Import RatingModal ---
 import './RecipeDetail.css';
 
 const RecipeDetail = ({ recipe, onClose, allSpecials, onRate }) => {
-  const [isRatingModalOpen, setIsRatingModalOpen] = useState(false);
-  const { startCooking } = useCookMode();
+    const { savedRecipeIds, saveRecipe, unsaveRecipe, handleSelectRecipe } = useAuth();
+    const { startCookMode } = useCookMode();
+    const isSaved = savedRecipeIds.has(recipe.id);
 
-  const handleSubmitRating = (rating) => {
-    if (onRate) {
-      onRate(recipe.id, rating);
-    }
-    setIsRatingModalOpen(false);
-  };
+    const [isModifyModalOpen, setIsModifyModalOpen] = useState(false);
+    // --- NEW: State for the rating modal ---
+    const [isRatingModalOpen, setIsRatingModalOpen] = useState(false);
 
-  const handleStartCooking = () => {
-    startCooking(recipe);
-    onClose(); // Close the detail modal
-  };
+    const specialsMap = useMemo(() => {
+        return allSpecials.reduce((acc, special) => {
+            acc[special.ingredient_name.toLowerCase()] = special.price;
+            return acc;
+        }, {});
+    }, [allSpecials]);
 
-  return (
-    <>
-      <div className="modal-overlay" onClick={onClose}>
-        <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-          <button className="close-button" onClick={onClose}>×</button>
+    const handleSaveClick = (e) => {
+        e.stopPropagation();
+        isSaved ? unsaveRecipe(recipe.id) : saveRecipe(recipe.id);
+    };
 
-          <div className="recipe-detail-header">
-            <h2>{recipe.title}</h2>
-            <div className="rating-section">
-              <div className="rating-display">
-                <StarRating rating={recipe.average_rating} readOnly={true} />
-                {recipe.rating_count > 0 && (
-                  <span className="rating-value">({recipe.average_rating.toFixed(1)})</span>
-                )}
-              </div>
-              <button className="rate-recipe-btn" onClick={() => setIsRatingModalOpen(true)}>
-                Rate Recipe
-              </button>
+    const handleSelectClick = (e) => {
+        e.stopPropagation();
+        handleSelectRecipe(recipe);
+    };
+
+    const handleStartCookMode = (e) => {
+        e.stopPropagation();
+        startCookMode(recipe);
+        onClose();
+    };
+
+    const handleModifyClick = (e) => {
+        e.stopPropagation();
+        setIsModifyModalOpen(true);
+    };
+    
+    // --- NEW: Handlers for opening and submitting the rating modal ---
+    const handleOpenRatingModal = () => {
+        setIsRatingModalOpen(true);
+    };
+
+    const handleRatingSubmit = (rating) => {
+        onRate(recipe.id, rating);
+        setIsRatingModalOpen(false); // Close the modal after submitting
+    };
+
+    return (
+        <>
+            <div className="recipe-detail-overlay" onClick={onClose}>
+                <div className="recipe-detail" onClick={(e) => e.stopPropagation()}>
+                    <button onClick={onClose} className="close-button">&times;</button>
+                    <h2>{recipe.title}</h2>
+                    <div className="recipe-meta" onClick={handleOpenRatingModal} style={{cursor: 'pointer'}}>
+                        <StarRating 
+                            rating={recipe.average_rating} 
+                            // --- FIX: Star rating is now read-only and opens the modal ---
+                            readOnly={true}
+                        />
+                        <span className="rating-count">({recipe.rating_count} ratings) - Click to rate</span>
+                    </div>
+
+                    <p className="description">{recipe.description}</p>
+                    
+                    <div className="recipe-actions">
+                        <button onClick={handleSaveClick} className={`action-btn ${isSaved ? 'saved' : ''}`}>
+                            {isSaved ? '✓ Unsave' : 'Save Recipe'}
+                        </button>
+                        <button onClick={handleModifyClick} className="action-btn modify-btn">
+                            ✨ Modify with AI
+                        </button>
+                        <button onClick={handleStartCookMode} className="action-btn cook-mode-btn">
+                            Start Cooking
+                        </button>
+                        <button onClick={handleSelectClick} className="action-btn add-list-btn">
+                            + Add to List
+                        </button>
+                    </div>
+
+                    <div className="recipe-columns">
+                        <div className="ingredients-section">
+                            <h3>Ingredients</h3>
+                            <ul>
+                                {recipe.ingredients.map(ing => (
+                                    <li key={ing.ingredient_id}>
+                                        {ing.quantity} {ing.name}
+                                        {specialsMap[ing.name.toLowerCase()] && (
+                                            <span className="special-tag">ON SPECIAL</span>
+                                        )}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                        <div className="instructions-section">
+                            <h3>Instructions</h3>
+                            <ol>
+                                {recipe.instructions.split('\n').map((step, index) => (
+                                    step.trim() ? <li key={index}>{step}</li> : null
+                                ))}
+                            </ol>
+                        </div>
+                    </div>
+                </div>
             </div>
-          </div>
+            
+            {isModifyModalOpen && (
+                <RecipeModificationModal 
+                    originalRecipe={recipe}
+                    onClose={() => setIsModifyModalOpen(false)}
+                />
+            )}
 
-          <p className="description">{recipe.description}</p>
-          <h3>Ingredients</h3>
-          <ul>
-            {recipe.ingredients.map((ingredient, index) => {
-              const special = allSpecials.find(s => 
-                s.ingredient_name.toLowerCase().includes(ingredient.name.toLowerCase())
-              );
-
-              return (
-                <li key={index}>
-                  <span>{ingredient.quantity} {ingredient.name}</span>
-                  {special && <span className="ingredient-price">{special.price}</span>}
-                </li>
-              );
-            })}
-          </ul>
-          <h3>Instructions</h3>
-          <div className="instructions">
-            {recipe.instructions.split('\n').filter(step => step.trim() !== '').map((step, index) => (
-              <p key={index}>{step}</p>
-            ))}
-          </div>
-
-          {/* --- Start Cooking Button --- */}
-          <div className="modal-footer">
-            <button className="start-cooking-btn" onClick={handleStartCooking}>
-              🍳 Start Cooking
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {isRatingModalOpen && (
-        <RatingModal
-          recipeTitle={recipe.title}
-          onClose={() => setIsRatingModalOpen(false)}
-          onSubmitRating={handleSubmitRating}
-        />
-      )}
-    </>
-  );
+            {/* --- NEW: Conditionally render the rating modal --- */}
+            {isRatingModalOpen && (
+                <RatingModal 
+                    recipeTitle={recipe.title}
+                    onClose={() => setIsRatingModalOpen(false)}
+                    onSubmit={handleRatingSubmit}
+                />
+            )}
+        </>
+    );
 };
 
 export default RecipeDetail;
