@@ -1,78 +1,113 @@
 // src/pages/SignUpPage.jsx
+
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { GoogleLogin } from '@react-oauth/google'; // <-- IMPORT
+import { useAuth } from '../context/AuthContext'; // <-- IMPORT
 import { toast } from 'react-toastify';
-import api from '../api'; // Import the api instance
 import './AuthForm.css';
 
-const SignUpPage = () => {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const { login } = useAuth(); // We only need the login function from context
-    const navigate = useNavigate();
+function SignUpPage() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState('');
+  const { loginWithGoogle } = useAuth(); // <-- GET THE FUNCTION
+  const navigate = useNavigate();
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        try {
-            // Step 1: Register the new user
-            await api.post('/register', { email, password });
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (password !== confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
+    setError('');
+    try {
+      await axios.post('http://127.0.0.1:8000/register', { email, password });
+      toast.success('Sign up successful! Please log in.');
+      navigate('/login');
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to sign up.');
+    }
+  };
 
-            // Step 2: Immediately log the new user in to get a token
-            const formData = new URLSearchParams();
-            formData.append('username', email);
-            formData.append('password', password);
+  // --- NEW: ADD GOOGLE HANDLERS ---
+  const handleGoogleSuccess = (credentialResponse) => {
+    // This same function works for both login and signup
+    loginWithGoogle(credentialResponse);
+  };
 
-            const tokenResponse = await api.post('/token', formData, {
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            });
+  const handleGoogleError = () => {
+    console.error("Google Login Failed");
+    setError("Google sign up failed. Please try again.");
+  };
 
-            // Step 3: Use the context's login function to set the token globally
-            if (tokenResponse.data.access_token) {
-                login(tokenResponse.data.access_token);
-                navigate('/dashboard');
-                toast.success('Sign up successful! Welcome!');
-            } else {
-                // This case should ideally not be hit if registration works
-                throw new Error("Signup succeeded but failed to log in.");
-            }
-
-        } catch (error) {
-            const errorMessage = error.response?.data?.detail || 'An error occurred during sign up.';
-            toast.error(errorMessage);
-        }
-    };
-
-    return (
-        <div className="auth-container">
-            <form onSubmit={handleSubmit} className="auth-form">
-                <h2>Sign Up</h2>
-                <div className="form-group">
-                    <label htmlFor="email">Email</label>
-                    <input
-                        id="email"
-                        type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="Enter your email"
-                        required
-                    />
-                </div>
-                <div className="form-group">
-                    <label htmlFor="password">Password</label>
-                    <input
-                        id="password"
-                        type="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="Enter your password"
-                        required
-                    />
-                </div>
-                <button type="submit">Sign Up</button>
-            </form>
+  return (
+    <div className="auth-container">
+      <form className="auth-form" onSubmit={handleSubmit}>
+        <h2>Sign Up</h2>
+        
+        <div className="form-group">
+          <label htmlFor="email">Email</label>
+          <input
+            type="email"
+            id="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
         </div>
-    );
-};
+        
+        <div className="form-group">
+          <label htmlFor="password">Password</label>
+          <input
+            type="password"
+            id="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            minLength="8"
+          />
+        </div>
+        
+        <div className="form-group">
+          <label htmlFor="confirmPassword">Confirm Password</label>
+          <input
+            type="password"
+            id="confirmPassword"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            required
+          />
+        </div>
+        
+        {error && <p className="auth-error">{error}</p>}
+        
+        <button type="submit" className="auth-button">Sign Up</button>
+
+        {/* --- NEW: ADD DIVIDER AND BUTTON --- */}
+        <div className="auth-divider">
+          <span>OR</span>
+        </div>
+
+        <div className="google-login-container">
+          <GoogleLogin
+            onSuccess={handleGoogleSuccess}
+            onError={handleGoogleError}
+            useOneTap
+            theme="outline"
+            size="large"
+            width="100%"
+          />
+        </div>
+        
+        <p className="auth-switch">
+          Already have an account? <Link to="/login">Log In</Link>
+        </p>
+      </form>
+    </div>
+  );
+}
 
 export default SignUpPage;

@@ -12,3 +12,4 @@ beautifulsoup4==4.12.3
 google-generativeai
 Pillow
 argon2-cffi
+google-auth==2.29.0

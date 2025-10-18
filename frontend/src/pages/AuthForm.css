@@ -4,14 +4,13 @@
   display: flex;
   align-items: flex-start; /* Aligns card to the top */
   justify-content: center;
-  padding-top: 5rem; /* Adds space from the top navbar */
   min-height: calc(100vh - 70px); /* Full height minus navbar */
   width: 100%;
 }
 
 .auth-form {
   background-color: #ffffff;
-  padding: 2.5rem;
+  padding: 2rem;
   border-radius: 12px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
   width: 100%;
@@ -92,4 +91,30 @@
 
 .auth-switch a:hover {
   text-decoration: underline;
+}
+
+/* --- NEW STYLES --- */
+.auth-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  color: #aaa;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.auth-divider span {
+  padding: 0 1rem;
+}
+
+.google-login-container {
+  display: flex;
+  justify-content: center;
 }

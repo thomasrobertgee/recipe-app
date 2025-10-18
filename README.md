@@ -9,6 +9,7 @@ The application consists of a Python backend that serves data from a database an
 ## Current Features
 
 - **Full User Authentication:** Users can register, log in, and maintain a persistent session using JWTs.
+- **Google OAuth 2.0 Login:** Users can sign up or log in using their Google accounts.
 - **Robust Web Scraper:**
     - Utilizes **ScrapingBee** to bypass bot detection and render JavaScript-heavy pages.
     - Scrapes specific, high-value categories (e.g., "Meat & Seafood", "Fruit & Vegetables").
@@ -39,7 +40,6 @@ Here are some of the planned features to evolve the app from an MVP into a full-
 4.  **"Cooking Streak" & Achievements:** Gamify the cooking experience by adding a "I Made This!" button to Cook Mode. This would contribute to a "Weekly Cooking Streak" and unlock badges for achievements like staying under budget or using up pantry items.
 
 ### Advanced Data & AI Features
-
 5.  **Integration with Local Suppliers:** Create a portal for local butchers and greengrocers to upload their weekly specials. These would then appear in the app, promoting local businesses and providing users with unique deals.
 
 ---
@@ -52,6 +52,7 @@ Here are some of the planned features to evolve the app from an MVP into a full-
 - **Database ORM:** SQLModel
 - **Database:** SQLite
 - **AI:** OpenAI GPT API
+- **Authentication:** Passlib (hashing), python-jose (JWTs), **google-auth** (OAuth)
 - **Scraping:** **ScrapingBee API, Requests & BeautifulSoup4**
 
 ### Frontend
@@ -60,6 +61,7 @@ Here are some of the planned features to evolve the app from an MVP into a full-
 - **Build Tool:** Vite
 - **HTTP Client:** Axios
 - **Routing:** React Router
+- **Authentication:** **@react-oauth/google**
 
 ---
 
@@ -70,6 +72,22 @@ To get the application running locally, you will need to set up and run both the
 - Python 3.9+
 - Node.js and npm
 - Git
+
+### Environment Variables
+This project requires several API keys to function.
+
+1.  **Backend (`backend/.env`):**
+    ```
+    SECRET_KEY="YOUR_JWT_SECRET_KEY"
+    OPENAI_API_KEY="YOUR_OPENAI_API_KEY"
+    SCRAPINGBEE_API_KEY="YOUR_SCRAPINGBEE_API_KEY"
+    GOOGLE_CLIENT_ID="YOUR_GOOGLE_CLOUD_CLIENT_ID"
+    ```
+
+2.  **Frontend (`frontend/.env`):**
+    ```
+    VITE_GOOGLE_CLIENT_ID="YOUR_GOOGLE_CLOUD_CLIENT_ID"
+    ```
 
 ### Backend Setup
 1.  Navigate to the backend directory:

@@ -2,185 +2,165 @@
 
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { useUI } from './UIContext'; // --- NEW: Import useUI ---
 
 const AuthContext = createContext();
+
+// --- Set Axios base URL ---
+axios.defaults.baseURL = 'http://127.0.0.1:8000';
+
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
-  const [token, setToken] = useState(() => {
-    const storedToken = localStorage.getItem('token');
-    return (storedToken && storedToken !== 'null') ? storedToken : null;
-  });
-
-  const [isLoading, setIsLoading] = useState(true);
-  
-  const [selectedRecipes, setSelectedRecipes] = useState(() => {
-    try {
-      const storedData = JSON.parse(localStorage.getItem('selectedRecipes') || '[]');
-      if (Array.isArray(storedData)) {
-        if (storedData.length > 0 && storedData[0] && typeof storedData[0].recipe === 'undefined') {
-          return storedData.map(recipe => ({ recipe: recipe, quantity: 1 }));
-        }
-        return storedData;
-      }
-      return [];
-    } catch (error) {
-      console.error("Error parsing selected recipes from localStorage", error);
-      return [];
-    }
-  });
-
+  const [token, setToken] = useState(localStorage.getItem('token'));
   const [userProfile, setUserProfile] = useState(null);
-  const [savedRecipeIds, setSavedRecipeIds] = useState(new Set());
-  const [removedItems, setRemovedItems] = useState(() => JSON.parse(localStorage.getItem('removedItems') || '[]'));
-
-  const { openSidebar, closeSidebar } = useUI(); // --- NEW: Get sidebar controls ---
-
-  useEffect(() => {
-    const initializeAuth = async () => {
-      if (token) {
-        localStorage.setItem('token', token);
-        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-        try {
-          const [savedRecipesRes, userProfileRes] = await Promise.all([
-            axios.get('http://127.0.0.1:8000/api/users/me/saved-recipes'),
-            axios.get('http://127.0.0.1:8000/users/me')
-          ]);
-          setSavedRecipeIds(new Set(savedRecipesRes.data.map(recipe => recipe.id)));
-          setUserProfile(userProfileRes.data);
-        } catch (error) { 
-          console.error("Could not fetch initial user data", error);
-          if (error.response && error.response.status === 401) {
-            setToken(null);
-            setUserProfile(null);
-          }
-        }
-      } else {
-        localStorage.removeItem('token');
-        delete axios.defaults.headers.common['Authorization'];
-        setSavedRecipeIds(new Set());
-        setUserProfile(null);
-      }
-      setIsLoading(false);
-    };
-    initializeAuth();
-  }, [token]);
-  
-  useEffect(() => {
-    localStorage.setItem('selectedRecipes', JSON.stringify(selectedRecipes));
-    // --- NEW: Automatically close sidebar if list becomes empty ---
-    if (selectedRecipes.length === 0) {
-      closeSidebar();
-    }
-  }, [selectedRecipes, closeSidebar]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [selectedRecipes, setSelectedRecipes] = useState([]);
+  const [savedRecipes, setSavedRecipes] = useState([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    localStorage.setItem('removedItems', JSON.stringify(removedItems));
-  }, [removedItems]);
-
-
-  const login = (newToken) => setToken(newToken);
-  const logout = () => { 
-    setToken(null); 
-    setSelectedRecipes([]); 
-    setUserProfile(null);
-    setRemovedItems([]);
-    closeSidebar(); // --- NEW: Close sidebar on logout ---
-  };
-  
-  const saveRecipe = async (recipeId) => {
-    try {
-      await axios.post(`http://127.0.0.1:8000/api/users/me/saved-recipes/${recipeId}`);
-      setSavedRecipeIds(prevIds => new Set(prevIds).add(recipeId));
-      toast.success("Recipe saved!");
-    } catch (error) { console.error("Error saving recipe:", error); toast.error("Could not save recipe."); }
-  };
-
-  const unsaveRecipe = async (recipeId) => {
-    try {
-      await axios.delete(`http://127.0.0.1:8000/api/users/me/saved-recipes/${recipeId}`);
-      setSavedRecipeIds(prevIds => { const newIds = new Set(prevIds); newIds.delete(recipeId); return newIds; });
-      toast.info("Recipe unsaved.");
-    } catch (error) { console.error("Error unsaving recipe:", error); toast.error("Could not unsave recipe."); }
-  };
-  
-  const handleSelectRecipe = (recipeToAdd) => {
-    const isAlreadySelected = selectedRecipes.some(item => item.recipe.id === recipeToAdd.id);
-    if (isAlreadySelected) {
-        setSelectedRecipes(prev => prev.filter(item => item.recipe.id !== recipeToAdd.id));
-        toast.info(`"${recipeToAdd.title}" removed from your list.`);
+    if (token) {
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      fetchUserProfile();
+      fetchSavedRecipes();
     } else {
-        // --- UPDATED: Open sidebar when the first item is added ---
-        if (selectedRecipes.length === 0) {
-          openSidebar();
-        }
-        setSelectedRecipes(prev => [...prev, { recipe: recipeToAdd, quantity: 1 }]);
-        toast.success(`"${recipeToAdd.title}" added to your list!`);
+      delete axios.defaults.headers.common['Authorization'];
+      setIsLoading(false);
+    }
+  }, [token]);
+
+  const fetchUserProfile = async () => {
+    try {
+      const res = await axios.get('/users/me');
+      setUserProfile(res.data);
+    } catch (error) {
+      console.error("Error fetching user profile:", error);
+      if (error.response && error.response.status === 401) {
+        logout(); // Token is invalid or expired
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const incrementRecipeQuantity = (recipeId) => {
-    setSelectedRecipes(prev =>
-        prev.map(item =>
-            item.recipe.id === recipeId
-                ? { ...item, quantity: item.quantity + 1 }
-                : item
-        )
-    );
+  const fetchSavedRecipes = async () => {
+    try {
+      const res = await axios.get('/api/users/me/saved-recipes');
+      setSavedRecipes(res.data);
+    } catch (error) {
+      console.error("Error fetching saved recipes:", error);
+    }
   };
 
-  const decrementRecipeQuantity = (recipeId) => {
-      const existingItem = selectedRecipes.find(item => item.recipe.id === recipeId);
-      if (existingItem && existingItem.quantity > 1) {
-          setSelectedRecipes(prev => prev.map(item =>
-              item.recipe.id === recipeId
-                  ? { ...item, quantity: item.quantity - 1 }
-                  : item
-          ));
-      } else {
-          if (existingItem) {
-            toast.info(`"${existingItem.recipe.title}" removed from your list.`);
-          }
-          setSelectedRecipes(prev => prev.filter(item => item.recipe.id !== recipeId));
-      }
+  const login = async (email, password) => {
+    try {
+      const formData = new URLSearchParams();
+      formData.append('username', email);
+      formData.append('password', password);
+
+      const res = await axios.post('/token', formData, {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+      });
+      
+      const new_token = res.data.access_token;
+      setToken(new_token);
+      localStorage.setItem('token', new_token);
+      axios.defaults.headers.common['Authorization'] = `Bearer ${new_token}`;
+      
+      await fetchUserProfile(); // Fetch profile right after login
+      await fetchSavedRecipes(); // Fetch saved recipes right after login
+      
+      navigate('/dashboard');
+    } catch (error) {
+      console.error("Login error:", error);
+      toast.error(error.response?.data?.detail || "Login failed");
+    }
   };
 
-  const handleRemoveShoppingListItem = (itemId) => {
-    setRemovedItems(prev => [...prev, itemId]);
+  const loginWithGoogle = async (credentialResponse) => {
+    try {
+      const res = await axios.post('/api/auth/google', {
+        token: credentialResponse.credential
+      });
+      
+      const new_token = res.data.access_token;
+      setToken(new_token);
+      localStorage.setItem('token', new_token);
+      axios.defaults.headers.common['Authorization'] = `Bearer ${new_token}`;
+
+      await fetchUserProfile();
+      await fetchSavedRecipes();
+      
+      navigate('/dashboard');
+      toast.success("Successfully logged in with Google!");
+    } catch (error) {
+      console.error("Google login error:", error);
+      toast.error(error.response?.data?.detail || "Google login failed");
+    }
   };
-  
-  const handleAddShoppingListItem = (itemId) => {
-    setRemovedItems(prev => prev.filter(id => id !== itemId));
-  };
-  
-  const clearShoppingList = () => {
+
+  const logout = () => {
+    setToken(null);
+    setUserProfile(null);
+    setSavedRecipes([]);
     setSelectedRecipes([]);
-    setRemovedItems([]);
-    closeSidebar(); // --- NEW: Close sidebar when cleared ---
-    toast.info("Shopping list cleared.");
+    localStorage.removeItem('token');
+    delete axios.defaults.headers.common['Authorization'];
+    navigate('/');
   };
 
-  const contextValue = { 
-    token, 
-    isLoading, 
-    login, 
-    logout, 
-    savedRecipeIds, 
-    saveRecipe, 
-    unsaveRecipe, 
-    selectedRecipes, 
-    handleSelectRecipe,
-    userProfile,
-    setUserProfile,
-    removedItems,
-    handleRemoveShoppingListItem,
-    handleAddShoppingListItem,
-    incrementRecipeQuantity,
-    decrementRecipeQuantity,
-    clearShoppingList
+  const handleSelectRecipe = (recipe) => {
+    setSelectedRecipes(prevSelected => {
+      const isSelected = prevSelected.find(r => r.id === recipe.id);
+      if (isSelected) {
+        return prevSelected.filter(r => r.id !== recipe.id);
+      } else {
+        return [...prevSelected, recipe];
+      }
+    });
   };
 
-  return (<AuthContext.Provider value={contextValue}>{!isLoading && children}</AuthContext.Provider>);
+  const handleSaveRecipe = async (recipe) => {
+    try {
+      await axios.post(`/api/users/me/saved-recipes/${recipe.id}`);
+      setSavedRecipes(prev => [...prev, recipe]);
+      toast.success("Recipe saved!");
+    } catch (error) {
+      console.error("Error saving recipe:", error);
+      toast.error("Could not save recipe.");
+    }
+  };
+
+  const handleUnsaveRecipe = async (recipeId) => {
+    try {
+      await axios.delete(`/api/users/me/saved-recipes/${recipeId}`);
+      setSavedRecipes(prev => prev.filter(r => r.id !== recipeId));
+      toast.info("Recipe removed from saved.");
+    } catch (error) {
+      console.error("Error unsaving recipe:", error);
+      toast.error("Could not unsave recipe.");
+    }
+  };
+
+  return (
+    <AuthContext.Provider value={{ 
+      token, 
+      userProfile, 
+      isLoading, 
+      login, 
+      loginWithGoogle,
+      logout, 
+      fetchUserProfile,
+      selectedRecipes,
+      handleSelectRecipe,
+      savedRecipes,
+      handleSaveRecipe,
+      handleUnsaveRecipe,
+      fetchSavedRecipes
+    }}>
+      {children}
+    </AuthContext.Provider>
+  );
 };
