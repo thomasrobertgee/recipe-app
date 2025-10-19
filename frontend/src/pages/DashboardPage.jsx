@@ -6,6 +6,9 @@ import { Link } from 'react-router-dom';
 import RecipeCard from '../components/RecipeCard';
 import RecipeDetail from '../components/RecipeDetail';
 import FilterSortControls from '../components/FilterSortControls';
+import { useAuth } from '../context/AuthContext';
+import OnboardingModal from '../components/OnboardingModal';
+import './Page.css'; // Keep this for page-header styles
 
 const DashboardPage = ({ allSpecials }) => {
   const [recipes, setRecipes] = useState([]);
@@ -14,11 +17,19 @@ const DashboardPage = ({ allSpecials }) => {
   const [minRating, setMinRating] = useState('');
   const [sortBy, setSortBy] = useState('');
   const [selectedTags, setSelectedTags] = useState([]);
-  
-  // --- NEW: State to hold all possible tags from the API ---
   const [allAvailableTags, setAllAvailableTags] = useState([]);
 
-  // --- NEW: Fetch all tags once on component mount ---
+  const { userProfile, isLoading: authIsLoading, savedRecipes } = useAuth();
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  useEffect(() => {
+    if (userProfile && userProfile.has_completed_onboarding === false) {
+      setShowOnboarding(true);
+    } else {
+      setShowOnboarding(false);
+    }
+  }, [userProfile]);
+
   useEffect(() => {
     axios.get('http://127.0.0.1:8000/api/tags')
       .then(res => setAllAvailableTags(res.data))
@@ -68,51 +79,66 @@ const DashboardPage = ({ allSpecials }) => {
   };
 
   const handleTagClick = (tag) => {
-    setSelectedTags(prevTags => 
+    setSelectedTags(prevTags =>
       prevTags.includes(tag)
         ? prevTags.filter(t => t !== tag)
         : [...prevTags, tag]
     );
   };
 
+  const handleCloseOnboarding = () => {
+    setShowOnboarding(false);
+  };
+
+  if (authIsLoading || !userProfile) {
+    // Use app-container here too for consistency during loading
+    return <div className="app-container">Loading user...</div>;
+  }
+
   return (
-    <div className="app-container">
-      <div className="page-header"><h1>Recipe Dashboard</h1></div>
-      <FilterSortControls
-        minRating={minRating}
-        setMinRating={setMinRating}
-        sortBy={sortBy}
-        setSortBy={setSortBy}
-        // --- UPDATED: Pass the stable list of all tags ---
-        availableTags={allAvailableTags}
-        selectedTags={selectedTags}
-        handleTagClick={handleTagClick}
-      />
-      <div className="recipe-grid">
-        {loading ? <p>Loading recipes...</p> : 
-          recipes.slice(0, 9).map(recipe => (
-            <RecipeCard 
-              key={recipe.id} 
-              recipe={recipe} 
-              allSpecials={allSpecials}
-              onDelete={handleDeleteRecipe}
-              onClick={() => setSelectedRecipe(recipe)}
-            />
-          ))
-        }
-      </div>
-      {recipes.length > 9 && (
-        <div className="view-more-container"><Link to="/recipes" className="view-more-btn">View All Recipes</Link></div>
-      )}
-      {selectedRecipe && (
-        <RecipeDetail 
-          recipe={selectedRecipe} 
-          onClose={() => setSelectedRecipe(null)} 
-          allSpecials={allSpecials}
-          onRate={handleRateRecipe}
+    <>
+      {showOnboarding && <OnboardingModal onClose={handleCloseOnboarding} />}
+
+      {/* --- USE app-container HERE --- */}
+      <div className="app-container">
+        <div className="page-header"><h1>Recipe Dashboard</h1></div>
+        <FilterSortControls
+          minRating={minRating}
+          setMinRating={setMinRating}
+          sortBy={sortBy}
+          setSortBy={setSortBy}
+          availableTags={allAvailableTags}
+          selectedTags={selectedTags}
+          handleTagClick={handleTagClick}
         />
-      )}
-    </div>
+        <div className="recipe-grid">
+          {loading ? <p>Loading recipes...</p> :
+            recipes.slice(0, 9).map(recipe => (
+              <RecipeCard
+                key={recipe.id}
+                recipe={recipe}
+                allSpecials={allSpecials}
+                savedRecipes={savedRecipes}
+                onDelete={handleDeleteRecipe}
+                onClick={() => setSelectedRecipe(recipe)}
+              />
+            ))
+          }
+        </div>
+        {recipes.length > 9 && (
+          <div className="view-more-container"><Link to="/recipes" className="view-more-btn">View All Recipes</Link></div>
+        )}
+        {selectedRecipe && (
+          <RecipeDetail
+            recipe={selectedRecipe}
+            onClose={() => setSelectedRecipe(null)}
+            allSpecials={allSpecials}
+            onRate={handleRateRecipe}
+            savedRecipes={savedRecipes}
+          />
+        )}
+      </div>
+    </>
   );
 };
 export default DashboardPage;

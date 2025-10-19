@@ -33,6 +33,7 @@ export const AuthProvider = ({ children }) => {
 
   const fetchUserProfile = async () => {
     try {
+      // This will now fetch the new fields (adult_count, etc.) as part of the response
       const res = await axios.get('/users/me');
       setUserProfile(res.data);
     } catch (error) {

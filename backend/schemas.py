@@ -13,12 +13,24 @@ class UserRead(SQLModel):
     dietary_restrictions: Optional[str] = None
     preferred_cuisines: Optional[str] = None
     cooking_skill: Optional[str] = None
+    
+    # --- NEW FIELDS ---
+    adult_count: int
+    child_count: int
+    weekly_budget: Optional[int] = None
+    has_completed_onboarding: bool
 
 class UserUpdate(SQLModel):
     email: Optional[str] = None
     dietary_restrictions: Optional[str] = None
     preferred_cuisines: Optional[str] = None
     cooking_skill: Optional[str] = None
+
+    # --- NEW FIELDS ---
+    adult_count: Optional[int] = None
+    child_count: Optional[int] = None
+    weekly_budget: Optional[int] = None
+    has_completed_onboarding: Optional[bool] = None
 
 class Token(SQLModel):
     access_token: str

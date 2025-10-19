@@ -34,6 +34,7 @@
   flex-grow: 1;
   transition: width 0.3s ease;
   padding-top: 65px; /* Adjust this value based on your navbar's height */
+  /* --- PADDING REMOVED FROM HERE --- */
 }
 .sidebar {
   width: 25%;

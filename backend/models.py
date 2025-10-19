@@ -54,12 +54,19 @@ class User(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     email: str = Field(unique=True, index=True)
     hashed_password: Optional[str] = Field(default=None)
-    google_user_id: Optional[str] = Field(default=None, unique=True, index=True) # <-- NEW
+    google_user_id: Optional[str] = Field(default=None, unique=True, index=True)
 
     # Profile preferences
     dietary_restrictions: Optional[str] = Field(default=None)
     preferred_cuisines: Optional[str] = Field(default=None)
     cooking_skill: Optional[str] = Field(default="beginner") # beginner, intermediate, advanced
+    
+    # --- NEW ONBOARDING FIELDS ---
+    adult_count: int = Field(default=1)
+    child_count: int = Field(default=0)
+    weekly_budget: Optional[int] = Field(default=None)
+    has_completed_onboarding: bool = Field(default=False)
+    # --- END NEW ONBOARDING FIELDS ---
     
     saved_recipes: List["Recipe"] = Relationship(back_populates="saved_by_users", link_model=UserRecipeLink)
     pantry_items: List["Ingredient"] = Relationship(back_populates="users_with_in_pantry", link_model=UserPantryLink)

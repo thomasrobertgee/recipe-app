@@ -1,35 +1,137 @@
 /* src/pages/ProfilePage.css */
 
-/* --- NEW: Container for the profile form to give it a card-like appearance --- */
-.profile-form-container {
-  max-width: 600px; /* Wider for a better profile layout */
-  margin: 0 auto; /* Center the form card on the page */
-  padding: 2rem;
+.profile-form {
+  max-width: 800px;
+  margin: 0 auto;
   background-color: #fff;
+  padding: 2rem;
   border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
-.auth-form fieldset {
+.form-section {
+  margin-bottom: 2.5rem;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 2rem;
+}
+.form-section:last-of-type {
+  border-bottom: none;
+  margin-bottom: 1.5rem;
+}
+
+.form-section h3 {
+  font-size: 1.4rem;
+  color: #333;
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #4CAF50;
+  display: inline-block;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+/* Last form group in a section has less margin */
+.form-section .form-group:last-child {
+  margin-bottom: 0.5rem;
+}
+
+
+.form-group label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #555;
+}
+
+.form-input {
+  width: 100%;
+  padding: 12px 15px;
   border: 1px solid #ccc;
-  border-radius: 4px;
-  padding: 10px 15px;
+  border-radius: 6px;
+  font-size: 1rem;
+  box-sizing: border-box; /* Ensures padding doesn't break layout */
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-.auth-form legend {
-  padding: 0 5px;
-  font-weight: 500;
+.form-input:focus {
+  outline: none;
+  border-color: #4CAF50;
+  box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
 }
 
-.checkbox-group {
+textarea.form-input {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.checkbox-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
 }
 
 .checkbox-label {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-weight: normal;
+  gap: 0.75rem;
+  font-weight: 500;
+  padding: 10px;
+  border-radius: 6px;
+  background-color: #f9f9f9;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+.checkbox-label:hover {
+  background-color: #f0f0f0;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #4CAF50;
+}
+
+.profile-save-btn {
+  display: inline-block;
+  background-color: #4CAF50;
+  color: white;
+  padding: 14px 28px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.profile-save-btn:hover {
+  background-color: #45a049;
+}
+
+
+/* --- NEW STYLES --- */
+
+.form-row {
+  display: flex;
+  gap: 2rem;
+}
+.form-row .form-group {
+  flex: 1;
+}
+
+.form-slider {
+  width: 100%;
+  accent-color: #4CAF50;
+}
+
+.slider-value {
+  display: block;
+  text-align: center;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #333;
+  margin-top: 0.5rem;
 }

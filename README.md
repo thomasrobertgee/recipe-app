@@ -10,6 +10,7 @@ The application consists of a Python backend that serves data from a database an
 
 - **Full User Authentication:** Users can register, log in, and maintain a persistent session using JWTs.
 - **Google OAuth 2.0 Login:** Users can sign up or log in using their Google accounts.
+- **New User Onboarding:** A multi-step modal guides new users through setting up their profile preferences (household size, budget, dietary needs, cuisines, skill level).
 - **Robust Web Scraper:**
     - Utilizes **ScrapingBee** to bypass bot detection and render JavaScript-heavy pages.
     - Scrapes specific, high-value categories (e.g., "Meat & Seafood", "Fruit & Vegetables").
