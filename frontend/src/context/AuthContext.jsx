@@ -8,7 +8,8 @@ import { toast } from 'react-toastify';
 const AuthContext = createContext();
 
 // --- Set Axios base URL ---
-axios.defaults.baseURL = 'http://127.0.0.1:8000';
+// axios.defaults.baseURL = 'http://127.0.0.1:8000'; // <-- OLD
+axios.defaults.baseURL = 'http://192.168.1.102:8000'; // <-- NEW (Use YOUR PC's IP)
 
 export const useAuth = () => useContext(AuthContext);
 

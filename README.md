@@ -95,7 +95,6 @@ This project requires several API keys to function.
     ```sh
     cd recipe-app/backend
     ```
-
 2.  Create and activate a virtual environment:
     ```sh
     # Create the environment
@@ -104,7 +103,6 @@ This project requires several API keys to function.
     # Activate on Windows (Git Bash)
     source venv/Scripts/activate
     ```
-
 3.  Install dependencies:
     ```sh
     pip install -r requirements.txt
@@ -115,7 +113,6 @@ This project requires several API keys to function.
     ```sh
     cd recipe-app/frontend
     ```
-
 2.  Install dependencies:
     ```sh
     npm install
@@ -150,6 +147,55 @@ For the app to work, both servers must be running simultaneously.
     npm run dev
     ```
     The frontend will be available at `http://localhost:5173`.
+
+---
+
+## Testing on Mobile
+
+You can test the locally running application on your mobile phone if it's connected to the same Wi-Fi network as your development PC.
+
+1.  **Find your PC's Local IP Address:**
+    * **Windows:** Open Command Prompt (`cmd`) and run `ipconfig`. Look for the IPv4 address under your active Wi-Fi or Ethernet adapter (e.g., `192.168.1.100`).
+    * **Mac:** System Preferences > Network > Wi-Fi.
+    * **Linux:** Run `ip addr show` in a terminal.
+
+2.  **Configure Servers to Allow Network Access:**
+    * **Backend (Uvicorn):** Start the server with the `--host 0.0.0.0` flag:
+        ```sh
+        uvicorn main:app --reload --host 0.0.0.0
+        ```
+    * **Frontend (Vite):** Modify the `dev` script in `frontend/package.json` to include the `--host` flag:
+        ```json
+        "scripts": {
+          "dev": "vite --host",
+          // ... other scripts
+        },
+        ```
+        Then restart the frontend server (`npm run dev`).
+    * **Backend CORS:** Add your PC's network origin to the `origins` list in `backend/main.py`:
+        ```python
+        origins = [
+            "http://localhost:5173",
+            "http://<YOUR_PC_IP_ADDRESS>:5173" # e.g., "[http://192.168.1.100:5173](http://192.168.1.100:5173)"
+        ]
+        ```
+        Restart the backend server after this change.
+
+3.  **Update Frontend API Base URL (Temporarily):**
+    * In `frontend/src/context/AuthContext.jsx`, change `axios.defaults.baseURL` to use your PC's IP address and the **backend port (8000)**:
+        ```jsx
+        axios.defaults.baseURL = 'http://<YOUR_PC_IP_ADDRESS>:8000'; // e.g., '[http://192.168.1.100:8000](http://192.168.1.100:8000)'
+        ```
+    * Restart the frontend server.
+
+4.  **Access on Mobile:**
+    * Open a browser on your phone and navigate to `http://<YOUR_PC_IP_ADDRESS>:5173`.
+
+**Notes:**
+* Ensure both devices are on the exact same Wi-Fi network.
+* Your PC's firewall might block connections; you may need to allow incoming connections on ports 5173 and 8000.
+* **Remember to revert** the `--host` flags, CORS origin, and `axios.defaults.baseURL` when you return to PC-only development.
+* Google OAuth login from mobile via local IP requires more complex workarounds (like ngrok) due to Google's security policies and is not covered here. Seeded logins will work.
 
 ---
 
