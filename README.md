@@ -19,6 +19,7 @@ The application consists of a Python backend that serves data from a database an
 - **AI-powered recipe generation** that uses a user's saved preferences and pantry items to create tailored recipes.
 - **AI-powered Recipe Modification:** Users can request modifications to any recipe (e.g., "make this vegan", "double the servings"), and the AI will generate a new, updated version.
 - **My Pantry Feature:** Users can add from a categorized list of staple ingredients to their personal pantry.
+- **Barcode Scanning:** Users can scan product barcodes using their device camera to quickly add items to their pantry (utilizes Open Food Facts API via backend proxy).
 - **Recipe Ratings & Filtering:** Users can rate recipes and filter/sort them.
 - **Intelligent Shopping List:** A dynamic list that consolidates ingredients, calculates costs, and tracks spending against a user's budget.
 - **Interactive Cook Mode:** A persistent, step-by-step cooking interface with integrated, clickable timers to guide users while cooking.
@@ -33,7 +34,7 @@ Here are some of the planned features to evolve the app from an MVP into a full-
 ### Core App Enhancements
 1.  **Meal Planner & Weekly Budgeting:** A new "Meal Plan" page with a weekly calendar. Users can drag and drop recipes onto days of the week, generating a consolidated shopping list for the entire plan and tracking the total cost against their weekly budget.
 
-2.  **Barcode Scanning for Pantry Management:** A "Scan Barcode" button on the "My Pantry" page that uses the device's camera. Scanning a product's barcode would use an open API (like Open Food Facts) to automatically identify and add the item to the user's pantry.
+2.  **Barcode Scanning for Pantry Management:** A "Scan Barcode" button on the "My Pantry" page that uses the device's camera. Scanning a product's barcode would use an open API (like Open Food Facts) to automatically identify and add the item to the user's pantry. *(Now Implemented)*
 
 ### Community & Engagement Features
 3.  **Community Recipes & Recipe Sharing:** Allow users to submit their own favorite recipes. Other users could then search, view, save, and rate these community-submitted meals. A "Share" button would also generate a unique, shareable link for any recipe.
@@ -41,7 +42,7 @@ Here are some of the planned features to evolve the app from an MVP into a full-
 4.  **"Cooking Streak" & Achievements:** Gamify the cooking experience by adding a "I Made This!" button to Cook Mode. This would contribute to a "Weekly Cooking Streak" and unlock badges for achievements like staying under budget or using up pantry items.
 
 ### Advanced Data & AI Features
-5.  **Integration with Local Suppliers:** Create a portal for local butchers and greengrocers to upload their weekly specials. These would then appear in the app, promoting local businesses and providing users with unique deals.
+5.  **Integration with Local Suppliers:** Create a portal for local butchers and greengročers to upload their weekly specials. These would then appear in the app, promoting local businesses and providing users with unique deals.
 
 ---
 
@@ -55,6 +56,7 @@ Here are some of the planned features to evolve the app from an MVP into a full-
 - **AI:** OpenAI GPT API
 - **Authentication:** Passlib (hashing), python-jose (JWTs), **google-auth** (OAuth)
 - **Scraping:** **ScrapingBee API, Requests & BeautifulSoup4**
+- **APIs:** Requests (for Open Food Facts proxy)
 
 ### Frontend
 - **Language:** JavaScript
@@ -63,6 +65,7 @@ Here are some of the planned features to evolve the app from an MVP into a full-
 - **HTTP Client:** Axios
 - **Routing:** React Router
 - **Authentication:** **@react-oauth/google**
+- **Barcode Scanning:** **react-zxing**
 
 ---
 
@@ -196,9 +199,11 @@ You can test the locally running application on your mobile phone if it's connec
 * Your PC's firewall might block connections; you may need to allow incoming connections on ports 5173 and 8000.
 * **Remember to revert** the `--host` flags, CORS origin, and `axios.defaults.baseURL` when you return to PC-only development.
 * Google OAuth login from mobile via local IP requires more complex workarounds (like ngrok) due to Google's security policies and is not covered here. Seeded logins will work.
+* **Camera access (for barcode scanning) requires HTTPS.** This means testing barcode scanning on mobile *requires* using a service like `ngrok` or deploying the app to an HTTPS environment. It won't work via `http://<IP_ADDRESS>`.
 
 ---
 
 ## API Endpoints
 - **`GET /api/recipes`**: Retrieves a list of all recipes in the database.
 - **`GET /docs`**: View the interactive API documentation (Swagger UI).
+- **`GET /api/barcode-lookup/{barcode}`**: Proxies a lookup to the Open Food Facts API.

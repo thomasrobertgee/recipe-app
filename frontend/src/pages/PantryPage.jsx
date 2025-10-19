@@ -1,172 +1,191 @@
 // src/pages/PantryPage.jsx
-
 import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
+import BarcodeScanner from '../components/BarcodeScanner'; // <-- IMPORT SCANNER
 import './PantryPage.css';
 import './Page.css';
 
 const PantryPage = () => {
   const [pantryItems, setPantryItems] = useState([]);
+  const [staples, setStaples] = useState({});
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState([]);
-  const [isLoadingPantry, setIsLoadingPantry] = useState(true);
-  const [staples, setStaples] = useState({});
-  const [isLoadingStaples, setIsLoadingStaples] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isScannerOpen, setIsScannerOpen] = useState(false); // <-- STATE FOR SCANNER
 
-  const pantryItemIds = useMemo(() => new Set(pantryItems.map(item => item.ingredient_id)), [pantryItems]);
-
-  const fetchPantryItems = () => {
-    setIsLoadingPantry(true);
-    axios.get('http://127.0.0.1:8000/api/pantry')
-      .then(res => setPantryItems(res.data))
-      .catch(err => console.error("Error fetching pantry items:", err))
-      .finally(() => setIsLoadingPantry(false));
-  };
-
-  const fetchStaples = () => {
-      setIsLoadingStaples(true);
-      axios.get('http://127.0.0.1:8000/api/ingredients/staples')
-        .then(res => setStaples(res.data))
-        .catch(err => console.error("Error fetching staples:", err))
-        .finally(() => setIsLoadingStaples(false));
-  };
-
+  // Fetch initial pantry items and staples
   useEffect(() => {
-    fetchPantryItems();
-    fetchStaples();
+    setIsLoading(true);
+    Promise.all([
+      axios.get('/api/pantry'),
+      axios.get('/api/ingredients/staples')
+    ]).then(([pantryRes, staplesRes]) => {
+      setPantryItems(pantryRes.data);
+      setStaples(staplesRes.data);
+    }).catch(error => {
+      console.error("Error fetching pantry data:", error);
+      toast.error("Could not load pantry items or staples.");
+    }).finally(() => {
+      setIsLoading(false);
+    });
   }, []);
 
+  // Handle search input changes
   useEffect(() => {
-    if (searchTerm.length > 1) {
-      const delayDebounceFn = setTimeout(() => {
-        axios.get(`http://127.0.0.1:8000/api/ingredients/search?q=${searchTerm}`)
+    if (searchTerm.length >= 2) {
+      const timer = setTimeout(() => {
+        axios.get(`/api/ingredients/search?q=${searchTerm}`)
           .then(res => setSearchResults(res.data))
-          .catch(err => console.error("Error searching ingredients:", err));
-      }, 300);
-      return () => clearTimeout(delayDebounceFn);
+          .catch(err => console.error("Search error:", err));
+      }, 300); // Debounce search
+      return () => clearTimeout(timer);
     } else {
       setSearchResults([]);
     }
   }, [searchTerm]);
 
-  const handleAddItem = (ingredientName) => {
-    axios.post('http://127.0.0.1:8000/api/pantry', { ingredient_name: ingredientName })
-      .then(() => {
-        toast.success(`"${ingredientName}" added to your pantry.`);
-        fetchPantryItems();
-        setSearchTerm('');
+  const handleAddItem = (itemName) => {
+    // Prevent adding duplicates visually before backend confirms
+    if (pantryItems.some(item => item.name.toLowerCase() === itemName.toLowerCase())) {
+        toast.info(`"${itemName}" is already in your pantry.`);
+        return;
+    }
+
+    const optimisticItem = { ingredient_id: Date.now(), name: itemName, category: 'Unknown' }; // Temporary ID
+    setPantryItems(prev => [...prev, optimisticItem].sort((a, b) => a.name.localeCompare(b.name))); // Add optimistically and sort
+
+    axios.post('/api/pantry', { ingredient_name: itemName })
+      .then(res => {
+        // Replace optimistic item with actual data from backend
+        setPantryItems(prev => prev.map(item => item.ingredient_id === optimisticItem.ingredient_id ? res.data : item)
+                                  .sort((a, b) => a.name.localeCompare(b.name)));
+        toast.success(`"${itemName}" added to pantry!`);
+        setSearchTerm(''); // Clear search after adding
         setSearchResults([]);
       })
-      .catch(err => {
-        console.error("Error adding pantry item:", err);
-        toast.error(err.response?.data?.detail || "Could not add item.");
+      .catch(error => {
+        console.error("Error adding item:", error);
+        toast.error(`Failed to add "${itemName}". ${error.response?.data?.detail || ''}`);
+        // Remove optimistic item on failure
+        setPantryItems(prev => prev.filter(item => item.ingredient_id !== optimisticItem.ingredient_id));
       });
   };
 
-  const handleRemoveItem = (item) => {
-    axios.delete(`http://127.0.0.1:8000/api/pantry/${item.ingredient_id}`)
+  const handleRemoveItem = (itemId, itemName) => {
+    setPantryItems(prev => prev.filter(item => item.ingredient_id !== itemId)); // Remove optimistically
+    axios.delete(`/api/pantry/${itemId}`)
       .then(() => {
-        toast.info(`"${item.name}" removed from your pantry.`);
-        fetchPantryItems();
+        toast.info(`"${itemName}" removed from pantry.`);
       })
-      .catch(err => {
-        console.error("Error removing pantry item:", err);
-        toast.error("Could not remove item.");
+      .catch(error => {
+        console.error("Error removing item:", error);
+        toast.error(`Failed to remove "${itemName}".`);
+        // Add item back on failure? Might be complex, refetch might be simpler
+        // For simplicity, we don't add it back here. A full refresh would fix it.
       });
   };
-  
+
+  // --- NEW: Function called by scanner on success ---
+  const handleScanSuccess = (productName) => {
+      if(productName) {
+          handleAddItem(productName);
+      }
+  };
+
   const categorizedItems = useMemo(() => {
-    const groups = {};
-    const sortedItems = [...pantryItems].sort((a, b) => a.name.localeCompare(b.name));
-    
-    sortedItems.forEach(item => {
-        const category = item.category || "Other";
-        if (!groups[category]) {
-            groups[category] = [];
-        }
-        groups[category].push(item);
-    });
-    return groups;
+    return pantryItems.reduce((acc, item) => {
+      const category = item.category || 'Other';
+      if (!acc[category]) acc[category] = [];
+      acc[category].push(item);
+      return acc;
+    }, {});
   }, [pantryItems]);
 
+  const sortedCategories = useMemo(() => Object.keys(categorizedItems).sort(), [categorizedItems]);
+  const sortedStapleCategories = useMemo(() => Object.keys(staples).sort(), [staples]);
+
+  if (isLoading) return <div className="page-container">Loading pantry...</div>;
+
   return (
-    <div className="app-container">
+    <div className="app-container pantry-page">
+      {/* --- RENDER SCANNER MODAL --- */}
+      {isScannerOpen && <BarcodeScanner onClose={() => setIsScannerOpen(false)} onScanSuccess={handleScanSuccess} />}
+
       <div className="page-header">
         <h1>My Pantry</h1>
+         {/* --- SCAN BUTTON --- */}
+        <button onClick={() => setIsScannerOpen(true)} className="pantry-scan-btn">
+           📷 Scan Barcode
+        </button>
       </div>
-      <p className="page-subtitle">Add ingredients you already have at home. The AI will prioritize these when generating recipes to help you save money and reduce waste.</p>
 
-      <div className="pantry-list-section">
-        <h2>Current Pantry Items</h2>
-        {isLoadingPantry ? (
-          <p>Loading your pantry...</p>
-        ) : pantryItems.length > 0 ? (
-          <div className="pantry-grid"> {/* --- APPLY THE NEW CLASS HERE --- */}
-            {Object.entries(categorizedItems).sort(([a], [b]) => a.localeCompare(b)).map(([category, items]) => (
+      <div className="pantry-layout">
+        <div className="pantry-main-content">
+          <h2>Current Pantry Items</h2>
+          {pantryItems.length === 0 ? (
+            <p>Your pantry is empty. Add some items using the sections below!</p>
+          ) : (
+            sortedCategories.map(category => (
               <div key={category} className="pantry-category">
                 <h3>{category}</h3>
-                <ul className="pantry-list">
-                  {items.map(item => (
-                    <li key={item.ingredient_id}>
+                <ul className="pantry-item-list">
+                  {categorizedItems[category].sort((a, b) => a.name.localeCompare(b.name)).map(item => (
+                    <li key={item.ingredient_id} className="pantry-item">
                       <span>{item.name}</span>
-                      <button onClick={() => handleRemoveItem(item)} className="remove-item-btn">×</button>
+                      <button onClick={() => handleRemoveItem(item.ingredient_id, item.name)}>&times;</button>
                     </li>
                   ))}
                 </ul>
               </div>
+            ))
+          )}
+        </div>
+
+        <aside className="pantry-sidebar">
+          <h2>Add Items</h2>
+          <div className="pantry-search">
+            <input
+              type="text"
+              placeholder="Search & add ingredients..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            {searchResults.length > 0 && (
+              <ul className="search-results">
+                {searchResults.map(item => (
+                  <li key={item.ingredient_id} onClick={() => handleAddItem(item.name)}>
+                    {item.name}
+                  </li>
+                ))}
+              </ul>
+            )}
+             {searchTerm.length >= 2 && searchResults.length === 0 && (
+                <button
+                    className="add-new-item-btn"
+                    onClick={() => handleAddItem(searchTerm)}
+                >
+                    Add "{searchTerm}" as a new item
+                </button>
+            )}
+          </div>
+
+          <div className="staples-section">
+            <h3>Quick Add Staples</h3>
+            {sortedStapleCategories.map(category => (
+              <div key={category} className="staple-category">
+                <h4>{category}</h4>
+                <div className="staple-items">
+                  {staples[category].sort((a,b)=> a.name.localeCompare(b.name)).map(staple => (
+                    <button key={staple.ingredient_id} onClick={() => handleAddItem(staple.name)}>
+                      {staple.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
-        ) : (
-          <p>Your pantry is empty. Add some items using the search bar or the quick-add buttons below!</p>
-        )}
-      </div>
-
-      <div className="add-item-section">
-        <h2>Add to Your Pantry</h2>
-        <input
-          type="text"
-          placeholder="Search for an ingredient to add..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pantry-search-input"
-        />
-        {searchResults.length > 0 && (
-          <ul className="search-results-list">
-            {searchResults.map(item => (
-              <li key={item.ingredient_id} onClick={() => handleAddItem(item.name)}>
-                {item.name}
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-
-      <div className="staples-section">
-        <h2>Quick Add Staples</h2>
-        {isLoadingStaples ? (
-            <p>Loading staples...</p>
-        ) : Object.keys(staples).length > 0 ? (
-            Object.entries(staples).sort(([a], [b]) => a.localeCompare(b)).map(([category, items]) => (
-            <div key={category} className="staple-category">
-                <h3>{category}</h3>
-                <div className="staple-items-grid">
-                {items.sort((a, b) => a.name.localeCompare(b.name)).map(item => (
-                    <button
-                    key={item.ingredient_id}
-                    onClick={() => handleAddItem(item.name)}
-                    className="staple-item-btn"
-                    disabled={pantryItemIds.has(item.ingredient_id)}
-                    >
-                    {item.name}
-                    </button>
-                ))}
-                </div>
-            </div>
-            ))
-        ) : (
-            <p>No staple ingredients found. These can be added to the database via a seed script.</p>
-        )}
+        </aside>
       </div>
     </div>
   );

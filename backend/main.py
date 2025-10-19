@@ -1,35 +1,37 @@
 # backend/main.py
 
+# --- (Keep all existing imports and setup) ---
 from fastapi import FastAPI, HTTPException, Depends, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
 from contextlib import asynccontextmanager
 from typing import List, Optional, Dict
-from sqlmodel import Session, select, func, delete # <-- Added delete
+from sqlmodel import Session, select, func, delete, Float # Added Float
 from sqlalchemy.orm import selectinload
 from datetime import date
 import os
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
+import requests # Added requests
 
 from database import engine, create_db_and_tables, get_session
-from models import ( # <-- Grouped imports
+from models import (
     User, Recipe, Ingredient, RecipeIngredientLink, PriceHistory,
-    UserRecipeRatingLink, UserPantryLink, UserRecipeLink # <-- Added UserRecipeLink explicitly
+    UserRecipeRatingLink, UserPantryLink, UserRecipeLink
 )
 from schemas import (
     GenerateRequest, UserCreate, UserRead, UserUpdate, Token,
     RecipeResponse, IngredientInRecipe, RecipeCreate, PriceHistoryCreate,
     PriceHistoryRead, RecipeRating, PantryItem, PantryItemCreate,
-    RecipeModificationRequest, GoogleLoginRequest
+    RecipeModificationRequest, GoogleLoginRequest,
+    BarcodeLookupResponse # Added BarcodeLookupResponse
 )
 from security import get_password_hash, verify_password, create_access_token, get_current_user
 from ai_service import generate_recipes_from_specials, modify_recipe_with_ai
 
-# --- ADD YOUR NETWORK ORIGIN HERE ---
 origins = [
     "http://localhost:5173",
-    "http://192.168.1.102:5173" # <-- ADDED YOUR PC's NETWORK IP
+    "http://192.168.1.102:5173" # Make sure this matches your PC's IP if testing mobile
 ]
 
 @asynccontextmanager
@@ -42,32 +44,43 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins, # <-- Use the updated list
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# --- (Rest of the file remains the same) ---
-
+# --- UPDATED with logging ---
 def get_or_create_ingredient(name: str, session: Session, category: Optional[str] = None) -> Ingredient:
-    exact_match = session.exec(select(Ingredient).where(func.lower(Ingredient.name) == name.lower())).first()
+    print(f"--- [get_or_create_ingredient] Called with name: '{name}', category: '{category}'")
+    
+    # Attempt exact match (case-insensitive)
+    search_name_lower = name.lower()
+    exact_match = session.exec(select(Ingredient).where(func.lower(Ingredient.name) == search_name_lower)).first()
+
     if exact_match:
+        print(f"--- [get_or_create_ingredient] Found existing ingredient ID: {exact_match.id}, Name: {exact_match.name}")
+        # Update category if provided and missing
         if category and not exact_match.category:
+            print(f"--- [get_or_create_ingredient] Updating category to '{category}' for ingredient ID: {exact_match.id}")
             exact_match.category = category
             session.add(exact_match)
             session.commit()
             session.refresh(exact_match)
         return exact_match
-
-    new_ingredient = Ingredient(name=name, category=category)
-    session.add(new_ingredient)
-    session.commit()
-    session.refresh(new_ingredient)
-    return new_ingredient
-
+    else:
+        # Create new ingredient
+        print(f"--- [get_or_create_ingredient] No exact match found. Creating new ingredient: '{name}' with category: '{category}'")
+        new_ingredient = Ingredient(name=name, category=category)
+        session.add(new_ingredient)
+        session.commit()
+        session.refresh(new_ingredient)
+        print(f"--- [get_or_create_ingredient] Created new ingredient ID: {new_ingredient.id}")
+        return new_ingredient
+# --- END UPDATE ---
 
 def _save_recipe_to_db(recipe_data: RecipeCreate, session: Session) -> Recipe:
+    # ...(no changes needed here)...
     new_recipe = Recipe(
         title=recipe_data.title,
         description=recipe_data.description,
@@ -77,7 +90,9 @@ def _save_recipe_to_db(recipe_data: RecipeCreate, session: Session) -> Recipe:
     session.add(new_recipe)
 
     for ing_data in recipe_data.ingredients:
-        ingredient = get_or_create_ingredient(ing_data.name, session)
+        # Pass category=None explicitly if not provided by AI,
+        # get_or_create_ingredient handles potential updates later
+        ingredient = get_or_create_ingredient(ing_data.name, session, category=None)
         link = RecipeIngredientLink(recipe=new_recipe, ingredient=ingredient, quantity=ing_data.quantity)
         session.add(link)
 
@@ -85,8 +100,10 @@ def _save_recipe_to_db(recipe_data: RecipeCreate, session: Session) -> Recipe:
     session.refresh(new_recipe)
     return new_recipe
 
+
 @app.post("/register", response_model=UserRead)
 def create_user(user: UserCreate, session: Session = Depends(get_session)):
+    # ...(no changes needed here)...
     existing_user = session.exec(select(User).where(User.email == user.email)).first()
     if existing_user:
         raise HTTPException(status_code=400, detail="Email already registered")
@@ -94,7 +111,6 @@ def create_user(user: UserCreate, session: Session = Depends(get_session)):
     new_user = User(
         email=user.email,
         hashed_password=hashed_password,
-        # Set defaults explicitly for clarity
         adult_count=1,
         child_count=0,
         weekly_budget=None,
@@ -105,16 +121,20 @@ def create_user(user: UserCreate, session: Session = Depends(get_session)):
     session.refresh(new_user)
     return new_user
 
+
 @app.post("/token", response_model=Token)
 def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), session: Session = Depends(get_session)):
+    # ...(no changes needed here)...
     user = session.exec(select(User).where(User.email == form_data.username)).first()
     if not user or not user.hashed_password or not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Incorrect email or password", headers={"WWW-Authenticate": "Bearer"})
     access_token = create_access_token(data={"sub": user.email})
     return Token(access_token=access_token, token_type="bearer")
 
+
 @app.post("/api/auth/google", response_model=Token)
 def login_with_google(google_token: GoogleLoginRequest, session: Session = Depends(get_session)):
+    # ...(no changes needed here)...
     google_client_id = os.getenv("GOOGLE_CLIENT_ID")
     if not google_client_id:
         raise HTTPException(status_code=500, detail="Google Client ID not configured")
@@ -129,17 +149,14 @@ def login_with_google(google_token: GoogleLoginRequest, session: Session = Depen
         email = id_info['email']
         google_sub = id_info['sub']
 
-        # 1. Check if user exists with this Google ID
         user = session.exec(select(User).where(User.google_user_id == google_sub)).first()
         if user:
             access_token = create_access_token(data={"sub": user.email})
             return Token(access_token=access_token, token_type="bearer")
 
-        # 2. If not, check if user exists with this email
         user = session.exec(select(User).where(User.email == email)).first()
         if user:
-            # Email exists, but not linked to Google. Link it.
-            if not user.google_user_id: # Only link if not already linked
+            if not user.google_user_id:
                  user.google_user_id = google_sub
                  session.add(user)
                  session.commit()
@@ -147,12 +164,10 @@ def login_with_google(google_token: GoogleLoginRequest, session: Session = Depen
             access_token = create_access_token(data={"sub": user.email})
             return Token(access_token=access_token, token_type="bearer")
 
-        # 3. If no user exists at all, create a new one
         new_user = User(
             email=email,
             google_user_id=google_sub,
-            hashed_password=None, # No password for OAuth users
-            # Set defaults explicitly
+            hashed_password=None,
             adult_count=1,
             child_count=0,
             weekly_budget=None,
@@ -175,16 +190,17 @@ def login_with_google(google_token: GoogleLoginRequest, session: Session = Depen
 
 @app.get("/users/me", response_model=UserRead)
 def read_users_me(current_user: User = Depends(get_current_user)):
+    # ...(no changes needed here)...
     return current_user
 
 @app.put("/users/me", response_model=UserRead)
 def update_user_me(user_update: UserUpdate, session: Session = Depends(get_session), current_user: User = Depends(get_current_user)):
+    # ...(no changes needed here)...
     update_data = user_update.model_dump(exclude_unset=True)
     for key, value in update_data.items():
-        # Handle potential None for budget
         if key == 'weekly_budget' and value is None:
              setattr(current_user, key, None)
-        elif value is not None: # Avoid overwriting with None unless intended (like budget)
+        elif value is not None:
             setattr(current_user, key, value)
 
     session.add(current_user)
@@ -192,8 +208,10 @@ def update_user_me(user_update: UserUpdate, session: Session = Depends(get_sessi
     session.refresh(current_user)
     return current_user
 
+
 @app.get("/api/users/me/saved-recipes", response_model=List[RecipeResponse])
 def get_saved_recipes(session: Session = Depends(get_session), current_user: User = Depends(get_current_user)):
+    # ...(no changes needed here)...
     user_with_recipes = session.exec(
         select(User)
         .where(User.id == current_user.id)
@@ -205,7 +223,7 @@ def get_saved_recipes(session: Session = Depends(get_session), current_user: Use
     ).first()
 
     if not user_with_recipes:
-        raise HTTPException(status_code=404, detail="User not found") # Should not happen with Depends(get_current_user)
+        raise HTTPException(status_code=404, detail="User not found")
 
     response_recipes = []
     for recipe in user_with_recipes.saved_recipes:
@@ -214,11 +232,6 @@ def get_saved_recipes(session: Session = Depends(get_session), current_user: Use
             for link in recipe.links
         ]
 
-        avg_rating = 0
-        if recipe.rating_count > 0:
-            avg_rating = round(recipe.total_rating / recipe.rating_count, 1)
-
-        # Construct RecipeResponse manually to include average_rating
         response_recipe = RecipeResponse(
             id=recipe.id,
             title=recipe.title,
@@ -228,17 +241,15 @@ def get_saved_recipes(session: Session = Depends(get_session), current_user: Use
             tags=recipe.tags,
             total_rating=recipe.total_rating,
             rating_count=recipe.rating_count,
-            # average_rating=avg_rating # Add average_rating if schema includes it
         )
-        # Use RecipeResponse.from_orm if you prefer that method
-        # response_recipe = RecipeResponse.from_orm(recipe, ingredients=response_ingredients)
-
         response_recipes.append(response_recipe)
 
     return response_recipes
 
+
 @app.post("/api/users/me/saved-recipes/{recipe_id}", status_code=201)
 def save_a_recipe(recipe_id: int, session: Session = Depends(get_session), current_user: User = Depends(get_current_user)):
+    # ...(no changes needed here)...
     recipe = session.get(Recipe, recipe_id)
     if not recipe:
         raise HTTPException(status_code=404, detail="Recipe not found")
@@ -253,8 +264,10 @@ def save_a_recipe(recipe_id: int, session: Session = Depends(get_session), curre
         session.commit()
     return {"message": "Recipe saved successfully"}
 
+
 @app.delete("/api/users/me/saved-recipes/{recipe_id}", status_code=204)
 def unsave_a_recipe(recipe_id: int, session: Session = Depends(get_session), current_user: User = Depends(get_current_user)):
+    # ...(no changes needed here)...
     recipe = session.get(Recipe, recipe_id)
     if not recipe:
         raise HTTPException(status_code=404, detail="Recipe not found")
@@ -267,37 +280,48 @@ def unsave_a_recipe(recipe_id: int, session: Session = Depends(get_session), cur
         user.saved_recipes.remove(recipe)
         session.add(user)
         session.commit()
-    # No return needed for 204
+
 
 @app.get("/api/pantry", response_model=List[PantryItem])
 def get_pantry_items(session: Session = Depends(get_session), current_user: User = Depends(get_current_user)):
+    # ...(no changes needed here)...
     user_with_pantry = session.exec(
         select(User).where(User.id == current_user.id).options(selectinload(User.pantry_items))
     ).first()
     return [PantryItem(ingredient_id=ing.id, name=ing.name, category=ing.category) for ing in user_with_pantry.pantry_items]
 
+
+# --- UPDATED with logging ---
 @app.post("/api/pantry", response_model=PantryItem)
 def add_pantry_item(item: PantryItemCreate, session: Session = Depends(get_session), current_user: User = Depends(get_current_user)):
-    ingredient = get_or_create_ingredient(item.ingredient_name, session)
+    print(f"--- [POST /api/pantry] Received request to add item name: '{item.ingredient_name}' for user ID: {current_user.id}")
+    
+    # Category is not provided when adding via barcode/name, get_or_create handles it
+    ingredient = get_or_create_ingredient(item.ingredient_name, session, category=None)
+    print(f"--- [POST /api/pantry] get_or_create_ingredient returned ingredient ID: {ingredient.id}, Name: {ingredient.name}")
 
     user = session.exec(
         select(User).where(User.id == current_user.id).options(selectinload(User.pantry_items))
     ).first()
 
+    # Check if the ingredient *object* is already in the user's pantry list
     if ingredient in user.pantry_items:
-        # Return existing item data instead of raising error? Or just 200 OK?
-        # raise HTTPException(status_code=400, detail="Item already in pantry")
-        print(f"Item '{ingredient.name}' already in pantry for user {current_user.id}")
-        return PantryItem(ingredient_id=ingredient.id, name=ingredient.name, category=ingredient.category)
+        print(f"--- [POST /api/pantry] Item '{ingredient.name}' (ID: {ingredient.id}) already in pantry for user ID: {current_user.id}. Skipping add.")
+    else:
+        print(f"--- [POST /api/pantry] Adding ingredient ID: {ingredient.id} to pantry for user ID: {current_user.id}")
+        user.pantry_items.append(ingredient)
+        session.add(user) # Add user to session to track the relationship change
+        session.commit()
+        print(f"--- [POST /api/pantry] Commit successful.")
 
-
-    user.pantry_items.append(ingredient)
-    session.add(user)
-    session.commit()
+    # Return the details of the ingredient that was added or already existed
     return PantryItem(ingredient_id=ingredient.id, name=ingredient.name, category=ingredient.category)
+# --- END UPDATE ---
+
 
 @app.delete("/api/pantry/{ingredient_id}", status_code=204)
 def remove_pantry_item(ingredient_id: int, session: Session = Depends(get_session), current_user: User = Depends(get_current_user)):
+    # ...(no changes needed here)...
     ingredient = session.get(Ingredient, ingredient_id)
     if not ingredient:
         raise HTTPException(status_code=404, detail="Ingredient not found")
@@ -310,10 +334,11 @@ def remove_pantry_item(ingredient_id: int, session: Session = Depends(get_sessio
         user.pantry_items.remove(ingredient)
         session.add(user)
         session.commit()
-    # No return needed for 204
+
 
 @app.get("/api/ingredients/search", response_model=List[PantryItem])
 def search_ingredients(q: str, session: Session = Depends(get_session)):
+    # ...(no changes needed here)...
     if not q or len(q) < 2:
         return []
 
@@ -321,7 +346,7 @@ def search_ingredients(q: str, session: Session = Depends(get_session)):
     ingredients = session.exec(
         select(Ingredient)
         .where(
-            Ingredient.is_staple == True, # Only search staples? Or all ingredients?
+            Ingredient.is_staple == True,
             func.lower(Ingredient.name).like(search_term)
         )
         .limit(10)
@@ -329,9 +354,11 @@ def search_ingredients(q: str, session: Session = Depends(get_session)):
 
     return [PantryItem(ingredient_id=ing.id, name=ing.name, category=ing.category) for ing in ingredients]
 
+
 @app.get("/api/ingredients/staples", response_model=Dict[str, List[PantryItem]])
 def get_staple_ingredients(session: Session = Depends(get_session)):
-    staples = session.exec(select(Ingredient).where(Ingredient.is_staple == True).order_by(Ingredient.category, Ingredient.name)).all() # Added ordering
+    # ...(no changes needed here)...
+    staples = session.exec(select(Ingredient).where(Ingredient.is_staple == True).order_by(Ingredient.category, Ingredient.name)).all()
 
     categorized_staples = {}
     for staple in staples:
@@ -344,18 +371,53 @@ def get_staple_ingredients(session: Session = Depends(get_session)):
             name=staple.name,
             category=staple.category
         ))
-    # Sort categories alphabetically
     return dict(sorted(categorized_staples.items()))
+
+
+# --- BARCODE LOOKUP ENDPOINT ---
+@app.get("/api/barcode-lookup/{barcode}", response_model=BarcodeLookupResponse)
+def lookup_barcode(barcode: str):
+    off_api_url = f"https://world.openfoodfacts.org/api/v0/product/{barcode}.json"
+    print(f"--- [GET /api/barcode-lookup] Proxying request to: {off_api_url}")
+
+    try:
+        response = requests.get(off_api_url, timeout=10)
+        response.raise_for_status()
+
+        data = response.json()
+        print(f"--- [GET /api/barcode-lookup] Received response status: {data.get('status')}")
+
+        if data.get("status") == 1 and data.get("product") and data["product"].get("product_name"):
+            product_name = data["product"]["product_name"]
+            print(f"--- [GET /api/barcode-lookup] Barcode {barcode} found: {product_name}")
+            return BarcodeLookupResponse(product_name=product_name)
+        else:
+            print(f"--- [GET /api/barcode-lookup] Product not found for barcode {barcode} in OFF API response.")
+            return BarcodeLookupResponse(error="Product not found in Open Food Facts database.")
+
+    except requests.exceptions.HTTPError as http_err:
+        status_code = http_err.response.status_code
+        if status_code == 404:
+            print(f"--- [GET /api/barcode-lookup] OFF API returned 404 for barcode {barcode}")
+            return BarcodeLookupResponse(error="Product not found (404).")
+        else:
+            print(f"--- [GET /api/barcode-lookup] HTTP error occurred: {http_err} - Status code: {status_code}")
+            raise HTTPException(status_code=502, detail=f"Failed to fetch data from Open Food Facts: HTTP {status_code}")
+    except requests.exceptions.RequestException as req_err:
+        print(f"--- [GET /api/barcode-lookup] Request error occurred: {req_err}")
+        raise HTTPException(status_code=503, detail="Could not connect to the barcode lookup service.")
+    except Exception as e:
+        print(f"--- [GET /api/barcode-lookup] An unexpected error occurred: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error during barcode lookup.")
+# --- END BARCODE LOOKUP ---
 
 
 @app.get("/")
 def read_root(): return {"message": "Welcome!"}
 
 @app.post("/api/generate-recipes")
-def generate_recipes_endpoint(request: GenerateRequest, session: Session = Depends(get_session), current_user: User = Depends(get_current_user)): # Added current_user
-    # Ensure preferences passed match the current user for security/privacy?
-    # Or rely on the fact that GenerateRequest contains UserRead, not sensitive data.
-
+def generate_recipes_endpoint(request: GenerateRequest, session: Session = Depends(get_session), current_user: User = Depends(get_current_user)):
+    # ...(no changes needed here)...
     ai_generated_recipes = generate_recipes_from_specials(
         specials_list=request.specials,
         preferences=request.preferences,
@@ -366,34 +428,30 @@ def generate_recipes_endpoint(request: GenerateRequest, session: Session = Depen
          print(f"AI service did not return a list: {ai_generated_recipes}")
          raise HTTPException(status_code=500, detail="AI failed to generate recipes in expected format.")
 
+    user = session.exec(
+        select(User).where(User.id == current_user.id).options(selectinload(User.saved_recipes))
+    ).first()
+
     for recipe_dict in ai_generated_recipes:
         if not isinstance(recipe_dict, dict):
              print(f"AI generated item is not a dictionary: {recipe_dict}")
-             continue # Skip this item
+             continue
         try:
-            # Ensure ingredients list exists and is a list
             if 'ingredients' not in recipe_dict or not isinstance(recipe_dict['ingredients'], list):
                 print(f"Skipping recipe due to missing or invalid ingredients: {recipe_dict.get('title')}")
                 continue
 
             recipe_data = RecipeCreate(**recipe_dict)
             saved_recipe = _save_recipe_to_db(recipe_data, session)
-            # --- Automatically save generated recipe for the user ---
-            user = session.exec(
-                select(User).where(User.id == current_user.id).options(selectinload(User.saved_recipes))
-            ).first()
+
             if saved_recipe not in user.saved_recipes:
                  user.saved_recipes.append(saved_recipe)
                  session.add(user)
-                 session.commit() # Commit after each save? Or once at the end? Once is better.
-            # --- End auto-save ---
+
             saved_recipes_count += 1
         except Exception as e:
-            # Catch validation errors or DB errors
             print(f"Could not validate or save AI recipe '{recipe_dict.get('title', 'N/A')}': {e}")
-            # Optionally: Log the problematic recipe_dict for debugging
 
-    # Commit any newly saved recipes for the user
     session.commit()
 
     return {"message": f"Successfully generated and saved {saved_recipes_count} new recipes."}
@@ -401,31 +459,31 @@ def generate_recipes_endpoint(request: GenerateRequest, session: Session = Depen
 
 @app.get("/api/prices/today", response_model=List[PriceHistoryRead])
 def get_todays_prices(session: Session = Depends(get_session)):
+    # ...(no changes needed here)...
     today = date.today()
-    # Corrected typo: PriceTopping -> PriceHistory
     db_prices = session.exec(
         select(PriceHistory)
         .where(PriceHistory.date_recorded == today)
-        .options(selectinload(PriceHistory.ingredient)) # Eager load ingredient
+        .options(selectinload(PriceHistory.ingredient))
     ).all()
 
     return [
         PriceHistoryRead(
             id=p.id,
-            ingredient_id=p.ingredient_id, # Use p.ingredient_id directly
+            ingredient_id=p.ingredient_id,
             date_recorded=p.date_recorded.isoformat(),
             price=p.price,
             store=p.store,
-            ingredient_name=p.ingredient.name, # Access name from loaded ingredient
-            category=p.ingredient.category    # Access category from loaded ingredient
+            ingredient_name=p.ingredient.name,
+            category=p.ingredient.category
         ) for p in db_prices
     ]
 
+
 @app.post("/api/prices", response_model=PriceHistoryRead)
 def create_price_record(price_data: PriceHistoryCreate, session: Session = Depends(get_session)):
+    # ...(no changes needed here)...
     ingredient = get_or_create_ingredient(price_data.ingredient_name, session, category=price_data.category)
-
-    # Check if a record for this ingredient, store, and date already exists
     today = date.today()
     existing_record = session.exec(
         select(PriceHistory).where(
@@ -436,7 +494,6 @@ def create_price_record(price_data: PriceHistoryCreate, session: Session = Depen
     ).first()
 
     if existing_record:
-        # Update existing record if price is different
         if existing_record.price != price_data.price:
              existing_record.price = price_data.price
              session.add(existing_record)
@@ -446,14 +503,13 @@ def create_price_record(price_data: PriceHistoryCreate, session: Session = Depen
              new_price_record = existing_record
         else:
              print(f"Skipping duplicate price for {ingredient.name} at {price_data.store} for {today}")
-             new_price_record = existing_record # Return existing data
+             new_price_record = existing_record
     else:
-        # Create new record
         new_price_record = PriceHistory(
             ingredient_id=ingredient.id,
             price=price_data.price,
             store=price_data.store,
-            date_recorded=today # Ensure date is set
+            date_recorded=today
         )
         session.add(new_price_record)
         session.commit()
@@ -471,11 +527,12 @@ def create_price_record(price_data: PriceHistoryCreate, session: Session = Depen
         category=ingredient.category
     )
 
+
 @app.delete("/api/prices/today")
 def delete_todays_prices(session: Session = Depends(get_session)):
+    # ...(no changes needed here)...
     today = date.today()
     try:
-        # Use delete() for potentially better performance on large deletes
         statement = delete(PriceHistory).where(PriceHistory.date_recorded == today)
         result = session.exec(statement)
         session.commit()
@@ -487,9 +544,10 @@ def delete_todays_prices(session: Session = Depends(get_session)):
         print(f"Error deleting prices: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @app.get("/api/ingredient/{ingredient_id}/price-history", response_model=List[PriceHistoryRead])
 def get_price_history_for_ingredient(ingredient_id: int, session: Session = Depends(get_session)):
-    # Check if ingredient exists first
+    # ...(no changes needed here)...
     ingredient = session.get(Ingredient, ingredient_id)
     if not ingredient:
          raise HTTPException(status_code=404, detail="Ingredient not found.")
@@ -498,10 +556,7 @@ def get_price_history_for_ingredient(ingredient_id: int, session: Session = Depe
         select(PriceHistory)
         .where(PriceHistory.ingredient_id == ingredient_id)
         .order_by(PriceHistory.date_recorded.desc())
-        # .options(selectinload(PriceHistory.ingredient)) # Not needed if we have ingredient already
     ).all()
-
-    # No need to check if history is empty, return [] is correct if no history
 
     return [
         PriceHistoryRead(
@@ -510,22 +565,22 @@ def get_price_history_for_ingredient(ingredient_id: int, session: Session = Depe
             date_recorded=h.date_recorded.isoformat(),
             price=h.price,
             store=h.store,
-            ingredient_name=ingredient.name # Use name from ingredient object
+            ingredient_name=ingredient.name
         ) for h in history
     ]
 
+
 @app.get("/api/tags", response_model=List[str])
 def get_all_tags(session: Session = Depends(get_session)):
-    # Optimized query to fetch distinct tags directly from the database if possible
-    # This might require specific DB features or a different approach
-    # Fallback to fetching all recipes:
-    all_recipes = session.exec(select(Recipe.tags)).all() # Fetch only tags column
+    # ...(no changes needed here)...
+    all_recipes = session.exec(select(Recipe.tags)).all()
     all_tags = set()
     for tags_list in all_recipes:
-        if tags_list: # Check if tags_list is not None
+        if tags_list:
             for tag in tags_list:
                 all_tags.add(tag)
     return sorted(list(all_tags))
+
 
 @app.get("/api/recipes", response_model=List[RecipeResponse])
 def get_recipes(
@@ -534,14 +589,14 @@ def get_recipes(
     sort_by: Optional[str] = Query(None),
     tags: Optional[str] = Query(None)
 ):
+    # ...(no changes needed here)...
     query = select(Recipe).options(
         selectinload(Recipe.links).selectinload(RecipeIngredientLink.ingredient)
     )
 
-    # Calculate average rating using SQL functions for efficiency
     average_rating_sql = func.coalesce(
          func.cast(Recipe.total_rating, Float) / func.nullif(Recipe.rating_count, 0),
-         0.0 # Ensure division by zero returns 0.0 (float)
+         0.0
     )
 
     if min_rating is not None:
@@ -552,21 +607,18 @@ def get_recipes(
             query = query.order_by(average_rating_sql.asc())
         elif sort_by == "rating_desc":
             query = query.order_by(average_rating_sql.desc())
-        # Add other sort options like title?
         elif sort_by == "title_asc":
             query = query.order_by(Recipe.title.asc())
         elif sort_by == "title_desc":
             query = query.order_by(Recipe.title.desc())
 
-
     db_recipes = session.exec(query).all()
 
-    # Filter by tags in Python after fetching if complex JSON query is not feasible/performant
     if tags:
         selected_tags = {tag.strip().lower() for tag in tags.split(',')}
         db_recipes = [
             recipe for recipe in db_recipes
-            if recipe.tags and selected_tags.issubset({t.lower() for t in recipe.tags}) # Handle potential None for tags
+            if recipe.tags and selected_tags.issubset({t.lower() for t in recipe.tags})
         ]
 
     response_recipes = []
@@ -576,11 +628,6 @@ def get_recipes(
             for link in recipe.links
         ]
 
-        avg_rating = 0
-        if recipe.rating_count > 0:
-            avg_rating = round(recipe.total_rating / recipe.rating_count, 1)
-
-        # Manually construct to include avg_rating
         response_recipe = RecipeResponse(
             id=recipe.id,
             title=recipe.title,
@@ -590,45 +637,27 @@ def get_recipes(
             tags=recipe.tags,
             total_rating=recipe.total_rating,
             rating_count=recipe.rating_count,
-            # average_rating=avg_rating # Add if schema supports it
         )
-        # Or use from_orm if preferred
-        # response_recipe = RecipeResponse.from_orm(recipe, ingredients=response_ingredients)
-
         response_recipes.append(response_recipe)
 
     return response_recipes
 
+
 @app.post("/api/recipes", response_model=RecipeResponse)
 def create_recipe(recipe_data: RecipeCreate, session: Session = Depends(get_session), current_user: User = Depends(get_current_user)):
-    """Creates and saves a single new recipe, optionally saves for the user."""
+    # ...(no changes needed here)...
     try:
         new_recipe = _save_recipe_to_db(recipe_data, session)
 
-        # --- Consider if creating should automatically save for the user ---
-        # If yes:
-        # user = session.exec(
-        #     select(User).where(User.id == current_user.id).options(selectinload(User.saved_recipes))
-        # ).first()
-        # if new_recipe not in user.saved_recipes:
-        #      user.saved_recipes.append(new_recipe)
-        #      session.add(user)
-        #      session.commit()
-        # --- End auto-save ---
-
-        # Eager load the new recipe's links and ingredients for the response
         session.refresh(new_recipe, attribute_names=["links"])
-        # Ensure ingredients within links are loaded if needed
         for link in new_recipe.links:
              session.refresh(link, attribute_names=["ingredient"])
-
 
         response_ingredients = [
             IngredientInRecipe(ingredient_id=link.ingredient.id, name=link.ingredient.name, quantity=link.quantity)
             for link in new_recipe.links
         ]
 
-        # Manually construct response
         response_recipe = RecipeResponse(
             id=new_recipe.id,
             title=new_recipe.title,
@@ -636,19 +665,16 @@ def create_recipe(recipe_data: RecipeCreate, session: Session = Depends(get_sess
             instructions=new_recipe.instructions,
             ingredients=response_ingredients,
             tags=new_recipe.tags,
-            total_rating=new_recipe.total_rating, # Should be 0
-            rating_count=new_recipe.rating_count  # Should be 0
-            # average_rating=0.0 # Add if schema supports
+            total_rating=new_recipe.total_rating,
+            rating_count=new_recipe.rating_count
         )
-        # Or use from_orm
-        # response_recipe = RecipeResponse.from_orm(new_recipe, ingredients=response_ingredients)
-
         return response_recipe
 
     except Exception as e:
         session.rollback()
         print(f"Could not save new recipe: {e}")
         raise HTTPException(status_code=500, detail="Failed to save the new recipe.")
+
 
 @app.post("/api/recipes/{recipe_id}/rate", status_code=200)
 def rate_recipe(
@@ -657,6 +683,7 @@ def rate_recipe(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ):
+    # ...(no changes needed here)...
     recipe = session.get(Recipe, recipe_id)
     if not recipe:
         raise HTTPException(status_code=404, detail="Recipe not found")
@@ -669,89 +696,70 @@ def rate_recipe(
     ).first()
 
     if existing_rating_link:
-        # Update existing rating
         old_rating = existing_rating_link.rating
         existing_rating_link.rating = rating.rating
         recipe.total_rating = recipe.total_rating - old_rating + rating.rating
         session.add(existing_rating_link)
     else:
-        # Add new rating
         recipe.total_rating += rating.rating
         recipe.rating_count += 1
         new_rating_link = UserRecipeRatingLink(user_id=current_user.id, recipe_id=recipe_id, rating=rating.rating)
         session.add(new_rating_link)
 
-    session.add(recipe) # Add recipe again to ensure changes are staged
+    session.add(recipe)
     session.commit()
-    # No need to refresh recipe unless returning it
 
     return {"message": "Recipe rated successfully"}
 
 
 @app.post("/api/recipes/modify", response_model=RecipeCreate)
 def modify_recipe_endpoint(request: RecipeModificationRequest, session: Session = Depends(get_session)):
-    """
-    Receives an original recipe and a modification prompt,
-    and returns a new, AI-modified recipe dict (matching RecipeCreate schema).
-    This new recipe is NOT saved to the database automatically.
-    """
+    # ...(no changes needed here)...
     try:
-        # Ensure original_recipe is a dict for the AI service
         if isinstance(request.original_recipe, SQLModel):
              original_recipe_dict = request.original_recipe.model_dump()
         else:
-             # Handle case if it's already a dict (less likely with FastAPI validation)
              original_recipe_dict = request.original_recipe
-
 
         modified_recipe_data = modify_recipe_with_ai(
             original_recipe=original_recipe_dict,
             modification_prompt=request.modification_prompt
         )
 
-        # Check if AI returned an error structure
         if isinstance(modified_recipe_data, dict) and "error" in modified_recipe_data:
             print(f"AI modification failed: {modified_recipe_data['error']}")
             raise HTTPException(status_code=500, detail=modified_recipe_data["error"])
 
-        # Validate the AI output against the RecipeCreate schema
-        # This ensures the AI result is in the correct format before sending back
         validated_recipe = RecipeCreate(**modified_recipe_data)
-        return validated_recipe # Return the Pydantic model instance
+        return validated_recipe
 
     except Exception as e:
-        # Catch validation errors or errors from the AI service call
         print(f"Error in modification endpoint: {e}")
-        # Consider more specific error handling/logging
         raise HTTPException(status_code=500, detail="Failed to process recipe modification.")
 
 
-@app.delete("/api/recipes/{recipe_id}", status_code=204) # Use 204 No Content
+@app.delete("/api/recipes/{recipe_id}", status_code=204)
 def delete_recipe(recipe_id: int, session: Session = Depends(get_session)):
+    # ...(no changes needed here)...
     recipe = session.get(Recipe, recipe_id)
     if not recipe: raise HTTPException(status_code=404, detail="Recipe not found")
 
-    # Manually delete related links first if cascade delete is not set/reliable
     session.exec(delete(UserRecipeRatingLink).where(UserRecipeRatingLink.recipe_id == recipe_id))
     session.exec(delete(UserRecipeLink).where(UserRecipeLink.recipe_id == recipe_id))
     session.exec(delete(RecipeIngredientLink).where(RecipeIngredientLink.recipe_id == recipe_id))
 
     session.delete(recipe)
     session.commit()
-    # No return for 204
 
-@app.delete("/api/recipes", status_code=200) # Maybe 200 OK with message?
+
+@app.delete("/api/recipes", status_code=200)
 def delete_all_recipes(session: Session = Depends(get_session)):
-
+    # ...(no changes needed here)...
     try:
-        # Manually delete links first
         deleted_ratings = session.exec(delete(UserRecipeRatingLink)).rowcount
         deleted_saves = session.exec(delete(UserRecipeLink)).rowcount
         deleted_ingredients = session.exec(delete(RecipeIngredientLink)).rowcount
-
-        # Now delete all recipes
         deleted_recipes = session.exec(delete(Recipe)).rowcount
-
         session.commit()
         print(f"Deleted all recipes: {deleted_recipes} recipes, {deleted_ingredients} ingredients links, {deleted_saves} saves, {deleted_ratings} ratings.")
         return {"message": f"All {deleted_recipes} recipes and related data have been cleared."}

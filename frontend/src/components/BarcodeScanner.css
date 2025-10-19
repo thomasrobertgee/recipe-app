@@ -1,0 +1,92 @@
+/* src/components/BarcodeScanner.css */
+
+.scanner-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1050; /* Higher than modal */
+}
+
+.scanner-container {
+  position: relative;
+  background-color: #333;
+  width: 90%;
+  max-width: 500px;
+  max-height: 80vh;
+  overflow: hidden;
+  border-radius: 8px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+  display: flex;
+  flex-direction: column;
+}
+
+.scanner-video {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.scanner-controls {
+  position: absolute;
+  bottom: 20px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.scanner-btn {
+  padding: 10px 20px;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 1px solid #ccc;
+  background-color: #f0f0f0;
+  transition: all 0.2s ease;
+}
+.scanner-btn:hover {
+  background-color: #e0e0e0;
+}
+.scanner-btn.close-btn {
+  background-color: #dc3545;
+  color: white;
+  border-color: #dc3545;
+}
+.scanner-btn.close-btn:hover {
+  background-color: #c82333;
+}
+
+.scanner-error {
+  color: #ffc107;
+  text-align: center;
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.7);
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+}
+
+/* Optional aimer overlay */
+.scanner-aimer {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 80%;
+    height: 40%;
+    max-height: 200px;
+    transform: translate(-50%, -50%);
+    border: 3px solid rgba(255, 0, 0, 0.7);
+    box-shadow: 0 0 0 100vmax rgba(0, 0, 0, 0.5); /* Dimming effect */
+    pointer-events: none; /* Allows clicks to go through */
+}

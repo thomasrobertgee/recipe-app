@@ -13,7 +13,6 @@ class UserRead(SQLModel):
     dietary_restrictions: Optional[str] = None
     preferred_cuisines: Optional[str] = None
     cooking_skill: Optional[str] = None
-    
     # --- NEW FIELDS ---
     adult_count: int
     child_count: int
@@ -25,7 +24,6 @@ class UserUpdate(SQLModel):
     dietary_restrictions: Optional[str] = None
     preferred_cuisines: Optional[str] = None
     cooking_skill: Optional[str] = None
-
     # --- NEW FIELDS ---
     adult_count: Optional[int] = None
     child_count: Optional[int] = None
@@ -67,14 +65,14 @@ class RecipeResponse(SQLModel):
         avg = 0
         if recipe.rating_count > 0:
             avg = round(recipe.total_rating / recipe.rating_count, 1)
-        
+
         # Merge calculated fields with model fields
         data = recipe.model_dump()
         data['average_rating'] = avg
-        
+
         # Allow overriding with kwargs
         data.update(kwargs)
-        
+
         # Create the response model
         # We manually construct to ensure validation
         return cls(
@@ -123,3 +121,8 @@ class PantryItemCreate(SQLModel):
 class RecipeModificationRequest(SQLModel):
     original_recipe: RecipeCreate # AI-generated, so it follows RecipeCreate schema
     modification_prompt: str
+
+# --- NEW SCHEMA ---
+class BarcodeLookupResponse(SQLModel):
+    product_name: Optional[str] = None
+    error: Optional[str] = None
