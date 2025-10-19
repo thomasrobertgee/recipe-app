@@ -33,16 +33,14 @@ Here are some of the planned features to evolve the app from an MVP into a full-
 
 ### Core App Enhancements
 1.  **Meal Planner & Weekly Budgeting:** A new "Meal Plan" page with a weekly calendar. Users can drag and drop recipes onto days of the week, generating a consolidated shopping list for the entire plan and tracking the total cost against their weekly budget.
-
-2.  **Barcode Scanning for Pantry Management:** A "Scan Barcode" button on the "My Pantry" page that uses the device's camera. Scanning a product's barcode would use an open API (like Open Food Facts) to automatically identify and add the item to the user's pantry. *(Now Implemented)*
+2.  **Scan Receipt Feature:** Allow users to take a picture of a shopping receipt. Use OCR and AI to parse the items and prices, automatically add items to the pantry, and update budget tracking.
 
 ### Community & Engagement Features
 3.  **Community Recipes & Recipe Sharing:** Allow users to submit their own favorite recipes. Other users could then search, view, save, and rate these community-submitted meals. A "Share" button would also generate a unique, shareable link for any recipe.
-
 4.  **"Cooking Streak" & Achievements:** Gamify the cooking experience by adding a "I Made This!" button to Cook Mode. This would contribute to a "Weekly Cooking Streak" and unlock badges for achievements like staying under budget or using up pantry items.
 
 ### Advanced Data & AI Features
-5.  **Integration with Local Suppliers:** Create a portal for local butchers and greengročers to upload their weekly specials. These would then appear in the app, promoting local businesses and providing users with unique deals.
+5.  **Integration with Local Suppliers:** Create a portal for local butchers and greengrocers to upload their weekly specials. These would then appear in the app, promoting local businesses and providing users with unique deals.
 
 ---
 
