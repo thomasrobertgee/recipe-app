@@ -124,8 +124,12 @@ def get_or_create_ingredient(name: str, session: Session, category: Optional[str
             return new_ingredient
         except Exception as e:
             print(f"--- [get_or_create_ingredient] Error during flush/refresh for new ingredient '{cleaned_name}': {e}")
-            # Consider rolling back the add or letting the main commit handle it
-            session.rollback() # Rollback the add if flush failed
+            # --- THIS IS THE FIX ---
+            # session.rollback() # <-- REMOVED. Let the main endpoint handle the rollback.
+            # By returning None, we signal failure, but the session remains in its
+            # failed state, which will cause the main endpoint's commit to fail
+            # and trigger the *correct* full transaction rollback.
+            # --- END FIX ---
             return None
 
 # --- END UPDATE ---
