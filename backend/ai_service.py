@@ -1,118 +1,191 @@
 # backend/ai_service.py
 
 import os
-import json
-from dotenv import load_dotenv
-from typing import List, Dict, Union
-import openai
+from openai import OpenAI
+from typing import List, Dict, Optional
+import json # Import json
 
-load_dotenv()
+# Load environment variables if you use python-dotenv
+# from dotenv import load_dotenv
+# load_dotenv()
 
-# Initialize the OpenAI client
-client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+# Ensure API key is loaded
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-def generate_recipes_from_specials(specials_list: List, preferences: object, pantry_items: List) -> List[Dict]:
+def generate_recipes_from_specials(
+    specials_list: List[Dict],
+    preferences: Dict,
+    pantry_items: List[Dict]
+) -> List[Dict]:
     """
-    Generates recipes from a list of specials using the OpenAI API.
+    Generates recipes based on specials, preferences, and pantry items using OpenAI.
     """
-    specials_str = ", ".join([f"{item.ingredient_name} at {item.store} for {item.price}" for item in specials_list])
-    pantry_str = ", ".join([item.name for item in pantry_items]) if pantry_items else "empty"
-    preferences_str = (
-        f"Household Size: {preferences.household_size}, "
-        f"Dietary Restrictions: {', '.join(preferences.dietary_restrictions) or 'none'}"
-    )
+    # Create strings for lists to ensure proper formatting in the prompt
+    specials_str = json.dumps(specials_list, indent=2)
+    pantry_items_str = json.dumps(pantry_items, indent=2)
+    preferences_str = json.dumps(preferences, indent=2)
+
 
     prompt = f"""
-    You are a creative chef specializing in budget-friendly meals. Based on the following supermarket specials, user preferences, and pantry items, generate 3 unique dinner recipes.
+    You are a recipe assistant. Given the following supermarket specials, user preferences, and pantry items, generate 3 diverse recipes.
+    Focus on using the specials, but incorporate pantry items where sensible.
+    Format each recipe strictly as a JSON object with keys: "title" (string), "description" (string), "instructions" (string of steps, use newline characters for separation), "ingredients" (list of objects, each with "name" (string) and "quantity" (string, e.g., "2 cups", "100g")), and "tags" (list of strings like "Quick", "Vegan", "Dinner", "Budget-Friendly").
+    Output *only* a valid JSON list containing these 3 recipe objects. Do not include any introductory text, explanations, or markdown formatting like ```json.
 
-    **Supermarket Specials:**
+    Specials:
     {specials_str}
 
-    **User Preferences:**
+    User Preferences:
     {preferences_str}
 
-    **User's Pantry Contains:**
-    {pantry_str}
+    Pantry Items:
+    {pantry_items_str}
 
-    **RESPONSE FORMAT:**
-    - The output must be a single, valid JSON array of 3 recipe objects. Do not include any text or formatting outside of the JSON array.
-    - Each recipe object in the array must have the following keys: "title", "description", "instructions", "ingredients", and "tags".
-    - The "ingredients" key must be an array of objects, where each object has "name" and "quantity" keys (e.g., {{"name": "Chicken Breast", "quantity": "500g"}}).
-    - The "tags" key should be an array of 3-5 strings that describe the recipe (e.g., "Quick & Easy", "Vegan", "High-Protein").
+    Generate 3 recipes in a JSON list:
     """
-    
     try:
         response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model="gpt-3.5-turbo", # Or your preferred model like gpt-4-turbo-preview
             messages=[{"role": "user", "content": prompt}],
-            # Using response_format is good, but we still need robust parsing
+            temperature=0.7,
+            # response_format={ "type": "json_object" } # Use if using newer models supporting JSON mode
         )
-        response_content = response.choices[0].message.content
-        data = json.loads(response_content)
-        
-        # More robust parsing logic
-        # Case 1: The AI returned the array directly.
-        if isinstance(data, list):
-            return data
-        
-        # Case 2: The AI wrapped the array in an object (e.g., {"recipes": [...]}).
-        # Find the first value in the JSON object that is a list.
-        if isinstance(data, dict):
-            for value in data.values():
-                if isinstance(value, list):
-                    return value
-        
-        # If neither of the above, something is wrong with the format.
-        print("AI response was valid JSON but did not contain a recipe list.")
-        return []
+        content = response.choices[0].message.content
 
-    except Exception as e:
-        print(f"An unexpected error occurred during recipe generation: {e}")
+        # Basic parsing - assumes AI returns a valid JSON list string
+        # Handle potential markdown ```json ... ```
+        if content.strip().startswith("```json"):
+            content = content.strip()[7:-3].strip()
+        elif content.strip().startswith("```"):
+             content = content.strip()[3:-3].strip()
+
+        recipes = json.loads(content)
+        # Add basic validation
+        if isinstance(recipes, list) and all(isinstance(r, dict) for r in recipes):
+            return recipes
+        else:
+            print(f"AI response was not a valid list of dicts: {content}")
+            return []
+    except json.JSONDecodeError as json_err:
+        print(f"Failed to decode AI JSON response for recipes: {json_err}")
+        print(f"Content was: {content}")
         return []
+    except Exception as e:
+        print(f"Error generating recipes with AI: {e}")
+        return [] # Return empty list on error
 
 def modify_recipe_with_ai(original_recipe: Dict, modification_prompt: str) -> Dict:
     """
-    Takes an existing recipe and a user's modification instruction,
-    and returns a new, modified recipe dictionary using the OpenAI API.
+    Modifies an existing recipe based on a prompt using OpenAI.
     """
-    ingredients_str = "\n".join([f"- {ing['quantity']} {ing['name']}" for ing in original_recipe['ingredients']])
-    original_recipe_str = (
-        f"Title: {original_recipe['title']}\n"
-        f"Description: {original_recipe['description']}\n"
-        f"Ingredients:\n{ingredients_str}\n"
-        f"Instructions: {original_recipe['instructions']}"
-    )
+    original_recipe_str = json.dumps(original_recipe, indent=2)
 
     prompt = f"""
-    You are a helpful cooking assistant. A user wants to modify an existing recipe.
-    Your task is to take the original recipe and the user's request, and generate a NEW, complete recipe that incorporates the changes.
+    You are a recipe modification assistant. Modify the following recipe based on the user's request.
+    Return the *entire* modified recipe as a single, valid JSON object matching the original structure
+    (keys: "title", "description", "instructions", "ingredients" list [with "name", "quantity"], "tags" list).
+    Do NOT just describe the changes. Ensure the output is only the JSON object, with no extra text or markdown formatting.
 
-    **USER'S REQUEST:** "{modification_prompt}"
-
-    **ORIGINAL RECIPE:**
-    ---
+    Original Recipe:
     {original_recipe_str}
-    ---
 
-    **RESPONSE FORMAT:**
-    Generate the modified recipe as a single, valid JSON object. Do NOT include any text or formatting outside of the JSON object.
-    The JSON object must have the following keys: "title", "description", "instructions", "ingredients", and "tags".
-    The "ingredients" key must be an array of objects, where each object has "name" and "quantity" keys.
-    --- FIX: Be explicit about the quantity's data type ---
-    The "quantity" key MUST be a string that includes the unit (e.g., "1 cup", "200g", "2 cloves").
-    The "tags" key should be an array of strings that describe the new recipe (e.g., "Vegan", "Gluten-Free", "Quick & Easy").
-    Ensure the new title reflects the modification (e.g., "Vegan Lentil Bolognese" instead of "Classic Beef Bolognese").
+    User Request: "{modification_prompt}"
+
+    Modified Recipe JSON:
+    """
+    try:
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo", # Or your preferred model
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.5, # Lower temperature for more deterministic modification
+            # response_format={ "type": "json_object" } # Use if using newer models
+        )
+        content = response.choices[0].message.content
+
+        # Handle potential markdown ```json ... ```
+        if content.strip().startswith("```json"):
+            content = content.strip()[7:-3].strip()
+        elif content.strip().startswith("```"):
+             content = content.strip()[3:-3].strip()
+
+        modified_recipe = json.loads(content)
+        # Add basic validation
+        if isinstance(modified_recipe, dict):
+             return modified_recipe
+        else:
+             print(f"AI response was not a valid dict: {content}")
+             return {"error": "AI returned invalid format."}
+
+    except json.JSONDecodeError as json_err:
+        print(f"Failed to decode AI JSON response for modification: {json_err}")
+        print(f"Content was: {content}")
+        return {"error": "Failed to decode AI response."}
+    except Exception as e:
+        print(f"Error modifying recipe with AI: {e}")
+        return {"error": f"AI failed to modify recipe: {e}"}
+
+
+# --- NEW FUNCTION for parsing receipt text ---
+def parse_receipt_text_with_ai(receipt_text: str) -> List[str]:
+    """
+    Uses OpenAI API to extract item names from OCR'd receipt text.
+    Returns a list of potential item names.
+    """
+    print("--- [AI Service] Parsing receipt text ---")
+    # Refined prompt for better extraction
+    prompt = f"""
+    Analyze the following text extracted from a shopping receipt. Identify and list only the names of the grocery items purchased.
+    - Ignore quantities, prices, discounts, taxes, totals, store information, addresses, dates, times, loyalty program details, payment information, and any other non-product text.
+    - Focus on extracting the core name of each product. For example, "ORG BANANAS 1KG" should become "Organic Bananas", "1L MILK FULL CRM" should become "Milk Full Cream", "GRAPES RED SEEDLESS" should become "Red Seedless Grapes".
+    - Try to combine lines if an item name spans multiple lines, but be cautious.
+    - If an item is unclear or ambiguous, make your best guess for the item name.
+    - Return the extracted item names as a JSON list of strings. Example: ["Milk Full Cream", "Organic Bananas", "Red Seedless Grapes", "White Bread Loaf"]
+    - If no items can be clearly identified, return an empty JSON list: []
+    - Output *only* the valid JSON list. Do not include explanations or markdown formatting.
+
+    Receipt Text:
+    \"\"\"
+    {receipt_text}
+    \"\"\"
+
+    JSON Item List:
     """
 
     try:
         response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model="gpt-3.5-turbo", # Consider GPT-4-turbo for potentially better accuracy
             messages=[{"role": "user", "content": prompt}],
-            response_format={"type": "json_object"}
+            temperature=0.1, # Very low temperature for factual extraction
+             # response_format={ "type": "json_object" } # Use if using newer models and sure the output will always be list-like JSON
         )
-        response_content = response.choices[0].message.content
-        modified_recipe_data = json.loads(response_content)
-        return modified_recipe_data
+        content = response.choices[0].message.content
+        print(f"--- [AI Service] Raw AI Response for receipt parsing:\n{content}") # Log raw response
+
+        # Handle potential markdown code block ```json ... ```
+        if content.strip().startswith("```json"):
+            content = content.strip()[7:-3].strip() # Remove markers and whitespace
+        elif content.strip().startswith("```"):
+             content = content.strip()[3:-3].strip()
+
+        item_names = json.loads(content)
+
+        if isinstance(item_names, list):
+             print(f"--- [AI Service] Parsed items: {item_names}")
+             # Further clean up empty strings and ensure all are strings
+             cleaned_items = [str(item).strip() for item in item_names if str(item).strip()]
+             # Optional: Add de-duplication
+             # unique_items = list(dict.fromkeys(cleaned_items))
+             # return unique_items
+             return cleaned_items
+        else:
+            print(f"--- [AI Service] AI did not return a list. Response: {item_names}")
+            return []
+
+    except json.JSONDecodeError as json_err:
+        print(f"--- [AI Service] Failed to decode AI JSON response for receipt: {json_err}")
+        print(f"--- [AI Service] Content was: {content}")
+        return [] # Return empty list on JSON parsing error
     except Exception as e:
-        print(f"An error occurred during AI recipe modification: {e}")
-        return {"error": "Could not modify the recipe. Please try again."}
+        print(f"--- [AI Service] Error parsing receipt text with AI: {e}")
+        return [] # Return empty list on any other error
+# --- END NEW FUNCTION ---

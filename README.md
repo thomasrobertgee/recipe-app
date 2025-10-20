@@ -20,6 +20,7 @@ The application consists of a Python backend that serves data from a database an
 - **AI-powered Recipe Modification:** Users can request modifications to any recipe (e.g., "make this vegan", "double the servings"), and the AI will generate a new, updated version.
 - **My Pantry Feature:** Users can add from a categorized list of staple ingredients to their personal pantry.
 - **Barcode Scanning:** Users can scan product barcodes using their device camera to quickly add items to their pantry (utilizes Open Food Facts API via backend proxy).
+- **Receipt Scanning (Beta):** Users can upload or take a photo of a receipt. Google Cloud Vision OCR extracts text, and OpenAI API parses items to add them to the pantry.
 - **Recipe Ratings & Filtering:** Users can rate recipes and filter/sort them.
 - **Intelligent Shopping List:** A dynamic list that consolidates ingredients, calculates costs, and tracks spending against a user's budget.
 - **Interactive Cook Mode:** A persistent, step-by-step cooking interface with integrated, clickable timers to guide users while cooking.
@@ -33,7 +34,7 @@ Here are some of the planned features to evolve the app from an MVP into a full-
 
 ### Core App Enhancements
 1.  **Meal Planner & Weekly Budgeting:** A new "Meal Plan" page with a weekly calendar. Users can drag and drop recipes onto days of the week, generating a consolidated shopping list for the entire plan and tracking the total cost against their weekly budget.
-2.  **Scan Receipt Feature:** Allow users to take a picture of a shopping receipt. Use OCR and AI to parse the items and prices, automatically add items to the pantry, and update budget tracking.
+2.  **Refine Receipt Scanning:** Improve AI prompt for accuracy, potentially add manual correction step, and integrate price extraction with budget tracking (once implemented).
 
 ### Community & Engagement Features
 3.  **Community Recipes & Recipe Sharing:** Allow users to submit their own favorite recipes. Other users could then search, view, save, and rate these community-submitted meals. A "Share" button would also generate a unique, shareable link for any recipe.
@@ -54,7 +55,7 @@ Here are some of the planned features to evolve the app from an MVP into a full-
 - **AI:** OpenAI GPT API
 - **Authentication:** Passlib (hashing), python-jose (JWTs), **google-auth** (OAuth)
 - **Scraping:** **ScrapingBee API, Requests & BeautifulSoup4**
-- **APIs:** Requests (for Open Food Facts proxy)
+- **APIs:** Requests (for Open Food Facts proxy), **google-cloud-vision** (OCR)
 
 ### Frontend
 - **Language:** JavaScript
@@ -74,9 +75,10 @@ To get the application running locally, you will need to set up and run both the
 - Python 3.9+
 - Node.js and npm
 - Git
+- Google Cloud Project with Cloud Vision API enabled and Service Account Key
 
 ### Environment Variables
-This project requires several API keys to function.
+This project requires several API keys/credentials to function.
 
 1.  **Backend (`backend/.env`):**
     ```
@@ -85,8 +87,14 @@ This project requires several API keys to function.
     SCRAPINGBEE_API_KEY="YOUR_SCRAPINGBEE_API_KEY"
     GOOGLE_CLIENT_ID="YOUR_GOOGLE_CLOUD_CLIENT_ID"
     ```
-
-2.  **Frontend (`frontend/.env`):**
+2.  **Backend (Environment Variable):** Set this in your terminal *before* running `uvicorn`:
+    ```bash
+    # Windows Command Prompt:
+    # set GOOGLE_APPLICATION_CREDENTIALS="C:\path\to\your\gcloud_keyfile.json"
+    # Git Bash / Linux / macOS:
+    export GOOGLE_APPLICATION_CREDENTIALS="/path/to/your/gcloud_keyfile.json"
+    ```
+3.  **Frontend (`frontend/.env`):**
     ```
     VITE_GOOGLE_CLIENT_ID="YOUR_GOOGLE_CLOUD_CLIENT_ID"
     ```
@@ -197,7 +205,7 @@ You can test the locally running application on your mobile phone if it's connec
 * Your PC's firewall might block connections; you may need to allow incoming connections on ports 5173 and 8000.
 * **Remember to revert** the `--host` flags, CORS origin, and `axios.defaults.baseURL` when you return to PC-only development.
 * Google OAuth login from mobile via local IP requires more complex workarounds (like ngrok) due to Google's security policies and is not covered here. Seeded logins will work.
-* **Camera access (for barcode scanning) requires HTTPS.** This means testing barcode scanning on mobile *requires* using a service like `ngrok` or deploying the app to an HTTPS environment. It won't work via `http://<IP_ADDRESS>`.
+* **Camera access (for barcode/receipt scanning) requires HTTPS.** This means testing camera features on mobile *requires* using a service like `ngrok` or deploying the app to an HTTPS environment. It won't work via `http://<IP_ADDRESS>`.
 
 ---
 
@@ -205,3 +213,4 @@ You can test the locally running application on your mobile phone if it's connec
 - **`GET /api/recipes`**: Retrieves a list of all recipes in the database.
 - **`GET /docs`**: View the interactive API documentation (Swagger UI).
 - **`GET /api/barcode-lookup/{barcode}`**: Proxies a lookup to the Open Food Facts API.
+- **`POST /api/pantry/scan-receipt`**: Receives receipt image, performs OCR/AI processing, adds items to pantry.

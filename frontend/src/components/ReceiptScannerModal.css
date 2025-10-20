@@ -1,0 +1,213 @@
+/* src/components/ReceiptScannerModal.css */
+/* Reusing some styles from BarcodeScanner.css where applicable */
+
+.receipt-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.8); /* Slightly darker maybe? */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1050; /* Higher than modal */
+}
+
+.receipt-container {
+  background-color: #333; /* Dark background */
+  width: 90%;
+  max-width: 600px; /* Wider for receipts */
+  min-height: 300px; /* Ensure minimum height */
+  max-height: 90vh; /* Limit height */
+  overflow: hidden;
+  border-radius: 12px; /* Slightly larger radius */
+  box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+  display: flex; /* Helps center content */
+  align-items: center; /* Center vertically */
+  justify-content: center; /* Center horizontally */
+  flex-direction: column; /* Stack views vertically */
+}
+
+/* Mode Selection View */
+.mode-selection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.2rem; /* Increased gap */
+  padding: 2.5rem; /* Increased padding */
+  text-align: center;
+  width: 100%; /* Take full width */
+}
+.mode-selection h2 {
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+    color: #eee;
+    font-size: 1.8rem;
+}
+.mode-selection p {
+    color: #ccc;
+    margin-bottom: 2rem;
+    font-size: 1.1rem;
+}
+
+.mode-btn {
+  width: 80%;
+  max-width: 300px;
+  padding: 15px 20px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 1px solid #777; /* Darker border */
+  background-color: #555; /* Darker background */
+  color: #eee; /* Light text */
+  transition: all 0.2s ease;
+  text-align: center; /* Ensure text is centered for label */
+}
+.mode-btn:hover {
+  background-color: #666;
+  border-color: #888;
+}
+.mode-btn label { /* For file upload trigger */
+    cursor: pointer;
+    display: block; /* Make label fill button */
+    width: 100%;
+    height: 100%;
+}
+.cancel-select {
+    margin-top: 1rem;
+    background-color: transparent;
+    border: 1px solid #aaa;
+    color: #ccc;
+    width: auto;
+    padding: 10px 20px;
+    font-size: 0.9rem;
+}
+.cancel-select:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: #ccc;
+}
+.scanner-error { /* Inherited */
+    color: #ffc107;
+    background: transparent;
+    padding: 0;
+    position: static;
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+    width: 80%; /* Limit width */
+    max-width: 300px; /* Consistent with buttons */
+}
+
+
+/* Camera View */
+.camera-view {
+  width: 100%;
+  position: relative;
+  display: flex; /* Make sure it displays */
+  justify-content: center; /* Center video horizontally if needed */
+  align-items: center; /* Center video vertically if needed */
+  overflow: hidden; /* Prevent overflow */
+  background-color: #111; /* Dark bg if video doesn't load */
+}
+.receipt-video {
+  display: block; /* Important: ensure it's displayed */
+  width: 100%;    /* Take full width */
+  height: auto;   /* Maintain aspect ratio */
+  max-height: 75vh; /* Limit height relative to viewport */
+  background-color: #111; /* Dark background for visibility */
+}
+.camera-controls {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-around; /* Space out buttons */
+  align-items: center; /* Vertically center buttons */
+  padding: 15px;
+  background: rgba(0, 0, 0, 0.7); /* Slightly darker overlay */
+  z-index: 5; /* Ensure controls are above video */
+}
+.capture-btn {
+  background-color: #4CAF50;
+  color: white;
+  border-color: #4CAF50;
+  font-weight: bold;
+  padding: 12px 25px; /* Larger capture button */
+  border-radius: 50px; /* Round button */
+  font-size: 1.1rem;
+}
+.capture-btn:hover {
+  background-color: #45a049;
+}
+.camera-controls .scanner-btn { /* Style for Back button */
+    background-color: #6c757d;
+    color: white;
+    border-color: #6c757d;
+}
+.camera-controls .scanner-btn:hover {
+    background-color: #5a6268;
+}
+
+
+/* Preview View */
+.preview-view {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1.5rem; /* Consistent padding */
+  width: 100%;
+  box-sizing: border-box; /* Include padding in width */
+}
+.preview-view h2 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    color: #eee;
+    font-size: 1.6rem;
+}
+.receipt-preview-img {
+  width: 100%; /* Use full width */
+  max-height: 60vh; /* Limit height */
+  object-fit: contain; /* Ensure whole image is visible */
+  margin-bottom: 1.5rem; /* Increased spacing */
+  border: 2px solid #555; /* Slightly thicker border */
+  border-radius: 4px;
+  background-color: #222; /* Dark bg if image has transparency */
+}
+.preview-controls {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap; /* Allow wrapping on small screens */
+  gap: 1rem;
+  width: 100%;
+  padding-top: 1.5rem;
+  border-top: 1px solid #555;
+}
+.process-btn {
+  background-color: #28a745;
+  color: white;
+  border-color: #28a745;
+  font-weight: bold;
+  padding: 12px 25px;
+  font-size: 1.05rem;
+}
+.process-btn:hover {
+  background-color: #218838;
+}
+/* Re-use scanner-btn styles for other buttons */
+.preview-controls .scanner-btn {
+    background-color: #6c757d;
+    color: white;
+    border-color: #6c757d;
+}
+.preview-controls .scanner-btn:hover {
+    background-color: #5a6268;
+}
+.preview-controls .close-btn { /* Specific override for cancel */
+    background-color: #dc3545;
+    border-color: #dc3545;
+}
+.preview-controls .close-btn:hover {
+    background-color: #c82333;
+}
