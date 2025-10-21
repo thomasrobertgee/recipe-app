@@ -36,4 +36,5 @@
 
 .star-rating.read-only button {
   cursor: default;
+  pointer-events: none; /* --- FIX: Allow clicks to pass through to the parent card --- */
 }

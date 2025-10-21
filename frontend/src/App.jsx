@@ -23,6 +23,12 @@ import AllRecipesPage from './pages/AllRecipesPage';
 import PantryPage from './pages/PantryPage';
 import './App.css';
 
+// --- NEW IMPORTS ---
+import SupplierProtectedRoute from './components/SupplierProtectedRoute';
+import SupplierDashboardPage from './pages/SupplierDashboardPage';
+import SupplierSignUpPage from './pages/SupplierSignUpPage';
+// --- END NEW IMPORTS ---
+
 function App() {
   const { token, logout } = useAuth();
   const { isSidebarOpen } = useUI();
@@ -68,9 +74,15 @@ function App() {
       <div className="app-layout">
         <main className="main-content">
           <Routes>
+            {/* --- Public Routes --- */}
             <Route path="/" element={<HomePage />} />
             <Route path="/signup" element={<SignUpPage />} />
             <Route path="/login" element={<LoginPage />} />
+            
+            {/* --- NEW Supplier Public Routes --- */}
+            <Route path="/portal/signup" element={<SupplierSignUpPage />} />
+
+            {/* --- Consumer Protected Routes --- */}
             <Route element={<ProtectedRoute />}>
               <Route path="/dashboard" element={<DashboardPage allSpecials={allSpecials} />} />
               <Route path="/recipes" element={<AllRecipesPage allSpecials={allSpecials} />} />
@@ -79,6 +91,12 @@ function App() {
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/pantry" element={<PantryPage />} />
             </Route>
+
+            {/* --- NEW Supplier Protected Routes --- */}
+            <Route element={<SupplierProtectedRoute />}>
+              <Route path="/portal/dashboard" element={<SupplierDashboardPage />} />
+            </Route>
+
           </Routes>
         </main>
         {token && isSidebarOpen && (

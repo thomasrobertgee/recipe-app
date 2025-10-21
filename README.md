@@ -16,7 +16,7 @@ The application consists of a Python backend that serves data from a database an
     - Scrapes specific, high-value categories (e.g., "Meat & Seafood", "Fruit & Vegetables").
     - **Dynamically handles pagination**, scraping all available pages for each category automatically.
     - Extracts detailed price information, including unit prices (e.g., per kg).
-- **AI-powered recipe generation** that uses a user's saved preferences and pantry items to create tailored recipes.
+- **AI-powered recipe generation** that uses a user's saved preferences and pantry items to create tailored recipes (Note: Recipes are now generated globally and not auto-saved to user profiles).
 - **AI-powered Recipe Modification:** Users can request modifications to any recipe (e.g., "make this vegan", "double the servings"), and the AI will generate a new, updated version.
 - **My Pantry Feature:** Users can add from a categorized list of staple ingredients to their personal pantry.
 - **Barcode Scanning:** Users can scan product barcodes using their device camera to quickly add items to their pantry (utilizes Open Food Facts API via backend proxy).
@@ -24,7 +24,12 @@ The application consists of a Python backend that serves data from a database an
 - **Recipe Ratings & Filtering:** Users can rate recipes and filter/sort them.
 - **Intelligent Shopping List:** A dynamic list that consolidates ingredients, calculates costs, and tracks spending against a user's budget.
 - **Interactive Cook Mode:** A persistent, step-by-step cooking interface with integrated, clickable timers to guide users while cooking.
+- **Supplier Portal:**
+    - Separate registration for local suppliers (e.g., butchers, greengrocers).
+    - Dedicated portal for suppliers to log in and manage their own weekly specials (add/delete items and prices).
+    - Supplier specials appear alongside supermarket specials for all users.
 - Full CRUD functionality for recipes and specials.
+- **Recent Bug Fixes:** Addressed issues related to receipt scanning database transactions, AI prompt formatting for instructions and receipt items, JSON serialization errors, recipe rating display updates, login redirection for suppliers, and various frontend styling inconsistencies.
 
 ---
 
@@ -41,7 +46,7 @@ Here are some of the planned features to evolve the app from an MVP into a full-
 4.  **"Cooking Streak" & Achievements:** Gamify the cooking experience by adding a "I Made This!" button to Cook Mode. This would contribute to a "Weekly Cooking Streak" and unlock badges for achievements like staying under budget or using up pantry items.
 
 ### Advanced Data & AI Features
-5.  **Integration with Local Suppliers:** Create a portal for local butchers and greengrocers to upload their weekly specials. These would then appear in the app, promoting local businesses and providing users with unique deals.
+*(Supplier integration moved to Current Features)*
 
 ---
 
@@ -111,6 +116,9 @@ This project requires several API keys/credentials to function.
 
     # Activate on Windows (Git Bash)
     source venv/Scripts/activate
+
+    # Activate on macOS/Linux
+    # source venv/bin/activate
     ```
 3.  Install dependencies:
     ```sh
@@ -210,7 +218,20 @@ You can test the locally running application on your mobile phone if it's connec
 ---
 
 ## API Endpoints
-- **`GET /api/recipes`**: Retrieves a list of all recipes in the database.
+- **`GET /api/recipes`**: Retrieves a list of all recipes (filter/sort options available).
+- **`POST /api/recipes`**: Create a new recipe (admin/future feature).
+- **`POST /api/recipes/{recipe_id}/rate`**: Rate a specific recipe. Returns updated recipe data.
+- **`POST /api/recipes/modify`**: Get an AI-modified version of a recipe (doesn't save automatically).
+- **`DELETE /api/recipes/{recipe_id}`**: Delete a specific recipe.
 - **`GET /docs`**: View the interactive API documentation (Swagger UI).
 - **`GET /api/barcode-lookup/{barcode}`**: Proxies a lookup to the Open Food Facts API.
 - **`POST /api/pantry/scan-receipt`**: Receives receipt image, performs OCR/AI processing, adds items to pantry.
+- **`GET /api/pantry`**: Get current user's pantry items.
+- **`POST /api/pantry`**: Add an item to the user's pantry by name.
+- **`DELETE /api/pantry/{ingredient_id}`**: Remove an item from the user's pantry.
+- **`GET /api/prices/today`**: Get all specials recorded today (supermarket + supplier).
+- **`GET /api/tags`**: Get a list of all unique recipe tags used.
+- **`POST /register/supplier`**: Register a new supplier user and profile.
+- **`GET /api/supplier/specials`**: (Supplier only) Get specials added by the logged-in supplier today.
+- **`POST /api/supplier/specials`**: (Supplier only) Add/update a special for the logged-in supplier.
+- **`DELETE /api/supplier/specials/{price_id}`**: (Supplier only) Delete a specific special added by the logged-in supplier.

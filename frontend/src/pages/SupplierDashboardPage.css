@@ -1,0 +1,121 @@
+/* frontend/src/pages/SupplierDashboardPage.css */
+
+.supplier-dashboard .supplier-content {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 2rem;
+    margin-top: 1rem;
+}
+
+.supplier-form-container {
+    background-color: #ffffff;
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    align-self: flex-start; /* Stick to top */
+}
+
+.supplier-form-container h3 {
+    margin-top: 0;
+    border-bottom: 2px solid #f0f0f0;
+    padding-bottom: 0.5rem;
+}
+
+.supplier-form .form-group {
+    margin-bottom: 1rem;
+}
+
+.supplier-form .form-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+    font-size: 0.9rem;
+}
+
+.supplier-form input[type="text"] {
+    width: 100%;
+    padding: 0.6rem;
+    font-size: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box; /* Important for 100% width */
+}
+
+.supplier-form .btn-primary {
+    width: 100%;
+    padding: 0.75rem;
+    font-size: 1rem;
+}
+
+.supplier-list-container h3 {
+    margin-top: 0;
+}
+
+.specials-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.special-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #ffffff;
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 0.75rem;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+    border: 1px solid #eee;
+}
+
+.special-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+}
+
+.special-name {
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.special-price {
+    font-size: 1rem;
+    color: var(--primary-color);
+    font-weight: 500;
+}
+
+.special-category {
+    font-size: 0.85rem;
+    color: #666;
+    font-style: italic;
+}
+
+.btn-danger-outline {
+    background: transparent;
+    border: 1px solid var(--danger-color);
+    color: var(--danger-color);
+    padding: 0.4rem 0.8rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.btn-danger-outline:hover {
+    background: var(--danger-color);
+    color: white;
+}
+
+
+/* Responsive */
+@media (max-width: 900px) {
+    .supplier-dashboard .supplier-content {
+        grid-template-columns: 1fr;
+    }
+
+    .supplier-list-container {
+        margin-top: 2rem;
+    }
+}

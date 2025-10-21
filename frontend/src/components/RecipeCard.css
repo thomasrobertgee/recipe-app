@@ -1,209 +1,188 @@
 /* src/components/RecipeCard.css */
 
 .recipe-card {
-  background-color: #ffffff;
-  border: 1px solid #e0e0e0;
+  background-color: #fff;
   border-radius: 12px;
-  width: 320px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   display: flex;
   flex-direction: column;
-  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  position: relative; /* For positioning child elements */
+  cursor: pointer;
+  border: 2px solid transparent;
 }
 
 .recipe-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
 }
 
 .recipe-card.selected {
-  border-color: #4caf50;
-  box-shadow: 0 4px 8px rgba(76, 175, 80, 0.2);
+  border-color: #4a90e2; /* A blue border to indicate selection */
+  box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.3);
+}
+
+.recipe-card.is-saved {
+  background-color: #fff5f7; /* A very light pink for saved items */
+  border-color: #e91e63;
+}
+
+.recipe-card.is-saved .save-btn {
+  color: #e91e63; /* Pink color for saved heart */
 }
 
 .card-header-actions {
   position: absolute;
-  top: 0px; /* MOVED UP FURTHER */
-  right: 0px; /* MOVED RIGHT FURTHER */
-  z-index: 10;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  gap: 8px;
+  z-index: 2;
 }
 
-.delete-btn {
-  background: transparent;
+.save-btn, .delete-btn {
+  background: rgba(255, 255, 255, 0.8);
   border: none;
-  font-size: 24px;
-  color: #aaa;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  transition: color 0.2s;
-  padding: 5px;
-  line-height: 1;
+  font-size: 18px;
+  color: #555;
+  transition: background-color 0.2s, color 0.2s;
+  backdrop-filter: blur(2px);
+}
+
+.save-btn:hover {
+  background-color: #f0f0f0;
+  color: #e91e63;
 }
 
 .delete-btn:hover {
-  color: #e57373;
+  background-color: #f0f0f0;
+  color: #d9534f;
 }
 
 .card-content {
-  padding: 20px;
+  /* Add padding-top to make space for the absolutely positioned header actions */
+  padding: 45px 20px 20px 20px;
   flex-grow: 1;
+  display: flex;
+  flex-direction: column;
 }
 
-/* --- NEW: Style for the row containing the title and cost --- */
 .card-title-row {
   display: flex;
-  justify-content: space-between;
+  justify-content: space-between; /* Pushes title and cost to opposite ends */
   align-items: flex-start;
   gap: 10px;
-  margin-bottom: 0.5rem;
+  margin-bottom: 8px;
 }
 
 .card-title-row h2 {
-  margin-top: 0;
+  margin: 0;
   font-size: 1.2rem;
   font-weight: 600;
   color: #333;
-  margin-bottom: 0;
+  flex-grow: 1;
+  /* Remove padding-right, flexbox will handle spacing */
 }
 
-/* --- NEW: Style for the cost display --- */
 .recipe-cost {
-  font-size: 1.3rem;
-  font-weight: bold;
-  color: #388e3c; /* Dark green */
-  white-space: nowrap; /* Prevents the price from wrapping */
-  padding-top: 2px;
+  /* --- FIX: Remove absolute positioning --- */
+  background-color: #e8f5e9; /* Light green */
+  color: #2e7d32; /* Dark green */
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 .card-content p {
+  margin: 0 0 12px 0;
   font-size: 0.9rem;
   color: #666;
   line-height: 1.5;
-  margin-top: 0;
+  flex-grow: 1;
 }
 
-.card-bottom-action {
-  padding: 15px 20px;
-  border-top: 1px solid #f0f0f0;
-  margin-top: auto;
-  text-align: center;
-}
-
-.select-btn {
-  background-color: #e8f5e9;
-  color: #388e3c;
-  border: 1px solid #a5d6a7;
-  border-radius: 6px;
-  padding: 10px 20px;
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 0.95rem;
-  transition: background-color 0.2s, border-color 0.2s, color 0.2s;
-  width: 100%;
-  max-width: 250px;
-}
-
-.select-btn:hover {
-  background-color: #dcedc8;
-  border-color: #8bc34a;
-}
-
-.recipe-card.selected .select-btn {
-  background-color: #4caf50;
-  color: white;
-  border-color: #4caf50;
-}
-
-.recipe-card.selected .select-btn:hover {
-  background-color: #43a047;
-  border-color: #43a047;
-}
-
-/* Add to bottom of src/components/RecipeCard.css */
-.save-btn {
-  background: none;
-  border: none;
-  font-size: 28px;
-  color: #aaa;
-  cursor: pointer;
-  padding: 0;
-  line-height: 1;
-  transition: color 0.2s, transform 0.2s;
-}
-.save-btn:hover {
-  transform: scale(1.2);
-}
-.save-btn.saved {
-  color: #e57373; /* Red color for saved */
-}
-
-/* src/components/RecipeCard.css */
-/* (Existing styles remain the same) */
-
-/* --- ADD TO BOTTOM OF FILE --- */
 .card-rating-display {
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: 8px;
-  margin-top: 10px;
+  margin-bottom: 12px;
 }
 
 .rating-value {
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   color: #777;
-  font-weight: 500;
-  margin-top: -2px; /* Helps align with stars */
 }
 
+.card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: auto; /* Pushes tags to the bottom of the content area */
+}
 
-.quantity-stepper {
+.card-tags .tag {
+  background-color: #f0f0f0;
+  color: #555;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.card-bottom-action {
+  padding: 16px 20px;
+  border-top: 1px solid #eee;
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 20px;
+}
+
+.select-btn {
+  width: 100%;
+  padding: 10px;
+  border: none;
+  background-color: #4a90e2;
+  color: white;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.select-btn:hover {
+  background-color: #357abd;
+}
+
+.quantity-stepper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
 }
 
 .quantity-stepper button {
-  background-color: #4caf50;
-  color: white;
+  background-color: #e0e0e0;
   border: none;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
-  width: 36px;
-  height: 36px;
-  font-size: 1.5rem;
+  font-size: 1.2rem;
   font-weight: bold;
   cursor: pointer;
-  line-height: 1;
-  padding-bottom: 4px; /* Adjust for vertical alignment */
+  color: #333;
 }
 
 .quantity-stepper span {
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   font-weight: 600;
-  min-width: 20px;
-  text-align: center;
-}
-
-/* src/components/RecipeCard.css */
-
-/* (Keep all existing styles) */
-
-/* --- ADD TO BOTTOM OF FILE --- */
-.card-tags {
-  margin-top: 15px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  justify-content: center;
-}
-
-.tag {
-  background-color: #f0f0f0;
-  color: #555;
-  padding: 4px 10px;
-  border-radius: 12px;
-  font-size: 0.75rem;
-  font-weight: 500;
 }

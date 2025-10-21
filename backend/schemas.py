@@ -2,6 +2,9 @@
 
 from sqlmodel import SQLModel, Field
 from typing import Optional, List, Dict
+# Import validator if needed later
+# from pydantic import validator
+# import math
 
 class UserCreate(SQLModel):
     email: str
@@ -10,6 +13,7 @@ class UserCreate(SQLModel):
 class UserRead(SQLModel):
     id: int
     email: str
+    role: str # <-- NEW FIELD
     dietary_restrictions: Optional[str] = None
     preferred_cuisines: Optional[str] = None
     cooking_skill: Optional[str] = None
@@ -37,6 +41,20 @@ class Token(SQLModel):
 class GoogleLoginRequest(SQLModel):
     token: str
 
+# --- NEW SUPPLIER SCHEMAS ---
+class SupplierProfileCreate(SQLModel):
+    business_name: str
+    address: Optional[str] = None
+
+class SupplierProfileRead(SupplierProfileCreate):
+    id: int
+    user_id: int
+
+class SupplierRegistrationRequest(SQLModel):
+    user: UserCreate
+    profile: SupplierProfileCreate
+# --- END NEW SCHEMAS ---
+
 class IngredientInRecipe(SQLModel):
     name: str
     quantity: str
@@ -58,32 +76,41 @@ class RecipeResponse(SQLModel):
     tags: List[str]
     total_rating: int
     rating_count: int
+    # --- *** FIX: Add average_rating field *** ---
+    average_rating: float = 0.0 # Default to 0.0, ensure it's a float
+    # --- *** END FIX *** ---
 
+    # --- Your existing from_orm method (no changes needed here now) ---
     @classmethod
     def from_orm(cls, recipe, **kwargs):
         # Calculate average_rating
-        avg = 0
+        avg = 0.0 # Use float
         if recipe.rating_count > 0:
-            avg = round(recipe.total_rating / recipe.rating_count, 1)
+             # Ensure float division
+            avg = round(float(recipe.total_rating) / float(recipe.rating_count), 1)
 
         # Merge calculated fields with model fields
         data = recipe.model_dump()
+        # Add calculated avg to data before creating instance
         data['average_rating'] = avg
 
         # Allow overriding with kwargs
         data.update(kwargs)
 
         # Create the response model
-        # We manually construct to ensure validation
+        # Pydantic should handle the extra 'average_rating' field now
+        # if it's defined in the model above.
         return cls(
             id=data['id'],
             title=data['title'],
             description=data['description'],
             instructions=data['instructions'],
             ingredients=data['ingredients'],
-            tags=data['tags'],
+            tags=data.get('tags', []), # Use .get for safety
             total_rating=data['total_rating'],
-            rating_count=data['rating_count']
+            rating_count=data['rating_count'],
+            # Pydantic will now expect average_rating
+            average_rating=data['average_rating']
         )
 
 class PriceHistoryCreate(SQLModel):

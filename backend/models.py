@@ -36,6 +36,17 @@ class UserRecipeRatingLink(SQLModel, table=True):
     recipe: "Recipe" = Relationship(back_populates="ratings")
 
 
+# --- NEW SUPPLIER PROFILE MODEL ---
+class SupplierProfile(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id", unique=True, index=True)
+    business_name: str = Field(index=True)
+    address: Optional[str] = None
+    
+    user: "User" = Relationship(back_populates="supplier_profile")
+# --- END NEW MODEL ---
+
+
 # --- Recipe Ingredient Link (Many-to-Many with data) ---
 class RecipeIngredientLink(SQLModel, table=True):
     recipe_id: Optional[int] = Field(
@@ -55,6 +66,7 @@ class User(SQLModel, table=True):
     email: str = Field(unique=True, index=True)
     hashed_password: Optional[str] = Field(default=None)
     google_user_id: Optional[str] = Field(default=None, unique=True, index=True)
+    role: str = Field(default="consumer", index=True) # <-- NEW FIELD
 
     # Profile preferences
     dietary_restrictions: Optional[str] = Field(default=None)
@@ -67,6 +79,10 @@ class User(SQLModel, table=True):
     weekly_budget: Optional[int] = Field(default=None)
     has_completed_onboarding: bool = Field(default=False)
     # --- END NEW ONBOARDING FIELDS ---
+    
+    # --- NEW RELATIONSHIP ---
+    supplier_profile: Optional["SupplierProfile"] = Relationship(back_populates="user")
+    # --- END NEW RELATIONSHIP ---
     
     saved_recipes: List["Recipe"] = Relationship(back_populates="saved_by_users", link_model=UserRecipeLink)
     pantry_items: List["Ingredient"] = Relationship(back_populates="users_with_in_pantry", link_model=UserPantryLink)

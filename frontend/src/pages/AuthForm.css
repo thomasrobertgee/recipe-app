@@ -1,120 +1,125 @@
 /* src/pages/AuthForm.css */
 
 .auth-container {
-  display: flex;
-  align-items: flex-start; /* Aligns card to the top */
-  justify-content: center;
-  min-height: calc(100vh - 70px); /* Full height minus navbar */
-  width: 100%;
+    display: flex;
+    align-items: flex-start; /* Aligns card to the top */
+    justify-content: center;
+    min-height: calc(100vh - 70px); /* Full height minus navbar */
+    padding-top: 2rem; /* Add some padding from the top */
+    width: 100%;
+    box-sizing: border-box; /* Include padding in height calculation */
 }
 
 .auth-form {
-  background-color: #ffffff;
-  padding: 2rem;
-  border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
-  width: 100%;
-  max-width: 450px;
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
+    background-color: #ffffff;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 450px;
+    display: flex;
+    flex-direction: column;
+    /* --- REDUCED GAP HERE --- */
+    gap: 1rem; /* Was 1.5rem */
+    /* --- END CHANGE --- */
 }
 
 .auth-form h2 {
-  text-align: center;
-  color: #333;
-  margin: 0 0 0.5rem;
-  font-size: 2rem;
+    text-align: center;
+    color: #333;
+    margin: 0 0 0.5rem;
+    font-size: 2rem;
 }
 
 .form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem; /* Space between label and input */
 }
 
 .form-group label {
-  font-weight: 600;
-  color: #555;
-  font-size: 0.9rem;
+    font-weight: 600;
+    color: #555;
+    font-size: 0.9rem;
 }
 
 .form-group input {
-  padding: 12px 15px;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  font-size: 1rem;
-  transition: border-color 0.2s, box-shadow 0.2s;
+    padding: 12px 15px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .form-group input:focus {
-  outline: none;
-  border-color: #4caf50;
-  box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
+    outline: none;
+    border-color: #4caf50;
+    box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
 }
 
 .auth-button {
-  padding: 14px 20px;
-  border: none;
-  border-radius: 8px;
-  background-color: #4caf50;
-  color: white;
-  font-size: 1.1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.2s, transform 0.2s;
-  margin-top: 0.5rem;
+    padding: 14px 20px;
+    border: none;
+    border-radius: 8px;
+    background-color: #4caf50;
+    color: white;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.2s;
+    margin-top: 0.5rem; /* Keep a bit of space before the button */
 }
 
 .auth-button:hover {
-  background-color: #45a049;
-  transform: translateY(-2px);
+    background-color: #45a049;
+    transform: translateY(-2px);
 }
 
 .auth-error {
-  color: #dc3545;
-  text-align: center;
-  margin-top: -0.5rem;
+    color: #dc3545;
+    text-align: center;
+    margin-top: -0.5rem; /* Adjust slightly if needed after gap change */
 }
 
 .auth-switch {
-  text-align: center;
-  margin-top: 0.5rem;
-  color: #555;
+    text-align: center;
+    margin-top: 0.5rem; /* Keep a bit of space before the switch link */
+    color: #555;
 }
 
 .auth-switch a {
-  color: #4caf50;
-  font-weight: 600;
-  text-decoration: none;
+    color: #4caf50;
+    font-weight: 600;
+    text-decoration: none;
 }
 
 .auth-switch a:hover {
-  text-decoration: underline;
+    text-decoration: underline;
 }
 
 /* --- NEW STYLES --- */
 .auth-divider {
-  display: flex;
-  align-items: center;
-  text-align: center;
-  color: #aaa;
-  font-size: 0.9rem;
-  font-weight: 600;
+    display: flex;
+    align-items: center;
+    text-align: center;
+    color: #aaa;
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin: 0.5rem 0; /* Adjust margin if needed */
 }
 
 .auth-divider::before,
 .auth-divider::after {
-  content: '';
-  flex: 1;
-  border-bottom: 1px solid #e0e0e0;
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid #e0e0e0;
 }
 
 .auth-divider span {
-  padding: 0 1rem;
+    padding: 0 1rem;
 }
 
 .google-login-container {
-  display: flex;
-  justify-content: center;
+    display: flex;
+    justify-content: center;
 }
