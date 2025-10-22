@@ -86,3 +86,29 @@
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.08);
 }
+
+/* --- NEW: Supplier Promo Section --- */
+.supplier-promo-section {
+  background-color: #f8f9fa; /* Match hero section background */
+  padding: 4rem 1rem;
+  margin-top: 4rem;
+  border-radius: 8px;
+  text-align: center; /* Center all content */
+}
+
+.supplier-promo-content {
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.supplier-promo-section h2 {
+  font-size: 2.5rem; /* Match other section titles */
+  margin-bottom: 1.5rem;
+}
+
+.supplier-promo-section p {
+  font-size: 1.1rem;
+  color: #6c757d; /* Match subtitle color */
+  line-height: 1.6;
+  margin-bottom: 2rem;
+}

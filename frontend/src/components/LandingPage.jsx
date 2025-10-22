@@ -19,20 +19,47 @@ const LandingPage = () => {
       </header>
 
       <section className="features-section">
-        <h2>How It Works</h2>
+        <h2>All-In-One Meal Planning</h2>
         <div className="features-grid">
           <div className="feature-card">
-            <h3>1. View Specials</h3>
-            <p>Browse daily updated specials from Australia's major supermarkets.</p>
+            <h3>Find Deals Everywhere</h3>
+            <p>Discover daily specials from major supermarkets and unique deals from local suppliers, all in one place.</p>
           </div>
           <div className="feature-card">
-            <h3>2. Generate Recipes</h3>
-            <p>Our AI analyzes your specials and personal preferences to create custom recipes just for you.</p>
+            <h3>Get Inspired by AI</h3>
+            <p>Let our AI generate personalized recipes based on your taste, budget, and the best deals available. You can even modify recipes on the fly!</p>
           </div>
           <div className="feature-card">
-            <h3>3. Shop & Cook</h3>
-            <p>Get an interactive shopping list and easy-to-follow recipes to make your week easier and more affordable.</p>
+            <h3>Build Your Smart List</h3>
+            <p>Add recipes to create an intelligent shopping list that consolidates ingredients, calculates costs, and tracks your budget in real-time.</p>
           </div>
+          <div className="feature-card">
+            <h3>Cook with Confidence</h3>
+            <p>Use our interactive Cook Mode with step-by-step instructions and integrated timers to make cooking a breeze.</p>
+          </div>
+          <div className="feature-card">
+            <h3>Your Digital Pantry</h3>
+            <p>Keep track of ingredients you already own. Our AI prioritizes recipes that use up what's in your pantry first, reducing food waste.</p>
+          </div>
+          <div className="feature-card">
+            <h3>Effortless Scanning</h3>
+            <p>Quickly add items to your pantry by scanning product barcodes or by simply taking a photo of your latest shopping receipt.</p>
+          </div>
+          <div className="feature-card">
+            <h3>Shop Smarter</h3>
+            <p>View an item's price history with interactive charts. See if that "special" is really a good deal before you buy.</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="supplier-promo-section">
+        <div className="supplier-promo-content">
+          <h2>Are you a business owner?</h2>
+          <p>
+            Promote your weekly specials directly to local customers looking for the best deals. 
+            Join our network of local suppliers today!
+          </p>
+          <Link to="/signup/supplier" className="cta-button">Sign up as a Supplier</Link>
         </div>
       </section>
     </div>

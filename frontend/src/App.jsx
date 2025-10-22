@@ -30,7 +30,7 @@ import SupplierSignUpPage from './pages/SupplierSignUpPage';
 // --- END NEW IMPORTS ---
 
 function App() {
-  const { token, logout } = useAuth();
+  const { token, userProfile, logout } = useAuth();
   const { isSidebarOpen } = useUI();
   const { activeRecipe } = useCookMode(); // <-- NEW
   const [allSpecials, setAllSpecials] = useState([]);
@@ -99,7 +99,7 @@ function App() {
 
           </Routes>
         </main>
-        {token && isSidebarOpen && (
+        {token && userProfile?.role === 'consumer' && isSidebarOpen && (
           <aside className="sidebar">
             <ShoppingList allSpecials={allSpecials} />
           </aside>

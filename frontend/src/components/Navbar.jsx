@@ -17,6 +17,13 @@ const Navbar = () => {
         // navigate('/'); // logout function in your context already handles navigation
     };
 
+    const handleToggleSidebar = () => {
+        // Only allow consumers to open the shopping list
+        if (userProfile?.role === 'consumer') {
+            toggleSidebar();
+        }
+    };
+
     // --- Helper function for NavLink className ---
     const getNavLinkClass = ({ isActive }) => (isActive ? 'active' : '');
 
@@ -48,7 +55,7 @@ const Navbar = () => {
             <div className="nav-auth">
                 {token && userProfile && userProfile.role === 'consumer' && (
                     // --- Show Shopping List only for consumers ---
-                    <button onClick={toggleSidebar} className="sidebar-tab">
+                    <button onClick={handleToggleSidebar} className="sidebar-tab">
                         Shopping List ({selectedRecipes.length})
                     </button>
                 )}
