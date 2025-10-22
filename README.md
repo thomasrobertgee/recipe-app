@@ -49,9 +49,6 @@ Here are some of the planned features to evolve the app from an MVP into a full-
 2.  **Community Recipes & Recipe Sharing:** Allow users to submit their own favorite recipes. Other users could then search, view, save, and rate these community-submitted meals. A "Share" button would also generate a unique, shareable link for any recipe.
 3.  **"Cooking Streak" & Achievements:** Gamify the cooking experience by adding a "I Made This!" button to Cook Mode. This would contribute to a "Weekly Cooking Streak" and unlock badges for achievements like staying under budget or using up pantry items.
 
-### Advanced Data & AI Features
-*(Supplier integration moved to Current Features)*
-
 ---
 
 ## Tech Stack
