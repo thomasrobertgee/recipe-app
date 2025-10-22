@@ -11,7 +11,7 @@ const ShoppingList = ({ allSpecials }) => {
       selectedRecipes, 
       userProfile, 
       clearShoppingList,
-      decrementRecipeQuantity 
+      removeIngredientFromList // --- FIX: Use the new function from context ---
     } = useAuth();
     
     const [checkedItems, setCheckedItems] = useState(() => JSON.parse(localStorage.getItem('checkedItems') || '[]'));
@@ -70,10 +70,10 @@ const ShoppingList = ({ allSpecials }) => {
       }
     };
     
-    const handleRemoveItem = (item) => {
-      const recipeIdToRemoveFrom = Array.from(item.recipeIds)[0];
-      if(recipeIdToRemoveFrom) {
-        decrementRecipeQuantity(recipeIdToRemoveFrom);
+    // --- FIX for 'Clear All' button ---
+    const handleClearAll = () => {
+      if (window.confirm('Are you sure you want to clear your entire shopping list?')) {
+        clearShoppingList();
       }
     };
 
@@ -84,7 +84,7 @@ const ShoppingList = ({ allSpecials }) => {
         <div className="shopping-list-container">
             <div className="shopping-list-header">
                 <h2>Shopping List</h2>
-                <button onClick={clearShoppingList} className="clear-all-btn">Clear All</button>
+                <button onClick={handleClearAll} className="clear-all-btn">Clear All</button>
             </div>
 
             {budget > 0 && (
@@ -119,7 +119,7 @@ const ShoppingList = ({ allSpecials }) => {
                                     <div className="item-details">
                                       {item.count > 1 && <span className="item-quantity">({item.count})</span>}
                                       {lineItemPrice > 0 && <span className="item-price">${lineItemPrice.toFixed(2)}</span>}
-                                      <button className="remove-item-btn" onClick={() => handleRemoveItem(item)}>×</button>
+                                      <button className="remove-item-btn" onClick={() => removeIngredientFromList(item.id)}>×</button>
                                     </div>
                                 </li>
                             );

@@ -3,7 +3,7 @@
 .recipe-detail-overlay {
   position: fixed;
   /* --- FIX: Start the overlay below the navbar --- */
-  top: 72px; 
+  top: 66px; 
   left: 0;
   right: 0;
   bottom: 0;
@@ -21,7 +21,8 @@
   border-radius: 8px;
   width: 100%;
   max-width: 900px;
-  max-height: 85vh; /* Adjusted for top margin */
+  /* --- *** FIX: Make max-height relative to the overlay's available space *** --- */
+  max-height: 580px;
   overflow-y: auto;
   position: relative;
   box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
