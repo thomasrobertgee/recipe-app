@@ -9,10 +9,17 @@ import './SupplierDashboardPage.css';
 const SupplierDashboardPage = () => {
     const [specials, setSpecials] = useState([]);
     const [ingredientName, setIngredientName] = useState('');
-    const [price, setPrice] = useState('');
-    const [category, setCategory] = useState('');
+    const [price, setPrice] = useState(''); // This will now be a number
+    const [unit, setUnit] = useState('/kg'); // New state for the unit
+    const [category, setCategory] = useState('Meat & Seafood'); // New default category
+    const [expiryDate, setExpiryDate] = useState(''); // --- NEW: State for expiry date ---
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+
+    // --- NEW: Define categories and units for dropdowns ---
+    const categories = ['Meat & Seafood', 'Fruit & Vegetables', 'Dairy & Eggs', 'Bakery', 'Pantry Staples', 'Deli'];
+    const units = ['/kg', '/g', 'each', 'bunch', 'pack'];
+    // --- END NEW ---
 
     // Fetch specials on component mount
     useEffect(() => {
@@ -36,16 +43,19 @@ const SupplierDashboardPage = () => {
 
     const handleAddSpecial = async (e) => {
         e.preventDefault();
-        if (!ingredientName || !price) {
-            toast.error("Please provide an ingredient name and a price.");
+        if (!ingredientName || !price || !category || !expiryDate) {
+            toast.error("Please fill out all fields.");
             return;
         }
 
+        // --- FIX: Combine price and unit into the expected string format ---
+        const priceString = `$${parseFloat(price).toFixed(2)}${unit}`;
         const newSpecial = {
             ingredient_name: ingredientName,
-            price: price,
+            price: priceString,
             store: '', // Backend will override this
-            category: category || null
+            category: category || null,
+            expiry_date: expiryDate // --- NEW: Add expiry date to payload ---
         };
 
         try {
@@ -57,7 +67,9 @@ const SupplierDashboardPage = () => {
             // Reset form
             setIngredientName('');
             setPrice('');
-            setCategory('');
+            setUnit('/kg');
+            setCategory('Meat & Seafood'); // Reset to default
+            setExpiryDate(''); // --- NEW: Reset expiry date ---
 
         } catch (err) {
             console.error("Failed to add special:", err);
@@ -105,25 +117,49 @@ const SupplierDashboardPage = () => {
                                 required
                             />
                         </div>
-                        <div className="form-group">
-                            <label htmlFor="price">Price</label>
-                            <input
-                                type="text"
-                                id="price"
-                                value={price}
-                                onChange={(e) => setPrice(e.target.value)}
-                                placeholder="e.g., $19.99/kg"
-                                required
-                            />
+                        <div className="form-row">
+                            <div className="form-group price-group">
+                                <label htmlFor="price">Price</label>
+                                <input
+                                    type="number"
+                                    id="price"
+                                    value={price}
+                                    onChange={(e) => setPrice(e.target.value)}
+                                    placeholder="e.g., 19.99"
+                                    step="0.01"
+                                    min="0"
+                                    required
+                                />
+                            </div>
+                            <div className="form-group unit-group">
+                                <label htmlFor="unit">Unit</label>
+                                <select id="unit" value={unit} onChange={(e) => setUnit(e.target.value)}>
+                                    {units.map(u => <option key={u} value={u}>{u}</option>)}
+                                </select>
+                            </div>
                         </div>
                         <div className="form-group">
-                            <label htmlFor="category">Category (Optional)</label>
-                            <input
-                                type="text"
+                            <label htmlFor="category">Category</label>
+                            <select
                                 id="category"
                                 value={category}
                                 onChange={(e) => setCategory(e.target.value)}
-                                placeholder="e.g., Meat & Seafood"
+                                required
+                            >
+                                {categories.map(cat => (
+                                    <option key={cat} value={cat}>{cat}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div className="form-group">
+                            <label htmlFor="expiryDate">Expiry Date</label>
+                            <input
+                                type="date"
+                                id="expiryDate"
+                                value={expiryDate}
+                                onChange={(e) => setExpiryDate(e.target.value)}
+                                required
+                                min={new Date().toISOString().split("T")[0]} // Prevent selecting past dates
                             />
                         </div>
                         <button type="submit" className="btn-primary">Add Special</button>

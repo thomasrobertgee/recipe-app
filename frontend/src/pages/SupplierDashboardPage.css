@@ -119,3 +119,18 @@
         margin-top: 2rem;
     }
 }
+
+/* --- NEW: Styles for side-by-side price and unit fields --- */
+.form-row {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-end;
+}
+
+.price-group {
+    flex-grow: 1;
+}
+
+.unit-group {
+    flex-basis: 120px; /* Adjust width as needed */
+}
