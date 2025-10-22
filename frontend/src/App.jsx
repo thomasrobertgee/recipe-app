@@ -27,6 +27,8 @@ import './App.css';
 import SupplierProtectedRoute from './components/SupplierProtectedRoute';
 import SupplierDashboardPage from './pages/SupplierDashboardPage';
 import SupplierSignUpPage from './pages/SupplierSignUpPage';
+// --- *** NEW MEAL PLAN IMPORT *** ---
+import MealPlanPage from './pages/MealPlanPage';
 // --- END NEW IMPORTS ---
 
 function App() {
@@ -90,6 +92,8 @@ function App() {
               <Route path="/saved-recipes" element={<MySavedRecipesPage allSpecials={allSpecials} />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/pantry" element={<PantryPage />} />
+              {/* --- *** NEW MEAL PLAN ROUTE *** --- */}
+              <Route path="/meal-plan" element={<MealPlanPage />} />
             </Route>
 
             {/* --- NEW Supplier Protected Routes --- */}

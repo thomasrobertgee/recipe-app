@@ -1,0 +1,112 @@
+/* src/pages/MealPlanPage.css */
+
+.meal-plan-page { display: flex; flex-direction: column; }
+
+.page-header {
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; /* Allow wrapping */
+    margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #eee;
+}
+.page-header h1 { margin: 0; }
+
+.add-plan-to-list-btn {
+    padding: 8px 15px; font-size: 0.95rem; font-weight: 600; color: #fff;
+    background-color: #28a745; border: none; border-radius: 5px; cursor: pointer;
+    transition: background-color 0.2s ease; margin-left: auto; margin-right: 20px;
+}
+.add-plan-to-list-btn:hover { background-color: #218838; }
+.add-plan-to-list-btn:disabled { background-color: #cccccc; cursor: not-allowed; }
+
+.page-header p {
+    flex-basis: 100%; margin-top: 10px; text-align: center; color: #555;
+}
+
+.meal-plan-layout {
+    display: grid; grid-template-columns: 2fr 5fr 3fr; gap: 20px; width: 100%;
+    height: calc(100vh - 180px);
+}
+
+.meal-plan-recipes-list, .meal-plan-calendar, .meal-plan-info-column {
+    background-color: #f9f9f9; border-radius: 8px; padding: 15px;
+    overflow-y: auto; height: 100%; box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.meal-plan-recipes-list h2, .meal-plan-calendar h2, .meal-plan-info-column h2 {
+    text-align: center; margin-top: 0; margin-bottom: 15px; border-bottom: 2px solid #eee;
+    padding-bottom: 10px; position: sticky; top: -15px; background: #f9f9f9; z-index: 10;
+}
+.meal-plan-calendar h2 { background: #fff; }
+
+.meal-plan-recipes-list .recipes-container { display: flex; flex-direction: column; gap: 10px; }
+.meal-plan-recipes-list .recipe-tile { width: 100%; margin: 0; padding: 8px; background-color: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+.meal-plan-recipes-list .recipe-tile-title { font-size: 0.95rem; }
+.meal-plan-recipes-list .recipe-tile-info { font-size: 0.8rem; }
+
+.meal-plan-calendar { background-color: #ffffff; }
+.calendar-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
+.calendar-day { background-color: #fdfdfd; border: 1px dashed #ddd; border-radius: 6px; min-height: 200px; padding: 10px; transition: background-color 0.2s ease, border 0.2s ease; }
+.calendar-day h3 { margin-top: 0; text-align: center; font-size: 1.1rem; color: #444; }
+.day-recipe-list { display: flex; flex-direction: column; gap: 10px; min-height: 50px; }
+.day-recipe-list > p { color: #aaa; text-align: center; font-style: italic; margin-top: 20px; }
+
+.planned-recipe-tile { position: relative; }
+.planned-recipe-tile .recipe-tile { width: 100%; padding: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+.delete-plan-item-btn {
+    position: absolute; top: 2px; right: 2px; width: 20px; height: 20px; border-radius: 50%;
+    border: none; background-color: rgba(255, 0, 0, 0.7); color: white; font-size: 14px;
+    font-weight: bold; line-height: 18px; text-align: center; cursor: pointer; opacity: 0;
+    transition: opacity 0.2s ease, background-color 0.2s ease; z-index: 2;
+}
+.planned-recipe-tile:hover .delete-plan-item-btn { opacity: 1; }
+.delete-plan-item-btn:hover { background-color: rgba(255, 0, 0, 1); }
+
+/* --- Updated Column 3 Styles --- */
+.meal-plan-info-column .budget-tracker {
+    text-align: center; font-size: 1rem; padding: 10px; background-color: #fff;
+    border: 1px solid #eee; border-radius: 6px; margin-bottom: 15px;
+}
+.meal-plan-info-column .budget-tracker.over-budget { /* Style for over budget */
+    border-color: #f5c6cb;
+    background-color: #f8d7da;
+}
+.meal-plan-info-column .budget-warning { /* Style for warning text */
+    color: #dc3545;
+    font-weight: bold;
+}
+.meal-plan-info-column .budget-tracker strong { color: #333; }
+.meal-plan-info-column p { color: #777; text-align: center; font-style: italic; margin-top: 20px; }
+
+/* --- NEW: Plan Ingredients List Styles --- */
+.plan-ingredients-list {
+    list-style: none;
+    padding: 0;
+    margin: 15px 0 0 0; /* Add margin above list */
+    border-top: 1px solid #eee; /* Separator */
+}
+.plan-ingredient-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 5px;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 0.9rem;
+}
+.plan-ingredient-item:last-child {
+    border-bottom: none;
+}
+.plan-ingredient-name {
+    font-weight: 500;
+    color: #444;
+}
+.plan-ingredient-price {
+    font-weight: 500;
+    color: #007bff;
+    font-size: 0.85rem;
+    text-align: right;
+}
+.plan-ingredient-store {
+    display: block;
+    font-size: 0.75rem;
+    color: #6c757d;
+}
+/* --- END NEW --- */

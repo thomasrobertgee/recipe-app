@@ -61,6 +61,19 @@ class RecipeIngredientLink(SQLModel, table=True):
     ingredient: "Ingredient" = Relationship(back_populates="links")
 
 
+# --- *** NEW MEAL PLAN MODEL *** ---
+class MealPlanEntry(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id", index=True)
+    recipe_id: int = Field(foreign_key="recipe.id", index=True)
+    # --- *** FIX: Renamed 'date' to 'plan_date' to avoid type clash *** ---
+    plan_date: date = Field(index=True) # The specific day this recipe is planned for
+    
+    user: "User" = Relationship(back_populates="meal_plan_entries")
+    recipe: "Recipe" = Relationship(back_populates="meal_plan_entries")
+# --- *** END NEW MEAL PLAN MODEL *** ---
+
+
 class User(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     email: str = Field(unique=True, index=True)
@@ -87,6 +100,9 @@ class User(SQLModel, table=True):
     saved_recipes: List["Recipe"] = Relationship(back_populates="saved_by_users", link_model=UserRecipeLink)
     pantry_items: List["Ingredient"] = Relationship(back_populates="users_with_in_pantry", link_model=UserPantryLink)
     ratings: List["UserRecipeRatingLink"] = Relationship(back_populates="user")
+    
+    # --- *** NEW MEAL PLAN RELATIONSHIP *** ---
+    meal_plan_entries: List["MealPlanEntry"] = Relationship(back_populates="user")
 
 
 class Recipe(SQLModel, table=True):
@@ -103,6 +119,9 @@ class Recipe(SQLModel, table=True):
     links: List[RecipeIngredientLink] = Relationship(back_populates="recipe")
     saved_by_users: List[User] = Relationship(back_populates="saved_recipes", link_model=UserRecipeLink)
     ratings: List[UserRecipeRatingLink] = Relationship(back_populates="recipe")
+    
+    # --- *** NEW MEAL PLAN RELATIONSHIP *** ---
+    meal_plan_entries: List["MealPlanEntry"] = Relationship(back_populates="recipe")
 
 
 class Ingredient(SQLModel, table=True):

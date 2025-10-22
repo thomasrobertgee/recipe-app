@@ -27,7 +27,9 @@ from database import engine, create_db_and_tables, get_session
 from models import (
     User, Recipe, Ingredient, RecipeIngredientLink, PriceHistory,
     UserRecipeRatingLink, UserPantryLink, UserRecipeLink,
-    SupplierProfile # <-- NEW IMPORT
+    SupplierProfile, # <-- NEW IMPORT
+    # --- *** NEW MEAL PLAN IMPORT *** ---
+    MealPlanEntry
 )
 from schemas import (
     GenerateRequest, UserCreate, UserRead, UserUpdate, Token,
@@ -35,7 +37,9 @@ from schemas import (
     PriceHistoryRead, RecipeRating, PantryItem, PantryItemCreate,
     RecipeModificationRequest, GoogleLoginRequest,
     BarcodeLookupResponse,
-    SupplierRegistrationRequest, SupplierProfileRead # <-- NEW IMPORTS
+    SupplierRegistrationRequest, SupplierProfileRead, # <-- NEW IMPORTS
+    # --- *** NEW MEAL PLAN IMPORTS *** ---
+    MealPlanEntryCreate, MealPlanEntryRead
 )
 from security import get_password_hash, verify_password, create_access_token, get_current_user
 # --- IMPORT NEW AI FUNCTION ---
@@ -644,6 +648,172 @@ def lookup_barcode(barcode: str):
     except Exception as e:
         print(f"--- [GET /api/barcode-lookup] An unexpected error occurred: {e}")
         raise HTTPException(status_code=500, detail="Internal server error during barcode lookup.")
+
+
+# --- *** NEW MEAL PLAN API ENDPOINTS *** ---
+@app.get("/api/meal-plan", response_model=List[MealPlanEntryRead])
+def get_meal_plan(
+    session: Session = Depends(get_session), 
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Fetches all meal plan entries for the logged-in user, with full recipe details.
+    """
+    meal_plan_entries = session.exec(
+        select(MealPlanEntry)
+        .where(MealPlanEntry.user_id == current_user.id)
+        .options(
+            # Eagerly load the recipe, its links, and the ingredient for each link
+            selectinload(MealPlanEntry.recipe)
+            .selectinload(Recipe.links)
+            .selectinload(RecipeIngredientLink.ingredient)
+        )
+        # --- *** FIX: Order by 'plan_date' *** ---
+        .order_by(MealPlanEntry.plan_date.asc()) # Order by date
+    ).all()
+
+    # Manually construct the response to use the RecipeResponse schema
+    response_list = []
+    for entry in meal_plan_entries:
+        if not entry.recipe:
+            print(f"Warning: Meal plan entry {entry.id} missing recipe data.")
+            continue
+            
+        recipe = entry.recipe
+        response_ingredients = [
+             IngredientInRecipe(ingredient_id=link.ingredient.id, name=link.ingredient.name, quantity=link.quantity)
+             for link in recipe.links if link.ingredient
+         ]
+
+        avg_rating = 0.0
+        if recipe.rating_count > 0:
+            avg_rating = round(float(recipe.total_rating) / float(recipe.rating_count), 1)
+
+        recipe_response = RecipeResponse(
+            id=recipe.id, title=recipe.title, description=recipe.description, instructions=recipe.instructions,
+            ingredients=response_ingredients, tags=recipe.tags or [],
+            total_rating=recipe.total_rating, rating_count=recipe.rating_count,
+            average_rating=avg_rating
+        )
+        
+        response_list.append(
+            MealPlanEntryRead(
+                id=entry.id,
+                user_id=entry.user_id,
+                recipe_id=entry.recipe_id,
+                # --- *** FIX: Use 'plan_date' *** ---
+                plan_date=entry.plan_date,
+                recipe=recipe_response # Assign the fully formed RecipeResponse
+            )
+        )
+        
+    return response_list
+
+
+@app.post("/api/meal-plan", response_model=MealPlanEntryRead)
+def add_to_meal_plan(
+    entry_data: MealPlanEntryCreate,
+    session: Session = Depends(get_session), 
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Adds a recipe to the user's meal plan for a specific date.
+    """
+    # Check if recipe exists
+    recipe = session.get(Recipe, entry_data.recipe_id)
+    if not recipe:
+        raise HTTPException(status_code=404, detail="Recipe not found")
+
+    # Optional: Check if the recipe is already saved by the user
+    # This might not be a strict requirement for meal planning
+    
+    new_entry = MealPlanEntry(
+        user_id=current_user.id,
+        recipe_id=entry_data.recipe_id,
+        # --- *** FIX: Use 'plan_date' *** ---
+        plan_date=entry_data.plan_date
+    )
+    
+    session.add(new_entry)
+    
+    try:
+        session.commit()
+        session.refresh(new_entry)
+        
+        # We need to manually load the recipe data to return the full response
+        full_entry = session.exec(
+            select(MealPlanEntry)
+            .where(MealPlanEntry.id == new_entry.id)
+            .options(
+                selectinload(MealPlanEntry.recipe)
+                .selectinload(Recipe.links)
+                .selectinload(RecipeIngredientLink.ingredient)
+            )
+        ).first()
+
+        if not full_entry or not full_entry.recipe:
+            raise HTTPException(status_code=500, detail="Failed to retrieve full meal plan entry after creation.")
+
+        # Construct the RecipeResponse part
+        recipe = full_entry.recipe
+        response_ingredients = [
+             IngredientInRecipe(ingredient_id=link.ingredient.id, name=link.ingredient.name, quantity=link.quantity)
+             for link in recipe.links if link.ingredient
+         ]
+        avg_rating = 0.0
+        if recipe.rating_count > 0:
+            avg_rating = round(float(recipe.total_rating) / float(recipe.rating_count), 1)
+        recipe_response = RecipeResponse(
+            id=recipe.id, title=recipe.title, description=recipe.description, instructions=recipe.instructions,
+            ingredients=response_ingredients, tags=recipe.tags or [],
+            total_rating=recipe.total_rating, rating_count=recipe.rating_count,
+            average_rating=avg_rating
+        )
+
+        return MealPlanEntryRead(
+            id=full_entry.id,
+            user_id=full_entry.user_id,
+            recipe_id=full_entry.recipe_id,
+            # --- *** FIX: Use 'plan_date' *** ---
+            plan_date=full_entry.plan_date,
+            recipe=recipe_response
+        )
+        
+    except Exception as e:
+        session.rollback()
+        print(f"Error adding to meal plan: {e}")
+        raise HTTPException(status_code=500, detail="Failed to save meal plan entry.")
+
+
+@app.delete("/api/meal-plan/{entry_id}", status_code=204)
+def remove_from_meal_plan(
+    entry_id: int,
+    session: Session = Depends(get_session), 
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Deletes a specific entry from the user's meal plan.
+    """
+    entry = session.get(MealPlanEntry, entry_id)
+    
+    if not entry:
+        # Return 204 even if not found to make deletion idempotent
+        print(f"Attempt to delete non-existent meal plan entry ID {entry_id}")
+        return
+
+    if entry.user_id != current_user.id:
+        print(f"Forbidden: User {current_user.id} tried to delete meal plan entry {entry_id} belonging to user {entry.user_id}")
+        raise HTTPException(status_code=403, detail="Not authorized to delete this entry.")
+        
+    try:
+        session.delete(entry)
+        session.commit()
+        print(f"User {current_user.id} deleted meal plan entry ID {entry_id}")
+    except Exception as e:
+        session.rollback()
+        print(f"Error deleting meal plan entry {entry_id}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to delete meal plan entry.")
+# --- *** END NEW MEAL PLAN API ENDPOINTS *** ---
 
 
 # --- NEW SUPPLIER PORTAL API ---

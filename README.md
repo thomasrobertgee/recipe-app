@@ -28,6 +28,11 @@ The application consists of a Python backend that serves data from a database an
     - Separate registration for local suppliers (e.g., butchers, greengrocers).
     - Dedicated portal for suppliers to log in and manage their own weekly specials (add/delete items and prices).
     - Supplier specials appear alongside supermarket specials for all users.
+- **Meal Planner & Weekly Budgeting:**
+    - Dedicated "Meal Plan" page with a 7-day calendar view.
+    - Users can drag and drop saved recipes onto specific days.
+    - Displays consolidated ingredients and estimated cost for the current plan, tracked against the user's weekly budget.
+    - Button to add all planned recipes to the main shopping list.
 - Full CRUD functionality for recipes and specials.
 - **Recent Bug Fixes:** Addressed issues related to receipt scanning database transactions, AI prompt formatting for instructions and receipt items, JSON serialization errors, recipe rating display updates, login redirection for suppliers, and various frontend styling inconsistencies.
 
@@ -38,12 +43,11 @@ The application consists of a Python backend that serves data from a database an
 Here are some of the planned features to evolve the app from an MVP into a full-featured product.
 
 ### Core App Enhancements
-1.  **Meal Planner & Weekly Budgeting:** A new "Meal Plan" page with a weekly calendar. Users can drag and drop recipes onto days of the week, generating a consolidated shopping list for the entire plan and tracking the total cost against their weekly budget.
-2.  **Refine Receipt Scanning:** Improve AI prompt for accuracy, potentially add manual correction step, and integrate price extraction with budget tracking (once implemented).
+1.  **Refine Receipt Scanning:** Improve AI prompt for accuracy, potentially add manual correction step, and integrate price extraction with budget tracking (once implemented).
 
 ### Community & Engagement Features
-3.  **Community Recipes & Recipe Sharing:** Allow users to submit their own favorite recipes. Other users could then search, view, save, and rate these community-submitted meals. A "Share" button would also generate a unique, shareable link for any recipe.
-4.  **"Cooking Streak" & Achievements:** Gamify the cooking experience by adding a "I Made This!" button to Cook Mode. This would contribute to a "Weekly Cooking Streak" and unlock badges for achievements like staying under budget or using up pantry items.
+2.  **Community Recipes & Recipe Sharing:** Allow users to submit their own favorite recipes. Other users could then search, view, save, and rate these community-submitted meals. A "Share" button would also generate a unique, shareable link for any recipe.
+3.  **"Cooking Streak" & Achievements:** Gamify the cooking experience by adding a "I Made This!" button to Cook Mode. This would contribute to a "Weekly Cooking Streak" and unlock badges for achievements like staying under budget or using up pantry items.
 
 ### Advanced Data & AI Features
 *(Supplier integration moved to Current Features)*
@@ -70,6 +74,7 @@ Here are some of the planned features to evolve the app from an MVP into a full-
 - **Routing:** React Router
 - **Authentication:** **@react-oauth/google**
 - **Barcode Scanning:** **react-zxing**
+- **Drag & Drop:** **@dnd-kit/core, @dnd-kit/sortable, @dnd-kit/utilities**
 
 ---
 
@@ -218,6 +223,9 @@ You can test the locally running application on your mobile phone if it's connec
 ---
 
 ## API Endpoints
+- **`GET /api/meal-plan`**: Get all meal plan entries for the current user.
+- **`POST /api/meal-plan`**: Add a recipe to the meal plan for a specific date.
+- **`DELETE /api/meal-plan/{entry_id}`**: Remove an entry from the meal plan.
 - **`GET /api/recipes`**: Retrieves a list of all recipes (filter/sort options available).
 - **`POST /api/recipes`**: Create a new recipe (admin/future feature).
 - **`POST /api/recipes/{recipe_id}/rate`**: Rate a specific recipe. Returns updated recipe data.

@@ -2,6 +2,8 @@
 
 from sqlmodel import SQLModel, Field
 from typing import Optional, List, Dict
+# --- *** NEW: Import date *** ---
+from datetime import date
 # Import validator if needed later
 # from pydantic import validator
 # import math
@@ -153,3 +155,18 @@ class RecipeModificationRequest(SQLModel):
 class BarcodeLookupResponse(SQLModel):
     product_name: Optional[str] = None
     error: Optional[str] = None
+
+# --- *** NEW MEAL PLAN SCHEMAS *** ---
+class MealPlanEntryCreate(SQLModel):
+    recipe_id: int
+    # --- *** FIX: Renamed 'date' to 'plan_date' *** ---
+    plan_date: date # Expects a date object or string in "YYYY-MM-DD" format
+
+class MealPlanEntryRead(SQLModel):
+    id: int
+    user_id: int
+    recipe_id: int
+    # --- *** FIX: Renamed 'date' to 'plan_date' *** ---
+    plan_date: date
+    recipe: RecipeResponse # Nest the full recipe details
+# --- *** END NEW MEAL PLAN SCHEMAS *** ---

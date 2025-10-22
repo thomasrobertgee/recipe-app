@@ -6,26 +6,32 @@ import { useAuth } from '../context/AuthContext';
 import { getSimplePrice, findBestSpecialMatch } from '../utils/priceUtils';
 import './ShoppingList.css';
 
-const ShoppingList = ({ allSpecials }) => {
+// --- *** UPDATED: Accept recipes prop and isEmbedded prop *** ---
+const ShoppingList = ({ allSpecials, recipes: recipesProp, isEmbedded = false }) => {
     const { 
-      selectedRecipes, 
-      userProfile, 
-      clearShoppingList,
-      removeIngredientFromList // --- FIX: Use the new function from context ---
+        selectedRecipes: globalRecipes, // Renamed to avoid conflict
+        userProfile, 
+        clearShoppingList,
+        removeIngredientFromList // --- FIX: Use the new function from context ---
     } = useAuth();
+    
+    // --- *** UPDATED: Use recipesProp if provided, else use globalRecipes *** ---
+    const recipesToDisplay = recipesProp || globalRecipes;
     
     const [checkedItems, setCheckedItems] = useState(() => JSON.parse(localStorage.getItem('checkedItems') || '[]'));
     
     useEffect(() => { localStorage.setItem('checkedItems', JSON.stringify(checkedItems)); }, [checkedItems]);
 
     const shoppingListData = useMemo(() => {
-        if (!selectedRecipes || selectedRecipes.length === 0) {
+        // --- *** UPDATED: Check recipesToDisplay *** ---
+        if (!recipesToDisplay || recipesToDisplay.length === 0) {
             return { consolidatedItems: [], totalCost: 0 };
         }
 
         const itemsMap = new Map();
 
-        selectedRecipes.forEach(({ recipe, quantity }) => {
+        // --- *** UPDATED: Iterate over recipesToDisplay *** ---
+        recipesToDisplay.forEach(({ recipe, quantity }) => {
             recipe.ingredients.forEach(ingredient => {
                 // --- THIS IS THE FIX ---
                 // Use our new "fuzzy match" function instead of a strict ID match.
@@ -58,7 +64,8 @@ const ShoppingList = ({ allSpecials }) => {
 
         return { consolidatedItems, totalCost };
 
-    }, [selectedRecipes, allSpecials]);
+    // --- *** UPDATED: Dependency is now recipesToDisplay *** ---
+    }, [recipesToDisplay, allSpecials]);
 
     const { consolidatedItems, totalCost } = shoppingListData;
 
@@ -82,10 +89,13 @@ const ShoppingList = ({ allSpecials }) => {
 
     return (
         <div className="shopping-list-container">
-            <div className="shopping-list-header">
-                <h2>Shopping List</h2>
-                <button onClick={handleClearAll} className="clear-all-btn">Clear All</button>
-            </div>
+            {/* --- *** UPDATED: Conditionally show header *** --- */}
+            {!isEmbedded && (
+                <div className="shopping-list-header">
+                    <h2>Shopping List</h2>
+                    <button onClick={handleClearAll} className="clear-all-btn">Clear All</button>
+                </div>
+            )}
 
             {budget > 0 && (
               <div className="budget-tracker">
@@ -113,13 +123,19 @@ const ShoppingList = ({ allSpecials }) => {
                             return (
                                 <li key={item.id} className={isChecked ? 'checked' : ''}>
                                     <label className="checkbox-label">
-                                        <input type="checkbox" checked={isChecked} onChange={() => handleCheckItem(item.id)} />
+                                        {/* --- *** UPDATED: Conditionally show checkbox *** --- */}
+                                        {!isEmbedded && (
+                                            <input type="checkbox" checked={isChecked} onChange={() => handleCheckItem(item.id)} />
+                                        )}
                                         <strong>{item.name}</strong>
                                     </label>
                                     <div className="item-details">
                                       {item.count > 1 && <span className="item-quantity">({item.count})</span>}
                                       {lineItemPrice > 0 && <span className="item-price">${lineItemPrice.toFixed(2)}</span>}
-                                      <button className="remove-item-btn" onClick={() => removeIngredientFromList(item.id)}>×</button>
+                                      {/* --- *** UPDATED: Conditionally show remove button *** --- */}
+                                      {!isEmbedded && (
+                                          <button className="remove-item-btn" onClick={() => removeIngredientFromList(item.id)}>×</button>
+                                      )}
                                     </div>
                                 </li>
                             );
