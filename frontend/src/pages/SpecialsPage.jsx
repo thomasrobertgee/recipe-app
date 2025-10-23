@@ -105,7 +105,7 @@ const SpecialsPage = () => {
   return (
     <div className="app-container">
       <div className="page-header">
-        <h1>Weekly Specials</h1>
+        <h1>Specials</h1>
       </div>
 
       <div className="generate-section">

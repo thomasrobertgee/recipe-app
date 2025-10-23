@@ -172,7 +172,7 @@ function MealPlanPage() {
 
     return (
         <DndContext onDragEnd={handleDragEnd} collisionDetection={closestCenter}>
-            <div className="page-container meal-plan-page">
+            <div className="app-container">
                 <header className="page-header">
                     <h1>My Meal Plan</h1>
                     <button onClick={handleAddPlanToShoppingList} className="add-plan-to-list-btn" disabled={mealPlan.length === 0}>

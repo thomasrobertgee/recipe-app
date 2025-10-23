@@ -1,73 +1,94 @@
 /* src/components/Navbar.css */
 .navbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background-color: #fff;
-  padding: 1rem 2rem;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  /* --- NEW --- */
-  position: sticky;
-  top: 0;
-  z-index: 100; /* Ensures it stays on top of other content */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #fff;
+    padding: 1rem 2rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    /* --- NEW --- */
+    position: sticky;
+    top: 0;
+    z-index: 100; /* Ensures it stays on top of other content */
 }
 .nav-logo {
-  font-weight: bold;
-  font-size: 1.5rem;
-  color: #333;
-  text-decoration: none;
+    font-weight: bold;
+    font-size: 1.5rem;
+    color: #333;
+    text-decoration: none;
 }
+
+/* --- UPDATED: Added flex and gap --- */
+.nav-links {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem; /* Controls spacing between links and separators */
+}
+
+/* --- UPDATED: Removed margin-left --- */
 .nav-links a {
-  margin-left: 1.5rem;
-  text-decoration: none;
-  color: #555;
-  font-weight: 500;
+    /* margin-left: 1.5rem; */ /* Replaced by gap on .nav-links */
+    text-decoration: none;
+    color: #555;
+    font-weight: 500;
 }
-.nav-links a.active {
-  color: #4caf50;
-  border-bottom: 2px solid #4caf50;
-  padding-bottom: 4px;
+
+/* --- UPDATED: Combined active and hover, and added bold --- */
+.nav-links a.active,
+.nav-links a:hover {
+    color: #4caf50;
+    border-bottom: 2px solid #4caf50;
+    padding-bottom: 4px;
+    font-weight: bold; /* Added bold as requested */
+}
+
+/* --- NEW: Style for the separator --- */
+.nav-separator {
+    color: #ccc;
+    font-size: 1.2rem;
+    font-weight: 300;
+    /* line-height: 1; */ /* Removed this to improve vertical alignment */
 }
 
 /* Add to bottom of src/components/Navbar.css */
 .nav-auth {
-  display: flex;
-  align-items: center;
-  gap: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
 }
 
 .signup-button {
-  background-color: #4caf50;
-  color: white !important;
-  padding: 8px 16px;
-  border-radius: 4px;
-  transition: background-color 0.2s;
+    background-color: #4caf50;
+    color: white !important;
+    padding: 8px 16px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
 }
 
 .signup-button:hover {
-  background-color: #45a049;
+    background-color: #45a049;
 }
 
 .signup-button.active {
-  border-bottom: none !important;
+    border-bottom: none !important;
 }
 
 .logout-button {
-  background: none;
-  border: 1px solid #ccc;
-  padding: 8px 16px;
-  border-radius: 4px;
-  cursor: pointer;
+    background: none;
+    border: 1px solid #ccc;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
 }
 
 /* Add to bottom of Navbar.css */
 .sidebar-tab {
-  background-color: #e8f5e9;
-  color: #388e3c;
-  border: 1px solid #a5d6a7;
-  padding: 8px 16px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: 500;
-  margin-right: 1.5rem;
+    background-color: #e8f5e9;
+    color: #388e3c;
+    border: 1px solid #a5d6a7;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    margin-right: 1.5rem;
 }

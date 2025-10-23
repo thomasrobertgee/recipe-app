@@ -101,7 +101,7 @@ const DashboardPage = ({ allSpecials }) => {
 
       {/* --- USE app-container HERE --- */}
       <div className="app-container">
-        <div className="page-header"><h1>Recipe Dashboard</h1></div>
+        <div className="page-header"><h1>Dashboard</h1></div>
         <FilterSortControls
           minRating={minRating}
           setMinRating={setMinRating}

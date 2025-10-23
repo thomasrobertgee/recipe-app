@@ -93,7 +93,7 @@ const AllRecipesPage = ({ allSpecials }) => {
     return (
         <div className="app-container">
             {/* Use page-header for consistency */}
-            <div className="page-header"><h1>All Generated Recipes</h1></div>
+            <div className="page-header"><h1>All Recipes</h1></div>
             <FilterSortControls
                 minRating={minRating}
                 setMinRating={setMinRating}

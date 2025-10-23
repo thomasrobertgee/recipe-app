@@ -6,12 +6,10 @@ import { useUI } from '../context/UIContext';
 import './Navbar.css';
 
 const Navbar = () => {
-    // --- Use userProfile (or user if you kept both in context) ---
     const { token, userProfile, logout, selectedRecipes } = useAuth();
     const { toggleSidebar } = useUI();
     const navigate = useNavigate(); // Added for logout redirect
 
-    // --- Added handleLogout function ---
     const handleLogout = () => {
         logout();
         // navigate('/'); // logout function in your context already handles navigation
@@ -38,11 +36,17 @@ const Navbar = () => {
                     // --- Consumer Links ---
                     <>
                         <NavLink to="/dashboard" className={getNavLinkClass}>Dashboard</NavLink>
+                        <span className="nav-separator">|</span>
                         <NavLink to="/recipes" className={getNavLinkClass}>All Recipes</NavLink>
-                        <NavLink to="/specials" className={getNavLinkClass}>View Specials</NavLink>
+                        <span className="nav-separator">|</span>
+                        <NavLink to="/specials" className={getNavLinkClass}>Specials</NavLink>
+                        <span className="nav-separator">|</span>
                         <NavLink to="/pantry" className={getNavLinkClass}>My Pantry</NavLink>
-                        <NavLink to="/saved-recipes" className={getNavLinkClass}>My Saved</NavLink>
+                        <span className="nav-separator">|</span>
+                        <NavLink to="/saved-recipes" className={getNavLinkClass}>Saved</NavLink>
+                        <span className="nav-separator">|</span>
                         <NavLink to="/meal-plan" className={getNavLinkClass}>Meal Plan</NavLink>
+                        <span className="nav-separator">|</span>
                         <NavLink to="/profile" className={getNavLinkClass}>Profile</NavLink>
                     </>
                 )}
@@ -68,7 +72,7 @@ const Navbar = () => {
                     // --- Logged Out: Show Supplier Signup, Login, Consumer Signup ---
                     <>
                         {/* Added Supplier Signup Link */}
-                        <NavLink to="/portal/signup" className={getNavLinkClass}>Supplier Sign Up</NavLink>
+                        <NavLink to="/portal/signup" className={getNavLinkClass}>TEMP Supplier Sign Up Link</NavLink>
                         <NavLink to="/login" className={getNavLinkClass}>Log In</NavLink>
                         <NavLink to="/signup" className={({ isActive }) => (isActive ? 'signup-button active' : 'signup-button')}>Sign Up</NavLink>
                     </>

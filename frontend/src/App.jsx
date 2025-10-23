@@ -9,6 +9,7 @@ import Navbar from './components/Navbar';
 import ProtectedRoute from './components/ProtectedRoute';
 import ShoppingList from './components/ShoppingList';
 import CookMode from './components/CookMode'; // <-- NEW
+import Footer from './components/Footer'; // <-- NEW FOOTER IMPORT
 import { useAuth } from './context/AuthContext';
 import { useUI } from './context/UIContext';
 import { useCookMode } from './context/CookModeContext'; // <-- NEW
@@ -111,6 +112,9 @@ function App() {
       </div>
       {/* --- NEW: Render CookMode if there is an active recipe --- */}
       {activeRecipe && <CookMode />}
+      
+      {/* --- NEW: Render Footer --- */}
+      <Footer />
     </div>
   );
 }

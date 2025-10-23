@@ -22,10 +22,10 @@ The application consists of a Python backend that serves data from a database an
 - **Barcode Scanning:** Users can scan product barcodes using their device camera to quickly add items to their pantry (utilizes Open Food Facts API via backend proxy).
 - **Receipt Scanning (Beta):** Users can upload or take a photo of a receipt. Google Cloud Vision OCR extracts text, and OpenAI API parses items to add them to the pantry.
 - **Recipe Ratings & Filtering:** Users can rate recipes and filter/sort them.
-- **Intelligent Shopping List:** A dynamic list that consolidates ingredients, calculates costs, and tracks spending against a user's budget.
+- **Intelligent Shopping List:** A dynamic list that consolidles ingredients, calculates costs, and tracks spending against a user's budget.
 - **Interactive Cook Mode:** A persistent, step-by-step cooking interface with integrated, clickable timers to guide users while cooking.
 - **Supplier Portal:**
-    - Separate registration for local suppliers (e.g., butchers, greengrocers).
+    - Separate registration for local suppliers (e.g., butchers, greengrocerrs).
     - Dedicated portal for suppliers to log in and manage their own weekly specials (add/delete items and prices).
     - Supplier specials appear alongside supermarket specials for all users.
 - **Meal Planner & Weekly Budgeting:**
@@ -42,12 +42,48 @@ The application consists of a Python backend that serves data from a database an
 
 Here are some of the planned features to evolve the app from an MVP into a full-featured product.
 
-### Core App Enhancements
-1.  **Refine Receipt Scanning:** Improve AI prompt for accuracy, potentially add manual correction step, and integrate price extraction with budget tracking (once implemented).
+### New Core Features
+1.  **"Smart Pantry" Shopping List Sync:** Automatically cross-reference a recipe's ingredients with the user's "My Pantry" list. Any items the user already has will be moved to an "Already in your pantry" section of the shopping list, preventing duplicate purchases.
+2.  **Price-Drop Alerts ("Stock Up" Notifier):** Create a "Watchlist" for staple items. If the scraper finds a price that is significantly lower than the item's historical average, send the user an in-app notification.
 
-### Community & Engagement Features
-2.  **Community Recipes & Recipe Sharing:** Allow users to submit their own favorite recipes. Other users could then search, view, save, and rate these community-submitted meals. A "Share" button would also generate a unique, shareable link for any recipe.
-3.  **"Cooking Streak" & Achievements:** Gamify the cooking experience by adding a "I Made This!" button to Cook Mode. This would contribute to a "Weekly Cooking Streak" and unlock badges for achievements like staying under budget or using up pantry items.
+### Existing Feature Improvements
+3.  **Refine Receipt Scanning (Manual Correction UI):** To improve accuracy, show a modal after the OCR/AI parsing that lists the detected items (e.g., "Bnnas"). This allows the user to correct any typos or misinterpretations before the items are added to their pantry.
+4.  **Smarter Shopping List (Sort by Aisle):** Automatically group items on the "Intelligent Shopping List" based on their ingredient category (e.g., "Fruit & Vegetables," "Meat & Seafood") to optimize the in-store shopping experience.
+5.  **Meal Planner "Leftovers" Integration:** Add a "Use for leftovers?" toggle when adding a recipe to the meal plan. This would add a "Leftovers" block to the next day's lunch and prevent those ingredients from being double-counted in the weekly shopping list.
+6.  **Dynamic Cook Mode Scaling:** Add a dropdown (e.g., "0.5x", "1x", "2x") to the "Cook Mode" interface that dynamically updates all ingredient quantities within the step-by-step instructions.
+
+### New AI & Data Features
+7.  **AI Ingredient Identification (from Photo):** Use Google Cloud Vision's *object detection* to allow users to take a photo of their fridge or pantry. The API will identify items (e.g., "Carrot," "Lemon"), which the user can then add to their pantry with one click.
+8.  **AI-Powered "Flavor Profile" Onboarding:** As an optional step during onboarding, present an AI-powered "flavor quiz" (e.g., "Spicy or mild?", "Rich or light?"). The AI will infer preferences to provide more personalized recipe recommendations.
+9.  **Dynamic AI Generation Inputs:** Add "Max Cook Time" and "Difficulty" sliders to the recipe generation page. These values will be fed directly into the AI prompt to ensure recipes match the user's immediate needs.
+
+### Community & Engagement
+10. **Community "Cook-along" Challenges:** Building on the original "Community Recipes" idea, feature a "Weekly Challenge" based on a major supermarket special (e.g., "This week's star: $5/kg Chicken Thighs"). Users can cook a recipe using that item and post a photo and rating to build engagement.
+11. **Community Recipes & Recipe Sharing:** Allow users to submit, share, and rate their own recipes.
+
+---
+
+## UI Improvement Suggestions
+
+A collection of ideas for improving the application's User Interface, primarily focused on the public-facing landing page.
+
+### Landing Page (First Impression)
+
+1.  **Hero Section Improvements:**
+    * **Stronger Headline:** Replace the generic "Welcome" with a benefit-driven headline like "Cook Smarter with AI-Powered Specials" or "Stop Overspending on Groceries."
+    * **Clearer Call to Action (CTA):** Change the "Get Started" button text to a more direct and low-friction CTA like "Sign Up for Free."
+    * **Better Visuals:** Replace the placeholder hero image with a high-quality, relevant photo. An idea is a split-screen image showing a supermarket receipt on one side and a delicious finished meal on the other, visually connecting the app's core concepts.
+
+2.  **Features Section Improvements:**
+    * **"Show, Don't Tell":** Replace the generic icons in the features section with small, clean screenshots of the *actual* application. For example:
+        * "Save Money" -> Show a crop of the `SpecialsPage`.
+        * "AI Powered" -> Show an `RecipeCard` with its AI tags.
+        * "Reduce Waste" -> Show a snippet of the `My Pantry` page.
+    * This builds user trust by proving the features are real and tangible.
+
+3.  **Supplier Section & Navbar Flow:**
+    * **Visual Separation:** Give the "For Suppliers" section on the landing page a distinct background color (e.g., light grey) to visually separate it from the main consumer-focused features.
+    * **De-clutter Navbar:** Move the "For Suppliers" link out of the main homepage/navbar flow and place it in a new website footer. This keeps the homepage 99% focused on the primary user (the home cook), as suppliers will know to look in the footer for business-related links.
 
 ---
 
