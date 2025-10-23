@@ -10,7 +10,8 @@ import './RecipeDetail.css';
 
 const RecipeDetail = ({ recipe, onClose, allSpecials, onRate }) => {
     const { savedRecipeIds, saveRecipe, unsaveRecipe, handleSelectRecipe } = useAuth();
-    const { startCookMode } = useCookMode();
+    // --- FIX: Destructure the correct function name ---
+    const { startCooking } = useCookMode();
     const isSaved = savedRecipeIds.has(recipe.id);
 
     const [isModifyModalOpen, setIsModifyModalOpen] = useState(false);
@@ -36,7 +37,8 @@ const RecipeDetail = ({ recipe, onClose, allSpecials, onRate }) => {
 
     const handleStartCookMode = (e) => {
         e.stopPropagation();
-        startCookMode(recipe);
+        // --- FIX: Call the correct function ---
+        startCooking(recipe);
         onClose();
     };
 

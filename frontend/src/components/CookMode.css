@@ -1,109 +1,129 @@
 /* src/components/CookMode.css */
 
-.cook-mode-overlay {
+/* --- This is the main container from your JSX file --- */
+.cook-mode-container {
     position: fixed;
-    top: 72px;
-    left: 0;
-    width: 100%;
-    height: calc(100% - 72px);
-    background-color: #f7f9fc;
-    z-index: 1005;
+    bottom: 20px;
+    right: 20px;
+    width: 380px;
+    max-width: 90vw;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+    z-index: 1010;
     display: flex;
     flex-direction: column;
+    overflow: hidden; /* Ensures content is hidden when minimized */
+    transition: all 0.3s ease-in-out;
 }
 
+/* --- Styles for the minimized state --- */
+.cook-mode-container.minimized {
+    /* Height will be determined by its header content */
+}
+
+.cook-mode-container.minimized .cook-mode-content,
+.cook-mode-container.minimized .cook-mode-footer {
+    display: none; /* Hide content and footer when minimized */
+}
+
+/* --- Header --- */
 .cook-mode-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1rem 1.5rem;
-    background-color: #fff;
+    padding: 12px 15px;
+    background-color: #f9f9f9;
     border-bottom: 1px solid #e0e0e0;
     flex-shrink: 0;
 }
 
-.cook-mode-header h2 {
+.cook-mode-header h3 {
     margin: 0;
-    font-size: 1.5rem;
-    color: #2c3e50;
+    font-size: 1.1rem;
+    color: #333;
+    /* Truncate long recipe titles */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding-right: 10px;
 }
 
-.exit-cook-mode-btn {
-    background-color: #e74c3c;
-    color: white;
-    border: none;
-    padding: 0.75rem 1.5rem;
-    border-radius: 5px;
-    font-size: 1rem;
-    font-weight: bold;
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-
-.exit-cook-mode-btn:hover {
-    background-color: #c0392b;
-}
-
-.cook-mode-main {
-    flex-grow: 1;
+.cook-mode-header-controls {
     display: flex;
-    justify-content: center;
     align-items: center;
-    padding: 2rem;
-    overflow-y: auto;
-}
-
-.step-card {
-    background-color: #fff;
-    border-radius: 8px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    padding: 2rem;
-    width: 100%;
-    max-width: 800px;
-    text-align: center;
-}
-
-.step-number {
-    font-size: 1.2rem;
-    font-weight: bold;
-    color: #3498db;
-    margin-bottom: 1rem;
-}
-
-.step-instruction {
-    font-size: 1.8rem;
-    line-height: 1.6;
-    margin-bottom: 2rem;
-    color: #34495e;
-}
-
-.cook-mode-footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1rem 1.5rem;
-    background-color: #fff;
-    border-top: 1px solid #e0e0e0;
+    gap: 8px;
     flex-shrink: 0;
 }
 
-.nav-btn {
-    background-color: #3498db;
+.minimize-btn,
+.close-cook-mode-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.2rem;
+    color: #888;
+    padding: 0;
+    line-height: 1;
+}
+
+.minimize-btn:hover,
+.close-cook-mode-btn:hover {
+    color: #000;
+}
+
+/* --- Content --- */
+.cook-mode-content {
+    padding: 15px;
+    max-height: 300px;
+    overflow-y: auto;
+    flex-grow: 1;
+}
+
+.step-counter {
+    font-size: 0.85rem;
+    font-weight: bold;
+    color: var(--color-primary, #4caf50);
+    margin-bottom: 8px;
+}
+
+.instruction-text {
+    font-size: 1rem;
+    line-height: 1.5;
+    color: #333;
+}
+
+.instruction-timer {
+    margin-top: 15px;
+}
+
+/* --- Footer --- */
+.cook-mode-footer {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 15px;
+    border-top: 1px solid #e0e0e0;
+    background-color: #f9f9f9;
+    flex-shrink: 0;
+}
+
+.cook-mode-footer button {
+    background-color: var(--color-primary, #4caf50);
     color: white;
     border: none;
-    padding: 0.75rem 2rem;
+    padding: 8px 16px;
     border-radius: 5px;
-    font-size: 1rem;
+    font-size: 0.9rem;
     font-weight: bold;
     cursor: pointer;
     transition: background-color 0.2s;
 }
 
-.nav-btn:hover {
-    background-color: #2980b9;
+.cook-mode-footer button:hover {
+    background-color: var(--color-primary-dark, #45a049);
 }
 
-.nav-btn:disabled {
+.cook-mode-footer button:disabled {
     background-color: #bdc3c7;
     cursor: not-allowed;
 }

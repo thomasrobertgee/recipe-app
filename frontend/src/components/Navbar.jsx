@@ -28,7 +28,7 @@ const Navbar = () => {
     return (
         <nav className="navbar">
             {/* --- Used your "Recipe Saver" logo text --- */}
-            <NavLink to="/" className="nav-logo">Recipe Saver</NavLink>
+            <NavLink to="/" className="nav-logo">Recipe App</NavLink>
 
             {/* --- Main Navigation Links --- */}
             <div className="nav-links">
