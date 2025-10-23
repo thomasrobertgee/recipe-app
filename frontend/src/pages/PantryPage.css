@@ -1,7 +1,7 @@
 /* src/pages/PantryPage.css */
 
 .pantry-page {
-  /* Uses app-container from App.css for padding/max-width */
+    /* Uses app-container from App.css for padding/max-width */
 }
 
 /* --- UPDATED: Styles for the header and button group --- */
@@ -10,6 +10,7 @@
     justify-content: space-between; /* Space title and buttons */
     align-items: center; /* Vertically align items */
     gap: 1rem; /* Space between title and buttons */
+    flex-wrap: wrap; /* Allow wrapping on small screens */
 }
 
 .pantry-header-actions {
@@ -18,191 +19,290 @@
 }
 
 .pantry-action-btn { /* Common button styles */
-  border: none;
-  padding: 10px 18px;
-  font-size: 0.95rem;
-  font-weight: 600;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background-color 0.2s, transform 0.1s;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: white;
+    border: none;
+    padding: 10px 18px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.1s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: white;
 }
+
 .pantry-action-btn:hover {
     transform: translateY(-1px);
 }
+
 .pantry-action-btn:active {
     transform: translateY(0);
 }
 
 .barcode-btn { /* Specific color for barcode */
-  background-color: #007bff;
+    background-color: #007bff;
 }
+
 .barcode-btn:hover {
-  background-color: #0056b3;
+    background-color: #0056b3;
 }
 
 .receipt-btn { /* Specific color for receipt */
-  background-color: #28a745;
+    background-color: #28a745;
 }
+
 .receipt-btn:hover {
-  background-color: #218838;
+    background-color: #218838;
 }
+
 /* --- End Header/Button Styles --- */
 
 
 .pantry-layout {
-  display: grid;
-  grid-template-columns: 2fr 1fr; /* Main content takes 2/3, sidebar 1/3 */
-  gap: 2rem;
+    display: grid;
+    grid-template-columns: 2fr 1fr; /* Main content takes 2/3, sidebar 1/3 */
+    gap: 2rem;
 }
 
 @media (max-width: 992px) {
-  .pantry-layout {
-    grid-template-columns: 1fr; /* Stack on smaller screens */
-  }
-  .pantry-sidebar {
-    order: -1; /* Move sidebar to the top on stack */
-    margin-bottom: 2rem;
-  }
-  /* Adjust header layout on smaller screens if needed */
-  .pantry-header {
-      flex-direction: column;
-      align-items: flex-start;
-  }
-  .pantry-header-actions {
-      margin-top: 1rem;
-      width: 100%;
-      justify-content: flex-start;
-  }
+    .pantry-layout {
+        grid-template-columns: 1fr; /* Stack on smaller screens */
+    }
+
+    .pantry-sidebar {
+        order: -1; /* Move sidebar to the top on stack */
+        margin-bottom: 2rem;
+    }
+
+    /* Adjust header layout on smaller screens if needed */
+    .pantry-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .pantry-header-actions {
+        margin-top: 1rem;
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    /* --- NEW: Adjust column count for tablet --- */
+    .pantry-item-list {
+        column-count: 2;
+    }
+}
+
+/* --- NEW: Add media query for mobile --- */
+@media (max-width: 576px) {
+    .pantry-item-list {
+        column-count: 1; /* Single column on mobile */
+    }
 }
 
 .pantry-main-content h2,
 .pantry-sidebar h2 {
-  margin-top: 0;
-  color: #333;
+    margin-top: 0;
+    color: #333;
 }
+
 .pantry-main-content h3,
 .pantry-sidebar h3 {
-  color: #4CAF50;
-  margin-top: 1.5rem;
-  margin-bottom: 0.8rem;
-  border-bottom: 1px solid #eee;
-  padding-bottom: 0.5rem;
+    color: #4CAF50;
+    margin-top: 1.5rem;
+    margin-bottom: 0.8rem;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 0.5rem;
 }
 
 .pantry-category {
-  margin-bottom: 1.5rem;
+    margin-bottom: 1.5rem;
 }
 
 .pantry-item-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    /* --- NEW: Make the list 3 columns on desktop --- */
+    column-count: 3;
+    column-gap: 1.5rem; /* Add some space between columns */
 }
 
 .pantry-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 15px;
-  background-color: #f9f9f9;
-  border-radius: 6px;
-  margin-bottom: 8px;
-  font-size: 0.95rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    background-color: #f9f9f9;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    font-size: 0.95rem;
+    /* --- NEW: Prevent items from splitting across columns --- */
+    break-inside: avoid;
 }
 
 .pantry-item button {
-  background: none;
-  border: none;
-  color: #dc3545;
-  font-size: 1.2rem;
-  font-weight: bold;
-  cursor: pointer;
-  padding: 0 5px;
+    background: none;
+    border: none;
+    color: #dc3545;
+    font-size: 1.2rem;
+    font-weight: bold;
+    cursor: pointer;
+    padding: 0 5px;
 }
+
 .pantry-item button:hover {
-  color: #a0202e;
+    color: #a0202e;
 }
 
 .pantry-sidebar {
-  background-color: #f8f9fa;
-  padding: 1.5rem;
-  border-radius: 8px;
-  border: 1px solid #e9ecef;
+    background-color: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
 }
 
 .pantry-search input {
-  width: 100%;
-  padding: 12px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  font-size: 1rem;
-  box-sizing: border-box;
-  margin-bottom: 0.5rem;
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 1rem;
+    box-sizing: border-box;
+    margin-bottom: 0.5rem;
 }
 
 .search-results {
-  list-style: none;
-  padding: 0;
-  margin: 0.5rem 0;
-  background-color: #fff;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  max-height: 200px;
-  overflow-y: auto;
+    list-style: none;
+    padding: 0;
+    margin: 0.5rem 0;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    max-height: 200px;
+    overflow-y: auto;
 }
 
 .search-results li {
-  padding: 10px 15px;
-  cursor: pointer;
+    padding: 10px 15px;
+    cursor: pointer;
 }
+
 .search-results li:hover {
-  background-color: #e9ecef;
+    background-color: #e9ecef;
 }
 
 .add-new-item-btn {
-  width: 100%;
-  padding: 10px;
-  border: none;
-  background-color: #e8f5e9;
-  color: #2e7d32;
-  font-weight: 600;
-  border-radius: 6px;
-  cursor: pointer;
-  margin-top: 0.5rem;
-  transition: background-color 0.2s;
+    width: 100%;
+    padding: 10px;
+    border: none;
+    background-color: #e8f5e9;
+    color: #2e7d32;
+    font-weight: 600;
+    border-radius: 6px;
+    cursor: pointer;
+    margin-top: 0.5rem;
+    transition: background-color 0.2s;
 }
+
 .add-new-item-btn:hover {
-  background-color: #c8e6c9;
+    background-color: #c8e6c9;
 }
 
 
 .staples-section {
-  margin-top: 2rem;
+    margin-top: 2rem;
 }
+
 .staple-category h4 {
-  margin-top: 1rem;
-  margin-bottom: 0.5rem;
-  font-size: 0.9rem;
-  color: #555;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    color: #555;
 }
+
 .staple-items {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
 }
+
 .staple-items button {
-  padding: 6px 12px;
-  background-color: #e0e0e0;
-  border: none;
-  border-radius: 15px;
-  cursor: pointer;
-  font-size: 0.85rem;
-  transition: background-color 0.2s;
+    padding: 6px 12px;
+    background-color: #e0e0e0;
+    border: none;
+    border-radius: 15px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: background-color 0.2s;
 }
+
 .staple-items button:hover {
-  background-color: #c7c7c7;
+    background-color: #c7c7c7;
+}
+
+/* --- NEW: Added loading overlay styles --- */
+.processing-overlay {
+    position: relative;
+    pointer-events: none; /* Disable interaction on page */
+}
+
+.processing-overlay::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.5);
+    z-index: 10;
+}
+
+.loading-indicator {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 20px 30px;
+    border-radius: 8px;
+    z-index: 1001; /* Above overlay */
+    font-size: 1.2rem;
+}
+
+/* Ensure buttons are re-enabled when not loading */
+.pantry-action-btn:disabled,
+.pantry-item button:disabled,
+.pantry-search input:disabled,
+.add-new-item-btn:disabled,
+.staple-items button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+/* Re-enable buttons specifically when *not* loading */
+.pantry-page:not(.processing-overlay) .pantry-action-btn.barcode-btn {
+    background-color: #007bff;
+    cursor: pointer;
+}
+.pantry-page:not(.processing-overlay) .pantry-action-btn.receipt-btn {
+    background-color: #28a745;
+    cursor: pointer;
+}
+.pantry-page:not(.processing-overlay) .pantry-item button {
+    background: none;
+    cursor: pointer;
+}
+.pantry-page:not(.processing-overlay) .pantry-search input {
+    background-color: #fff;
+    cursor: text;
+}
+.pantry-page:not(.processing-overlay) .add-new-item-btn {
+    background-color: #e8f5e9;
+    cursor: pointer;
+}
+.pantry-page:not(.processing-overlay) .staple-items button {
+    background-color: #e0e0e0;
+    cursor: pointer;
 }
