@@ -1,0 +1,39 @@
+/* src/pages/DashboardPage.css */
+
+.dashboard-grid {
+    display: grid;
+    /* Define columns - adjust as needed, e.g., 3 columns */
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    /* Define rows to attempt equal height, might need JS for perfect sync */
+    /* grid-auto-rows: 1fr; */
+    gap: 1.5rem; /* Space between modules */
+    margin-top: 1.5rem; /* Space below header/filters */
+}
+
+/* Optional: Define specific grid areas for modules if needed */
+/* Example:
+.welcome-stats { grid-area: welcome; }
+.quick-actions { grid-area: actions; }
+... etc ...
+
+.dashboard-grid {
+    grid-template-areas:
+        "welcome welcome actions"
+        "mealplan pantry budget"
+        "recent recent budget";
+    grid-template-columns: 1fr 1fr 1fr;
+}
+*/
+
+/* Responsive adjustments */
+@media (max-width: 992px) {
+    .dashboard-grid {
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* Back to auto-fit for tablet */
+    }
+}
+
+@media (max-width: 768px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr; /* Single column on mobile */
+    }
+}

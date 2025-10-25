@@ -1,0 +1,206 @@
+/* src/components/dashboard/DashboardModule.css */
+
+.dashboard-module {
+    background-color: #fff;
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    height: 100%; /* Make modules fill grid cell height */
+    display: flex;
+    flex-direction: column; /* Allow content to grow */
+}
+
+.dashboard-module h2 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    font-size: 1.3rem;
+    color: #333;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 0.5rem;
+}
+
+.module-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem; /* Adjust as needed */
+    /* Remove border/padding from h2 if using module-header */
+}
+.module-header h2 {
+    border-bottom: none;
+    padding-bottom: 0;
+    margin-bottom: 0;
+}
+
+.module-link {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--color-primary);
+    text-decoration: none;
+    white-space: nowrap;
+}
+.module-link:hover {
+    text-decoration: underline;
+}
+
+/* Specific module content styles */
+
+/* WelcomeStats */
+.stats-container {
+    display: flex;
+    justify-content: space-around;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+.stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+.stat-value {
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: var(--color-primary);
+}
+.stat-label {
+    font-size: 0.85rem;
+    color: #666;
+}
+
+/* MealPlanPreview */
+.meal-plan-preview-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    flex-grow: 1; /* Allow content to take space */
+    overflow-y: auto; /* Scroll if needed */
+    max-height: 350px; /* Adjust height if needed for RecipeCards */
+    padding-right: 5px; /* Add padding for scrollbar */
+}
+.preview-day h4 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1rem;
+    color: #555;
+}
+/* --- NEW: Style RecipeCard within the preview --- */
+.preview-day .recipe-card {
+    /* Override RecipeCard defaults if necessary */
+    margin-bottom: 0.75rem; /* Space between cards */
+    /* Make card slightly smaller? Optional */
+    /* transform: scale(0.95); */
+    /* transform-origin: top left; */
+}
+.preview-day .recipe-card .card-content {
+     padding: 35px 15px 15px 15px; /* Adjust padding for smaller card */
+}
+.preview-day .recipe-card .card-title-row h2 {
+     font-size: 1.05rem; /* Smaller title */
+}
+.preview-day .recipe-card .card-rating-display .star {
+    font-size: 1.1rem; /* Smaller stars */
+}
+.preview-day .recipe-card .card-bottom-action {
+    padding: 10px 15px; /* Smaller action area */
+}
+.preview-day .recipe-card .select-btn,
+.preview-day .recipe-card .quantity-stepper button,
+.preview-day .recipe-card .quantity-stepper span {
+    font-size: 0.85rem; /* Smaller button text/quantity */
+}
+.preview-day .recipe-card .quantity-stepper button {
+    width: 28px;
+    height: 28px;
+}
+/* --- END NEW --- */
+
+
+/* PantrySnapshot */
+.snapshot-list {
+    list-style: disc;
+    padding-left: 20px;
+    margin: 0;
+    flex-grow: 1;
+    overflow-y: auto;
+    max-height: 200px;
+}
+.snapshot-list li {
+    margin-bottom: 0.5rem;
+    color: #555;
+}
+
+/* BudgetSummary */
+.budget-summary-content {
+    margin-top: 1rem;
+}
+.budget-warning-text {
+    color: #dc3545;
+    font-weight: bold;
+    text-align: center;
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+}
+.button-link { /* Make button look like a link */
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+}
+
+/* RecentActivity */
+.recent-recipes-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    flex-grow: 1;
+    overflow-y: auto;
+    max-height: 250px; /* Adjust height */
+}
+/* --- UPDATED: Style RecipeTile (if we switch back) or RecipeCard --- */
+.recent-recipes-container .recipe-tile { /* Or .recipe-card */
+     padding: 8px;
+     box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+     margin-bottom: 5px;
+}
+
+
+/* QuickActions */
+.quick-actions-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Two columns */
+    gap: 0.75rem;
+}
+.quick-action-btn {
+    padding: 12px 10px; /* Adjust padding */
+    font-size: 0.9rem;
+    font-weight: 600;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    text-align: center;
+    transition: background-color 0.2s, transform 0.1s;
+    color: white; /* Default text color */
+}
+.quick-action-btn:hover {
+    transform: translateY(-1px);
+}
+.quick-action-btn:active {
+    transform: translateY(0);
+}
+/* Specific button colors */
+.quick-action-btn.generate { background-color: #4caf50; }
+.quick-action-btn.generate:hover { background-color: #45a049; }
+.quick-action-btn.meal-plan { background-color: #ff9800; }
+.quick-action-btn.meal-plan:hover { background-color: #fb8c00; }
+.quick-action-btn.scan-barcode { background-color: #007bff; }
+.quick-action-btn.scan-barcode:hover { background-color: #0056b3; }
+.quick-action-btn.scan-receipt { background-color: #28a745; }
+.quick-action-btn.scan-receipt:hover { background-color: #218838; }
+.quick-action-btn.pantry { background-color: #6f42c1; }
+.quick-action-btn.pantry:hover { background-color: #5a32a3; }
+
+.quick-action-btn:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+    transform: none;
+}

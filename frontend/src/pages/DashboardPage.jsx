@@ -1,142 +1,147 @@
 // src/pages/DashboardPage.jsx
-import React, { useState, useEffect, useMemo } from 'react';
-import axios from 'axios';
-import { toast } from 'react-toastify';
-import { Link } from 'react-router-dom';
-import RecipeCard from '../components/RecipeCard';
-import RecipeDetail from '../components/RecipeDetail';
-import FilterSortControls from '../components/FilterSortControls';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios'; // Needed for specials
 import { useAuth } from '../context/AuthContext';
-import OnboardingModal from '../components/OnboardingModal';
-import './Page.css'; // Keep this for page-header styles
+import { toast } from 'react-toastify'; // Keep for potential errors
+import { Link } from 'react-router-dom'; // Keep for fallback links
 
-const DashboardPage = ({ allSpecials }) => {
-  const [recipes, setRecipes] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedRecipe, setSelectedRecipe] = useState(null);
-  const [minRating, setMinRating] = useState('');
-  const [sortBy, setSortBy] = useState('');
-  const [selectedTags, setSelectedTags] = useState([]);
-  const [allAvailableTags, setAllAvailableTags] = useState([]);
+// Import Dashboard Modules
+import WelcomeStats from '../components/dashboard/WelcomeStats';
+import MealPlanPreview from '../components/dashboard/MealPlanPreview';
+import PantrySnapshot from '../components/dashboard/PantrySnapshot';
+import BudgetSummary from '../components/dashboard/BudgetSummary';
+import RecentActivity from '../components/dashboard/RecentActivity';
+import QuickActions from '../components/dashboard/QuickActions';
 
-  const { userProfile, isLoading: authIsLoading, savedRecipes } = useAuth();
+// Import Modals (needed for QuickActions)
+import BarcodeScanner from '../components/BarcodeScanner';
+import ReceiptScannerModal from '../components/ReceiptScannerModal';
+import OnboardingModal from '../components/OnboardingModal'; // Still needed
+
+// Import CSS
+import './Page.css'; // Common page header styles
+import './DashboardPage.css'; // Grid layout styles
+
+const DashboardPage = ({ allSpecials }) => { // Receives allSpecials from App.jsx
+  const { userProfile, isLoading: authIsLoading, addPantryItem, fetchPantryItems } = useAuth(); // Get add/fetch pantry functions
   const [showOnboarding, setShowOnboarding] = useState(false);
 
+  // State for scanners triggered by QuickActions
+  const [isBarcodeScannerOpen, setIsBarcodeScannerOpen] = useState(false);
+  const [isReceiptScannerOpen, setIsReceiptScannerOpen] = useState(false);
+  const [isProcessingReceipt, setIsProcessingReceipt] = useState(false); // Add processing state
+
+
   useEffect(() => {
-    if (userProfile && userProfile.has_completed_onboarding === false) {
+    if (!authIsLoading && userProfile && userProfile.has_completed_onboarding === false) {
       setShowOnboarding(true);
     } else {
       setShowOnboarding(false);
     }
-  }, [userProfile]);
+  }, [userProfile, authIsLoading]);
 
-  useEffect(() => {
-    axios.get('http://127.0.0.1:8000/api/tags')
-      .then(res => setAllAvailableTags(res.data))
-      .catch(err => console.error("Error fetching tags!", err));
-  }, []);
+   const handleCloseOnboarding = () => {
+        setShowOnboarding(false);
+        // Optionally trigger a profile refresh if needed after onboarding closes
+        // fetchUserProfile();
+    };
 
-  const fetchRecipes = () => {
-    setLoading(true);
-    const params = {};
-    if (minRating) params.min_rating = minRating;
-    if (sortBy) params.sort_by = sortBy;
-    if (selectedTags.length > 0) params.tags = selectedTags.join(',');
-
-    axios.get('http://127.0.0.1:8000/api/recipes', { params })
-      .then(res => setRecipes(res.data))
-      .catch(err => console.error("Failed to fetch recipes", err))
-      .finally(() => setLoading(false));
-  };
-
-  useEffect(() => {
-    fetchRecipes()
-  }, [minRating, sortBy, selectedTags]);
-
-  const handleDeleteRecipe = (recipeId) => {
-    axios.delete(`http://127.0.0.1:8000/api/recipes/${recipeId}`)
-      .then(() => {
-        toast.success("Recipe deleted.");
-        fetchRecipes();
-      })
-      .catch(err => console.error("Failed to delete recipe", err));
-   };
-
-  const handleRateRecipe = (recipeId, rating) => {
-    axios.post(`http://127.0.0.1:8000/api/recipes/${recipeId}/rate`, { rating })
-      .then(() => {
-        toast.success("Recipe rated!");
-        fetchRecipes();
-        if(selectedRecipe && selectedRecipe.id === recipeId) {
-            const updatedRecipe = { ...selectedRecipe, average_rating: rating, rating_count: selectedRecipe.rating_count + 1 };
-            setSelectedRecipe(updatedRecipe);
+    // --- Scanner Handlers ---
+    const handleScanSuccess = (productName) => {
+        if (productName) {
+            addPantryItem(productName); // Use context function
         }
-      })
-      .catch(error => {
-        console.error("Error rating recipe:", error);
-        toast.error("Could not rate recipe.");
-      });
-  };
+        setIsBarcodeScannerOpen(false); // Close scanner on success
+    };
 
-  const handleTagClick = (tag) => {
-    setSelectedTags(prevTags =>
-      prevTags.includes(tag)
-        ? prevTags.filter(t => t !== tag)
-        : [...prevTags, tag]
-    );
-  };
+    const handleReceiptScan = async (imageFile) => {
+        setIsReceiptScannerOpen(false);
+        if (!imageFile) return;
 
-  const handleCloseOnboarding = () => {
-    setShowOnboarding(false);
-  };
+        setIsProcessingReceipt(true);
+        const processingToastId = toast.loading("Uploading and processing receipt...");
+        const formData = new FormData();
+        formData.append("file", imageFile, imageFile.name);
 
-  if (authIsLoading || !userProfile) {
-    // Use app-container here too for consistency during loading
-    return <div className="app-container">Loading user...</div>;
+        try {
+            const response = await axios.post('/api/pantry/scan-receipt', formData);
+            toast.update(processingToastId, {
+                render: response.data.message || "Receipt processed", type: "success", isLoading: false, autoClose: 5000,
+            });
+            fetchPantryItems(); // Refresh pantry via context
+        } catch (error) {
+            console.error("Error processing receipt:", error);
+            const errorMsg = error.response?.data?.detail || "Failed to process receipt.";
+            toast.update(processingToastId, {
+                render: `Error: ${errorMsg}`, type: "error", isLoading: false, autoClose: 5000,
+            });
+        } finally {
+            setIsProcessingReceipt(false);
+        }
+    };
+
+
+  if (authIsLoading) {
+    return <div className="app-container"><p className="loading-message">Loading dashboard...</p></div>;
   }
+
+  // Handle case where user profile fetch failed but auth isn't loading anymore
+  if (!userProfile) {
+       return (
+            <div className="app-container">
+                 <p className="error-message">Could not load user profile. Please try logging in again.</p>
+                 <Link to="/login">Go to Login</Link>
+            </div>
+       );
+  }
+
 
   return (
     <>
       {showOnboarding && <OnboardingModal onClose={handleCloseOnboarding} />}
 
-      {/* --- USE app-container HERE --- */}
-      <div className="app-container">
-        <div className="page-header"><h1>Dashboard</h1></div>
-        <FilterSortControls
-          minRating={minRating}
-          setMinRating={setMinRating}
-          sortBy={sortBy}
-          setSortBy={setSortBy}
-          availableTags={allAvailableTags}
-          selectedTags={selectedTags}
-          handleTagClick={handleTagClick}
+      {/* Barcode Scanner Modal */}
+      {isBarcodeScannerOpen && (
+        <BarcodeScanner
+            onClose={() => setIsBarcodeScannerOpen(false)}
+            onScanSuccess={handleScanSuccess}
         />
-        <div className="recipe-grid">
-          {loading ? <p>Loading recipes...</p> :
-            recipes.slice(0, 9).map(recipe => (
-              <RecipeCard
-                key={recipe.id}
-                recipe={recipe}
-                allSpecials={allSpecials}
-                savedRecipes={savedRecipes}
-                onDelete={handleDeleteRecipe}
-                onClick={() => setSelectedRecipe(recipe)}
-              />
-            ))
-          }
-        </div>
-        {recipes.length > 9 && (
-          <div className="view-more-container"><Link to="/recipes" className="view-more-btn">View All Recipes</Link></div>
-        )}
-        {selectedRecipe && (
-          <RecipeDetail
-            recipe={selectedRecipe}
-            onClose={() => setSelectedRecipe(null)}
-            allSpecials={allSpecials}
-            onRate={handleRateRecipe}
-            savedRecipes={savedRecipes}
+      )}
+
+      {/* Receipt Scanner Modal */}
+      {isReceiptScannerOpen && (
+          <ReceiptScannerModal
+              onClose={() => setIsReceiptScannerOpen(false)}
+              onScan={handleReceiptScan}
           />
-        )}
+      )}
+      {isProcessingReceipt && <div className="loading-indicator">Processing Receipt...</div>}
+
+
+      {/* Main Dashboard Layout */}
+      <div className={`app-container ${isProcessingReceipt ? 'processing-overlay' : ''}`}>
+        {/* Simple Header */}
+        <div className="page-header">
+            <h1>Dashboard</h1>
+            {/* Optionally add a date or subtitle */}
+        </div>
+
+        {/* Grid for Dashboard Modules */}
+        <div className="dashboard-grid">
+            {/* Place modules in the desired grid order */}
+            <WelcomeStats />
+            <QuickActions
+                onScanBarcode={() => setIsBarcodeScannerOpen(true)}
+                onScanReceipt={() => setIsReceiptScannerOpen(true)}
+                allSpecials={allSpecials} // Pass specials down
+            />
+            {/* --- UPDATED: Pass allSpecials to MealPlanPreview --- */}
+            <MealPlanPreview allSpecials={allSpecials} />
+            <PantrySnapshot />
+            <BudgetSummary allSpecials={allSpecials} /> {/* Pass specials down */}
+            <RecentActivity />
+            {/* Add more modules here as needed */}
+        </div>
       </div>
     </>
   );
