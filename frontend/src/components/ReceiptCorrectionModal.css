@@ -1,0 +1,169 @@
+/* src/components/ReceiptCorrectionModal.css */
+
+/* Reuse modal overlay from other modals if desired, or define specific one */
+.correction-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1060; /* Higher than receipt scanner */
+  backdrop-filter: blur(3px);
+}
+
+.correction-modal-content {
+  background: #fff;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+  width: 90%;
+  max-width: 550px; /* Slightly wider */
+  max-height: 85vh; /* Limit height */
+  display: flex;
+  flex-direction: column;
+}
+
+.correction-modal-content h2 {
+  text-align: center;
+  margin-top: 0;
+  color: #333;
+}
+
+.correction-modal-content p {
+  text-align: center;
+  font-size: 1rem;
+  color: #555;
+  margin-bottom: 1.5rem;
+}
+
+.correction-item-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1.5rem 0;
+  max-height: 40vh; /* Limit list height */
+  overflow-y: auto;
+  border: 1px solid #eee;
+  border-radius: 6px;
+}
+
+.correction-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #eee;
+}
+.correction-item:last-child {
+  border-bottom: none;
+}
+
+.item-input {
+  flex-grow: 1;
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 0.95rem;
+}
+.item-input:focus {
+  outline: none;
+  border-color: #4CAF50;
+  box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.1);
+}
+
+.correction-item .remove-item-btn {
+  background: none;
+  border: 1px solid #ddd;
+  color: #dc3545;
+  font-size: 1.3rem;
+  font-weight: bold;
+  cursor: pointer;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  line-height: 28px; /* Adjust for border */
+  border-radius: 50%;
+  flex-shrink: 0;
+  transition: background-color 0.2s, color 0.2s;
+}
+.correction-item .remove-item-btn:hover {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.no-items-message {
+  font-style: italic;
+  color: #888;
+  padding: 1rem;
+  text-align: center;
+}
+
+.add-item-form {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.add-item-input {
+  flex-grow: 1;
+  padding: 10px 14px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.add-item-btn {
+  padding: 10px 20px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border-radius: 4px;
+  cursor: pointer;
+  border: 1px solid #1e7e34;
+  background-color: #28a745;
+  color: white;
+  transition: background-color 0.2s;
+  flex-shrink: 0;
+}
+.add-item-btn:hover {
+  background-color: #218838;
+}
+
+.correction-modal-actions {
+  margin-top: auto; /* Push buttons to bottom */
+  padding-top: 1.5rem;
+  border-top: 1px solid #eee;
+  display: flex;
+  justify-content: flex-end; /* Align buttons right */
+  gap: 1rem;
+}
+
+/* Re-use general modal button styles if defined elsewhere */
+.correction-modal-actions .modal-btn {
+  padding: 10px 20px;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 1px solid #ccc;
+  background-color: #f0f0f0;
+  transition: all 0.2s ease;
+}
+.correction-modal-actions .modal-btn:hover {
+  background-color: #e0e0e0;
+  border-color: #bbb;
+}
+.correction-modal-actions .modal-btn.primary {
+  background-color: #4CAF50;
+  color: white;
+  border-color: #4CAF50;
+}
+.correction-modal-actions .modal-btn.primary:hover {
+  background-color: #45a049;
+  border-color: #45a049;
+}
+.correction-modal-actions .modal-btn.cancel-btn {
+    /* Optional: Specific styles for cancel */
+}

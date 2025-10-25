@@ -27,7 +27,7 @@ The application consists of a Python backend that serves data from a database an
 - **AI-powered Recipe Modification:** Users can request modifications to any recipe (e.g., "make this vegan", "double the servings"), and the AI will generate a new, updated version.
 - **My Pantry Feature:** Users can add from a categorized list of staple ingredients to their personal pantry. Pantry state is managed globally via React Context.
 - **Barcode Scanning:** Users can scan product barcodes using their device camera to quickly add items to their pantry (utilizes Open Food Facts API via backend proxy).
-- **Receipt Scanning (Beta):** Users can upload or take a photo of a receipt. Google Cloud Vision OCR extracts text, and OpenAI API parses items to add them to the pantry.
+- **Receipt Scanning (with Correction UI):** Users can upload or take a photo of a receipt. Google Cloud Vision OCR extracts text, and OpenAI API parses potential items. A modal displays these items, allowing the user to correct names, add missing items, or remove incorrect ones before adding them to their pantry.
 - **Recipe Ratings & Filtering:** Users can rate recipes and filter/sort them.
 - **Intelligent Shopping List:**
     - A dynamic list that consolidles ingredients, calculates costs, and tracks spending against a user's budget.
@@ -52,30 +52,27 @@ The application consists of a Python backend that serves data from a database an
 Here are some of the planned features to evolve the app from an MVP into a full-featured product.
 
 ### New Core Features
-1.  ~~**"Smart Pantry" Shopping List Sync:** Automatically cross-reference a recipe's ingredients with the user's "My Pantry" list. Any items the user already has will be moved to an "Already in your pantry" section of the shopping list, preventing duplicate purchases.~~ (Implemented!)
-2.  **Price-Drop Alerts ("Stock Up" Notifier):** Create a "Watchlist" for staple items. If the scraper finds a price that is significantly lower than the item's historical average, send the user an in-app notification.
-3.  **Low Pantry Stock Alerts:** Implement a basic quantity tracking system for pantry items. Allow users to set a "low stock" threshold (e.g., "Notify me when below 2 units"). The dashboard could highlight items nearing this threshold.
-4.  **Notification System (Backend):** Implement backend logic and database models to generate, store, and manage notifications for users based on triggers like low stock, new specials for watched items/suppliers, etc. Create API endpoints for fetching and managing notification status.
+1.  **Price-Drop Alerts ("Stock Up" Notifier):** Create a "Watchlist" for staple items. If the scraper finds a price that is significantly lower than the item's historical average, send the user an in-app notification.
+2.  **Low Pantry Stock Alerts:** Implement a basic quantity tracking system for pantry items. Allow users to set a "low stock" threshold (e.g., "Notify me when below 2 units"). The dashboard could highlight items nearing this threshold.
+3.  **Notification System (Backend):** Implement backend logic and database models to generate, store, and manage notifications for users based on triggers like low stock, new specials for watched items/suppliers, etc. Create API endpoints for fetching and managing notification status.
 
 ### Existing Feature Improvements
-5.  ~~**Improved Dashboard:** Transform the dashboard from a simple recipe list into a personalized hub. Includes modules: Quick Actions, Notifications, Meal Plan Preview, Pantry Snapshot, Budget Summary, Recent Activity.~~ (Implemented!)
-6.  **Refine Receipt Scanning (Manual Correction UI):** To improve accuracy, show a modal after the OCR/AI parsing that lists the detected items (e.g., "Bnnas"). This allows the user to correct any typos or misinterpretations before the items are added to their pantry.
-7.  **Smarter Shopping List (Sort by Aisle):** Automatically group items on the "Intelligent Shopping List" based on their ingredient category (e.g., "Fruit & Vegetables," "Meat & Seafood") to optimize the in-store shopping experience.
-8.  **Shopping List Completion:** When items are checked off in the shopping list, provide an "Add Checked Items to Pantry" button. Clicking this would:
+4.  **Smarter Shopping List (Sort by Aisle):** Automatically group items on the "Intelligent Shopping List" based on their ingredient category (e.g., "Fruit & Vegetables," "Meat & Seafood") to optimize the in-store shopping experience.
+5.  **Shopping List Completion:** When items are checked off in the shopping list, provide an "Add Checked Items to Pantry" button. Clicking this would:
     * Add the corresponding ingredients to the user's pantry.
     * Remove the checked items from the shopping list.
     * (Optional) Log the purchase (items, date, cost) to a history section, potentially linked to the budget tracker.
-9.  **Meal Planner "Leftovers" Integration:** Add a "Use for leftovers?" toggle when adding a recipe to the meal plan. This would add a "Leftovers" block to the next day's lunch and prevent those ingredients from being double-counted in the weekly shopping list.
-10. **Dynamic Cook Mode Scaling:** Add a dropdown (e.g., "0.5x", "1x", "2x") to the "Cook Mode" interface that dynamically updates all ingredient quantities within the step-by-step instructions.
+6.  **Meal Planner "Leftovers" Integration:** Add a "Use for leftovers?" toggle when adding a recipe to the meal plan. This would add a "Leftovers" block to the next day's lunch and prevent those ingredients from being double-counted in the weekly shopping list.
+7.  **Dynamic Cook Mode Scaling:** Add a dropdown (e.g., "0.5x", "1x", "2x") to the "Cook Mode" interface that dynamically updates all ingredient quantities within the step-by-step instructions.
 
 ### New AI & Data Features
-11. **AI Ingredient Identification (from Photo):** Use Google Cloud Vision's *object detection* to allow users to take a photo of their fridge or pantry. The API will identify items (e.g., "Carrot," "Lemon"), which the user can then add to their pantry with one click.
-12. **AI-Powered "Flavor Profile" Onboarding:** As an optional step during onboarding, present an AI-powered "flavor quiz" (e.g., "Spicy or mild?", "Rich or light?"). The AI will infer preferences to provide more personalized recipe recommendations.
-13. **Dynamic AI Generation Inputs:** Add "Max Cook Time" and "Difficulty" sliders to the recipe generation page. These values will be fed directly into the AI prompt to ensure recipes match the user's immediate needs.
+8.  **AI Ingredient Identification (from Photo):** Use Google Cloud Vision's *object detection* to allow users to take a photo of their fridge or pantry. The API will identify items (e.g., "Carrot," "Lemon"), which the user can then add to their pantry with one click.
+9.  **AI-Powered "Flavor Profile" Onboarding:** As an optional step during onboarding, present an AI-powered "flavor quiz" (e.g., "Spicy or mild?", "Rich or light?"). The AI will infer preferences to provide more personalized recipe recommendations.
+10. **Dynamic AI Generation Inputs:** Add "Max Cook Time" and "Difficulty" sliders to the recipe generation page. These values will be fed directly into the AI prompt to ensure recipes match the user's immediate needs.
 
 ### Community & Engagement
-14. **Community "Cook-along" Challenges:** Building on the original "Community Recipes" idea, feature a "Weekly Challenge" based on a major supermarket special (e.g., "This week's star: $5/kg Chicken Thighs"). Users can cook a recipe using that item and post a photo and rating to build engagement.
-15. **Community Recipes & Recipe Sharing:** Allow users to submit, share, and rate their own recipes.
+11. **Community "Cook-along" Challenges:** Building on the original "Community Recipes" idea, feature a "Weekly Challenge" based on a major supermarket special (e.g., "This week's star: $5/kg Chicken Thighs"). Users can cook a recipe using that item and post a photo and rating to build engagement.
+12. **Community Recipes & Recipe Sharing:** Allow users to submit, share, and rate their own recipes.
 
 ---
 
@@ -284,7 +281,7 @@ You can test the locally running application on your mobile phone if it's connec
 - **`DELETE /api/recipes/{recipe_id}`**: Delete a specific recipe.
 - **`GET /docs`**: View the interactive API documentation (Swagger UI).
 - **`GET /api/barcode-lookup/{barcode}`**: Proxies a lookup to the Open Food Facts API.
-- **`POST /api/pantry/scan-receipt`**: Receives receipt image, performs OCR/AI processing, adds items to pantry.
+- **`POST /api/pantry/scan-receipt`**: Receives receipt image, performs OCR/AI processing, returns detected items for user confirmation.
 - **`GET /api/pantry`**: Get current user's pantry items.
 - **`POST /api/pantry`**: Add an item to the user's pantry by name.
 - **`DELETE /api/pantry/{ingredient_id}`**: Remove an item from the user's pantry.

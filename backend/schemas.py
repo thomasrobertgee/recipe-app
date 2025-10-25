@@ -170,3 +170,9 @@ class MealPlanEntryRead(SQLModel):
     plan_date: date
     recipe: RecipeResponse # Nest the full recipe details
 # --- *** END NEW MEAL PLAN SCHEMAS *** ---
+
+# --- NEW: Response schema for receipt scanning ---
+class ReceiptScanResponse(SQLModel):
+    message: str
+    detected_items: List[str]
+# --- END NEW ---
