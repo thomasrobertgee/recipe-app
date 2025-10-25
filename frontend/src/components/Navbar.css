@@ -6,7 +6,6 @@
     background-color: #fff;
     padding: 1rem 2rem;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    /* --- NEW --- */
     position: sticky;
     top: 0;
     z-index: 100; /* Ensures it stays on top of other content */
@@ -18,70 +17,129 @@
     text-decoration: none;
 }
 
-/* --- UPDATED: Added flex and gap --- */
 .nav-links {
     display: flex;
     align-items: center;
     gap: 0.75rem; /* Controls spacing between links and separators */
 }
 
-/* --- UPDATED: Removed margin-left --- */
 .nav-links a {
-    /* margin-left: 1.5rem; */ /* Replaced by gap on .nav-links */
     text-decoration: none;
     color: #555;
     font-weight: 500;
+    transition: color 0.2s ease-in-out, transform 0.1s ease-in-out, border-bottom 0.2s ease-in-out;
+    padding-bottom: 4px; /* Maintain padding for border alignment */
+    border-bottom: 2px solid transparent; /* Keep transparent border for consistent spacing */
 }
 
-/* --- UPDATED: Combined active and hover, and added bold --- */
 .nav-links a.active,
 .nav-links a:hover {
     color: #4caf50;
     border-bottom: 2px solid #4caf50;
-    padding-bottom: 4px;
     font-weight: bold; /* Added bold as requested */
 }
 
-/* --- NEW: Style for the separator --- */
+.nav-links a:not(.active):hover {
+    transform: translateY(-1px);
+}
+
+.nav-links a:active {
+    transform: translateY(1px);
+}
+
+
 .nav-separator {
     color: #ccc;
     font-size: 1.2rem;
     font-weight: 300;
-    /* line-height: 1; */ /* Removed this to improve vertical alignment */
 }
 
-/* Add to bottom of src/components/Navbar.css */
 .nav-auth {
     display: flex;
     align-items: center;
-    gap: 1.5rem;
+    /* --- UPDATED: Reduced gap slightly for button spacing --- */
+    gap: 1rem;
 }
 
+/* --- NEW: Secondary button style for Login --- */
+.login-button-nav {
+    background-color: transparent;
+    color: #4caf50 !important; /* Green text */
+    padding: 8px 16px;
+    border-radius: 50px; /* Rounded corners */
+    text-decoration: none;
+    font-size: 0.9rem; /* Match typical button size */
+    font-weight: bold;
+    transition: all 0.2s ease;
+    border: 2px solid #4caf50 !important; /* Green border, override NavLink */
+    line-height: 1.4; /* Adjust line-height for border */
+}
+.login-button-nav:hover {
+    background-color: #e8f5e9; /* Light green background on hover */
+    transform: translateY(-1px);
+    border-color: #4caf50 !important; /* Ensure border stays */
+}
+.login-button-nav:active {
+     transform: translateY(1px);
+}
+/* Ensure active NavLink state doesn't add underline/border */
+.login-button-nav.active {
+    background-color: #e8f5e9; /* Keep hover style if active */
+    border-bottom: 2px solid #4caf50 !important; /* Override default active border */
+}
+/* --- END NEW --- */
+
+
+/* --- UPDATED: Sign Up button to match primary style --- */
 .signup-button {
     background-color: #4caf50;
-    color: white !important;
+    color: white !important; /* Ensure text is white */
     padding: 8px 16px;
-    border-radius: 4px;
-    transition: background-color 0.2s;
+    border-radius: 50px; /* Rounded corners */
+    transition: background-color 0.2s, transform 0.1s ease-in-out;
+    text-decoration: none; /* Ensure no underline from NavLink */
+    border: 2px solid transparent !important; /* Add transparent border to align height with login */
+    line-height: 1.4; /* Match login button */
+    font-size: 0.9rem; /* Match login button */
+    font-weight: bold; /* Match login button */
 }
 
 .signup-button:hover {
     background-color: #45a049;
+    transform: translateY(-1px);
 }
 
-.signup-button.active {
-    border-bottom: none !important;
+.signup-button:active {
+    transform: translateY(1px);
 }
+
+/* Remove border from active NavLink state if it's the signup button */
+.signup-button.active {
+    border-bottom: 2px solid transparent !important; /* Override default active border */
+}
+/* --- END UPDATED --- */
+
 
 .logout-button {
     background: none;
     border: 1px solid #ccc;
+    color: #555; /* Match regular link color */
     padding: 8px 16px;
     border-radius: 4px;
     cursor: pointer;
+    font-weight: 500; /* Match regular link weight */
+    transition: background-color 0.2s, color 0.2s, transform 0.1s ease-in-out;
+}
+.logout-button:hover {
+    background-color: #f0f0f0;
+    color: #333;
+    transform: translateY(-1px);
+}
+.logout-button:active {
+    transform: translateY(1px);
 }
 
-/* Add to bottom of Navbar.css */
+
 .sidebar-tab {
     background-color: #e8f5e9;
     color: #388e3c;
@@ -91,4 +149,12 @@
     cursor: pointer;
     font-weight: 500;
     margin-right: 1.5rem;
+    transition: background-color 0.2s, transform 0.1s ease-in-out;
+}
+.sidebar-tab:hover {
+    background-color: #dcedc8;
+    transform: translateY(-1px);
+}
+.sidebar-tab:active {
+    transform: translateY(1px);
 }

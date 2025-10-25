@@ -69,12 +69,12 @@ const Navbar = () => {
                     // Use handleLogout for consistency
                     <button onClick={handleLogout} className="logout-button">Log Out</button>
                 ) : (
-                    // --- Logged Out: Show Supplier Signup, Login, Consumer Signup ---
+                    // --- Logged Out: Show Login (secondary), Consumer Signup (primary) ---
                     <>
-                        {/* Added Supplier Signup Link */}
-                        <NavLink to="/portal/signup" className={getNavLinkClass}>TEMP Supplier Sign Up Link</NavLink>
-                        <NavLink to="/login" className={getNavLinkClass}>Log In</NavLink>
-                        <NavLink to="/signup" className={({ isActive }) => (isActive ? 'signup-button active' : 'signup-button')}>Sign Up</NavLink>
+                        {/* --- UPDATED: Swapped order and added class to Login --- */}
+                        <NavLink to="/signup" className={({ isActive }) => `signup-button ${isActive ? 'active' : ''}`}>Sign Up</NavLink>
+                        <NavLink to="/login" className={({ isActive }) => `login-button-nav ${isActive ? 'active' : ''}`}>Log In</NavLink>
+                        {/* --- END UPDATED --- */}
                     </>
                 )}
             </div>
