@@ -2,11 +2,11 @@
 
 .dashboard-grid {
     display: grid;
-    /* Define columns - adjust as needed, e.g., 3 columns */
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    /* Define rows to attempt equal height, might need JS for perfect sync */
-    /* grid-auto-rows: 1fr; */
-    gap: 1.5rem; /* Space between modules */
+    /* --- NEW: Explicitly set auto row height --- */
+    grid-auto-rows: auto; /* Let rows size based on content */
+    /* --- END NEW --- */
+    gap: 2rem; /* Increased gap */
     margin-top: 1.5rem; /* Space below header/filters */
 }
 

@@ -1,55 +1,116 @@
 /* src/App.css */
 
-.app-container {
-  padding: 20px;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.recipe-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 24px;
-  justify-items: center;
-}
-
-.view-more-container { text-align: center; margin-top: 40px; }
-
-.view-more-btn {
-  padding: 12px 24px;
-  font-size: 1rem;
-  font-weight: bold;
-  color: white;
-  background-color: #4caf50;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-}
-
 .app-layout {
   display: flex;
-  align-items: flex-start;
-}
-.main-content {
-  flex-grow: 1;
-  transition: width 0.3s ease;
-  padding-top: 65px; /* Adjust this value based on your navbar's height */
-  /* --- PADDING REMOVED FROM HERE --- */
-}
-.sidebar {
-  width: 25%;
-  min-width: 320px;
-  flex-shrink: 0;
-  background: #fdfdfd;
-  border-left: 1px solid #e0e0e0;
-  padding: 20px;
-  height: calc(100vh - 65px); /* Full height minus navbar */
-  position: sticky;
-  top: 65px; /* Stick below the navbar */
-  overflow-y: auto;
+  min-height: calc(100vh - 70px); /* Ensure layout takes at least full viewport height minus navbar */
+  /* --- FIX: Reduced padding-top --- */
+  padding-top: 0.5rem; /* Reduced from 1rem to decrease gap below navbar */
+  /* --- END FIX --- */
 }
 
-/* --- FIX: Adjust ToastContainer position to be below the navbar --- */
+.main-content {
+  flex-grow: 1;
+  padding: 0 1rem; /* Add horizontal padding */
+}
+
+/* Ensure app-container provides max-width and centering where needed */
+.app-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem; /* Consistent horizontal padding */
+  /* --- NEW: Add margin-top to separate content from navbar --- */
+  margin-top: 1rem; /* Adjust this value as needed */
+  /* --- END NEW --- */
+}
+
+
+.sidebar {
+  flex-shrink: 0;
+  width: 350px;
+  max-width: 30%;
+  padding: 1rem;
+  border-left: 1px solid #e0e0e0;
+  background-color: #f9f9f9;
+  /* --- Styles for sticky sidebar (from previous attempt, kept for context) --- */
+  /* position: sticky; */ /* Make it sticky relative to the viewport */
+  /* top: 66px; */ /* Stick it below the navbar (adjust if navbar height changes) */
+  /* height: calc(100vh - 66px); */ /* Full viewport height minus navbar */
+  /* overflow-y: auto; */ /* Enable vertical scrolling */
+  /* --- END --- */
+}
+
+/* Common button style */
+.btn-primary {
+    background-color: var(--color-primary, #4caf50);
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+.btn-primary:hover {
+    background-color: var(--color-primary-dark, #45a049);
+}
+.btn-primary:disabled {
+    background-color: #bdc3c7;
+    cursor: not-allowed;
+}
+
+/* Recipe Grid (used on Dashboard, All Recipes, Saved Recipes) */
+.recipe-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+    padding: 1rem 0;
+}
+
+/* View More Button Container */
+.view-more-container {
+    text-align: center;
+    margin-top: 1.5rem;
+}
+.view-more-btn {
+    padding: 12px 25px;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-primary);
+    background-color: transparent;
+    border: 2px solid var(--color-primary);
+    border-radius: 25px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.view-more-btn:hover {
+    background-color: var(--color-primary-light);
+    color: white;
+    border-color: var(--color-primary-light);
+}
+
+/* Toastify Container Styling */
 .app-toast-container {
-  margin-top: 70px;
+  z-index: 9999 !important; /* Ensure it's above everything */
+  width: auto !important; /* Allow it to size based on content */
+  max-width: 450px; /* Limit max width */
+}
+
+/* Optional: Style individual toasts if needed */
+.Toastify__toast {
+  border-radius: 8px !important;
+}
+
+/* Loading/Error Messages (General) */
+.loading-message, .error-message {
+    text-align: center;
+    padding: 2rem;
+    font-size: 1.1rem;
+    color: #555;
+}
+.error-message {
+    color: #dc3545;
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    border-radius: 5px;
 }

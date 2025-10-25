@@ -1,36 +1,35 @@
 // src/pages/DashboardPage.jsx
 import React, { useState, useEffect } from 'react';
-import axios from 'axios'; // Needed for specials
+import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
-import { toast } from 'react-toastify'; // Keep for potential errors
-import { Link } from 'react-router-dom'; // Keep for fallback links
+import { toast } from 'react-toastify';
+import { Link } from 'react-router-dom';
 
 // Import Dashboard Modules
-import WelcomeStats from '../components/dashboard/WelcomeStats';
 import MealPlanPreview from '../components/dashboard/MealPlanPreview';
 import PantrySnapshot from '../components/dashboard/PantrySnapshot';
 import BudgetSummary from '../components/dashboard/BudgetSummary';
 import RecentActivity from '../components/dashboard/RecentActivity';
 import QuickActions from '../components/dashboard/QuickActions';
+// --- Import Notifications Module ---
+import NotificationsModule from '../components/dashboard/NotificationsModule';
 
-// Import Modals (needed for QuickActions)
+// Import Modals
 import BarcodeScanner from '../components/BarcodeScanner';
 import ReceiptScannerModal from '../components/ReceiptScannerModal';
-import OnboardingModal from '../components/OnboardingModal'; // Still needed
+import OnboardingModal from '../components/OnboardingModal';
 
 // Import CSS
-import './Page.css'; // Common page header styles
-import './DashboardPage.css'; // Grid layout styles
+import './Page.css';
+import './DashboardPage.css';
+import '../components/dashboard/DashboardModule.css';
 
-const DashboardPage = ({ allSpecials }) => { // Receives allSpecials from App.jsx
-  const { userProfile, isLoading: authIsLoading, addPantryItem, fetchPantryItems } = useAuth(); // Get add/fetch pantry functions
+const DashboardPage = ({ allSpecials }) => {
+  const { userProfile, isLoading: authIsLoading, addPantryItem, fetchPantryItems } = useAuth();
   const [showOnboarding, setShowOnboarding] = useState(false);
-
-  // State for scanners triggered by QuickActions
   const [isBarcodeScannerOpen, setIsBarcodeScannerOpen] = useState(false);
   const [isReceiptScannerOpen, setIsReceiptScannerOpen] = useState(false);
-  const [isProcessingReceipt, setIsProcessingReceipt] = useState(false); // Add processing state
-
+  const [isProcessingReceipt, setIsProcessingReceipt] = useState(false);
 
   useEffect(() => {
     if (!authIsLoading && userProfile && userProfile.has_completed_onboarding === false) {
@@ -42,16 +41,11 @@ const DashboardPage = ({ allSpecials }) => { // Receives allSpecials from App.js
 
    const handleCloseOnboarding = () => {
         setShowOnboarding(false);
-        // Optionally trigger a profile refresh if needed after onboarding closes
-        // fetchUserProfile();
     };
 
-    // --- Scanner Handlers ---
     const handleScanSuccess = (productName) => {
-        if (productName) {
-            addPantryItem(productName); // Use context function
-        }
-        setIsBarcodeScannerOpen(false); // Close scanner on success
+        if (productName) addPantryItem(productName);
+        setIsBarcodeScannerOpen(false);
     };
 
     const handleReceiptScan = async (imageFile) => {
@@ -68,7 +62,7 @@ const DashboardPage = ({ allSpecials }) => { // Receives allSpecials from App.js
             toast.update(processingToastId, {
                 render: response.data.message || "Receipt processed", type: "success", isLoading: false, autoClose: 5000,
             });
-            fetchPantryItems(); // Refresh pantry via context
+            fetchPantryItems();
         } catch (error) {
             console.error("Error processing receipt:", error);
             const errorMsg = error.response?.data?.detail || "Failed to process receipt.";
@@ -80,12 +74,10 @@ const DashboardPage = ({ allSpecials }) => { // Receives allSpecials from App.js
         }
     };
 
-
   if (authIsLoading) {
     return <div className="app-container"><p className="loading-message">Loading dashboard...</p></div>;
   }
 
-  // Handle case where user profile fetch failed but auth isn't loading anymore
   if (!userProfile) {
        return (
             <div className="app-container">
@@ -95,52 +87,28 @@ const DashboardPage = ({ allSpecials }) => { // Receives allSpecials from App.js
        );
   }
 
-
   return (
     <>
       {showOnboarding && <OnboardingModal onClose={handleCloseOnboarding} />}
-
-      {/* Barcode Scanner Modal */}
-      {isBarcodeScannerOpen && (
-        <BarcodeScanner
-            onClose={() => setIsBarcodeScannerOpen(false)}
-            onScanSuccess={handleScanSuccess}
-        />
-      )}
-
-      {/* Receipt Scanner Modal */}
-      {isReceiptScannerOpen && (
-          <ReceiptScannerModal
-              onClose={() => setIsReceiptScannerOpen(false)}
-              onScan={handleReceiptScan}
-          />
-      )}
+      {isBarcodeScannerOpen && <BarcodeScanner onClose={() => setIsBarcodeScannerOpen(false)} onScanSuccess={handleScanSuccess} />}
+      {isReceiptScannerOpen && <ReceiptScannerModal onClose={() => setIsReceiptScannerOpen(false)} onScan={handleReceiptScan} />}
       {isProcessingReceipt && <div className="loading-indicator">Processing Receipt...</div>}
 
-
-      {/* Main Dashboard Layout */}
       <div className={`app-container ${isProcessingReceipt ? 'processing-overlay' : ''}`}>
-        {/* Simple Header */}
-        <div className="page-header">
-            <h1>Dashboard</h1>
-            {/* Optionally add a date or subtitle */}
-        </div>
+        <div className="page-header"> <h1>Dashboard</h1> </div>
 
-        {/* Grid for Dashboard Modules */}
         <div className="dashboard-grid">
-            {/* Place modules in the desired grid order */}
-            <WelcomeStats />
             <QuickActions
                 onScanBarcode={() => setIsBarcodeScannerOpen(true)}
                 onScanReceipt={() => setIsReceiptScannerOpen(true)}
-                allSpecials={allSpecials} // Pass specials down
+                allSpecials={allSpecials}
             />
-            {/* --- UPDATED: Pass allSpecials to MealPlanPreview --- */}
+            {/* --- Added NotificationsModule --- */}
+            <NotificationsModule />
             <MealPlanPreview allSpecials={allSpecials} />
             <PantrySnapshot />
-            <BudgetSummary allSpecials={allSpecials} /> {/* Pass specials down */}
+            <BudgetSummary allSpecials={allSpecials} />
             <RecentActivity />
-            {/* Add more modules here as needed */}
         </div>
       </div>
     </>
