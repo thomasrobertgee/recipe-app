@@ -31,6 +31,12 @@ export const AuthProvider = ({ children }) => {
     });
 
     const [savedRecipes, setSavedRecipes] = useState([]); // Array of recipe objects
+    
+    // --- NEW: Centralized Pantry State ---
+    const [pantryItems, setPantryItems] = useState([]);
+    const pantryIdSet = useMemo(() => new Set(pantryItems.map(item => item.ingredient_id)), [pantryItems]);
+    // --- END NEW ---
+
     const navigate = useNavigate();
     const { openSidebar } = useUI();
 
@@ -42,6 +48,24 @@ export const AuthProvider = ({ children }) => {
     const savedRecipeIds = useMemo(() => {
         return new Set(savedRecipes.map(recipe => recipe.id));
     }, [savedRecipes]);
+    
+    // --- NEW: Centralized fetchPantryItems ---
+    const fetchPantryItems = useCallback(async () => {
+        if (!localStorage.getItem('token')) {
+            setPantryItems([]);
+            return;
+        }
+        try {
+            const res = await axios.get('/api/pantry');
+            setPantryItems(res.data);
+        } catch (error) {
+            console.error("Error fetching pantry items:", error);
+            if (error.response?.status !== 401) {
+                toast.error("Could not load pantry items.");
+            }
+            setPantryItems([]);
+        }
+    }, []); // No dependencies, relies on token in axios header
 
     // --- *** BUG FIX: Wrap fetchSavedRecipes in useCallback *** ---
     const fetchSavedRecipes = useCallback(async () => {
@@ -75,6 +99,8 @@ export const AuthProvider = ({ children }) => {
             if (res.data) {
                  // Call the memoized fetchSavedRecipes
                  await fetchSavedRecipes(); 
+                 // --- NEW: Fetch pantry items after profile ---
+                 await fetchPantryItems();
             }
         } catch (error) {
             console.error("Error fetching user profile:", error);
@@ -83,6 +109,7 @@ export const AuthProvider = ({ children }) => {
                 setUserProfile(null);
                 setSavedRecipes([]);
                 setSelectedRecipes([]);
+                setPantryItems([]); // --- NEW: Clear pantry on 401 ---
                 localStorage.removeItem('token');
                 localStorage.removeItem('selectedRecipes');
                 delete axios.defaults.headers.common['Authorization'];
@@ -93,7 +120,7 @@ export const AuthProvider = ({ children }) => {
             setIsLoading(false);
         }
     // Dependency on fetchSavedRecipes ensures it uses the correct memoized version
-    }, [fetchSavedRecipes, navigate]); 
+    }, [fetchSavedRecipes, fetchPantryItems, navigate]); // --- UPDATED dependencies
     // --- *** END BUG FIX *** ---
 
     useEffect(() => {
@@ -106,6 +133,7 @@ export const AuthProvider = ({ children }) => {
              // --- Ensure saved recipes are cleared if token is removed ---
             setSavedRecipes([]); 
             setUserProfile(null);
+            setPantryItems([]); // --- NEW: Clear pantry if no token ---
         }
     // fetchUserProfile is now memoized, safe to include
     }, [token, fetchUserProfile]); 
@@ -127,7 +155,7 @@ export const AuthProvider = ({ children }) => {
             localStorage.setItem('token', newToken);
             axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
             
-            // fetchUserProfile will handle setting user and fetching saved recipes
+            // fetchUserProfile will handle setting user, saved recipes, and pantry
             await fetchUserProfile(); 
             
             // Navigate based on fetched profile role
@@ -173,7 +201,7 @@ export const AuthProvider = ({ children }) => {
             localStorage.setItem('token', newToken);
             axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
 
-            await fetchUserProfile(); // Fetches profile and saved recipes
+            await fetchUserProfile(); // Fetches profile, saved recipes, and pantry
 
             const fetchedUser = userProfile; // Use state updated by fetchUserProfile
              
@@ -203,6 +231,7 @@ export const AuthProvider = ({ children }) => {
         setUserProfile(null);
         setSavedRecipes([]);
         setSelectedRecipes([]);
+        setPantryItems([]); // --- NEW: Clear pantry on logout ---
         localStorage.removeItem('token');
         localStorage.removeItem('selectedRecipes'); // --- FIX: Ensure this is cleared on logout ---
         delete axios.defaults.headers.common['Authorization'];
@@ -305,6 +334,45 @@ export const AuthProvider = ({ children }) => {
             return prev; // No change needed
         });
     };
+    
+    // --- NEW: Centralized Pantry Management Functions ---
+    const addPantryItem = useCallback(async (itemName) => {
+        const trimmedItemName = itemName.trim();
+        if (pantryItems.some(item => item.name.toLowerCase() === trimmedItemName.toLowerCase())) {
+            toast.info(`"${trimmedItemName}" is already in your pantry.`);
+            return null; // Return null to indicate no add was made
+        }
+
+        const optimisticItem = { ingredient_id: Date.now(), name: trimmedItemName, category: 'Unknown' };
+        setPantryItems(prev => [...prev, optimisticItem].sort((a, b) => a.name.localeCompare(b.name)));
+
+        try {
+            const res = await axios.post('/api/pantry', { ingredient_name: trimmedItemName });
+            setPantryItems(prev => prev.map(item => item.ingredient_id === optimisticItem.ingredient_id ? res.data : item)
+                .sort((a, b) => a.name.localeCompare(b.name)));
+            toast.success(`"${trimmedItemName}" added to pantry!`);
+            return res.data; // Return the new item
+        } catch (error) {
+            console.error("Error adding item:", error);
+            toast.error(`Failed to add "${trimmedItemName}". ${error.response?.data?.detail || ''}`);
+            setPantryItems(prev => prev.filter(item => item.ingredient_id !== optimisticItem.ingredient_id));
+            return null; // Return null on failure
+        }
+    }, [pantryItems]); // Depends on current pantryItems for duplicate check
+
+    const removePantryItem = useCallback(async (itemId, itemName) => {
+        setPantryItems(prev => prev.filter(item => item.ingredient_id !== itemId)); // Optimistic removal
+        try {
+            await axios.delete(`/api/pantry/${itemId}`);
+            toast.info(`"${itemName}" removed from pantry.`);
+        } catch (error) {
+            console.error("Error removing item:", error);
+            toast.error(`Failed to remove "${itemName}".`);
+            // Rollback on error by re-fetching
+            fetchPantryItems();
+        }
+    }, [fetchPantryItems]); // Depends on fetchPantryItems for rollback
+    // --- END NEW ---
 
     return (
         <AuthContext.Provider value={{
@@ -328,7 +396,13 @@ export const AuthProvider = ({ children }) => {
             decrementRecipeQuantity,
             // --- FIX: Expose the new functions ---
             clearShoppingList,
-            removeIngredientFromList
+            removeIngredientFromList,
+            // --- NEW: Expose Pantry State and Functions ---
+            pantryItems,
+            pantryIdSet,
+            addPantryItem,
+            removePantryItem,
+            fetchPantryItems
         }}>
             {children}
         </AuthContext.Provider>

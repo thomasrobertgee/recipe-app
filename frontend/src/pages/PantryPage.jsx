@@ -2,43 +2,49 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
+// --- NEW: Import useAuth ---
+import { useAuth } from '../context/AuthContext';
 import BarcodeScanner from '../components/BarcodeScanner';
 import ReceiptScannerModal from '../components/ReceiptScannerModal';
 import './PantryPage.css';
 import './Page.css';
 
 const PantryPage = () => {
-    const [pantryItems, setPantryItems] = useState([]);
+    // --- NEW: Get pantry state and functions from context ---
+    const { 
+        pantryItems, 
+        addPantryItem, 
+        removePantryItem, 
+        fetchPantryItems, // Get the refetch function
+        isLoading: isAuthLoading // Use auth loading state for pantry
+    } = useAuth();
+    
+    // --- UPDATED: Local state is now only for UI elements ---
     const [staples, setStaples] = useState({});
+    const [isStaplesLoading, setIsStaplesLoading] = useState(true); // Separate loading for staples
     const [searchTerm, setSearchTerm] = useState('');
     const [searchResults, setSearchResults] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
     const [isScannerOpen, setIsScannerOpen] = useState(false);
     const [isReceiptScannerOpen, setIsReceiptScannerOpen] = useState(false);
-    // --- NEW: Loading state for receipt processing ---
     const [isProcessingReceipt, setIsProcessingReceipt] = useState(false);
 
-    // Fetch initial pantry items and staples
+    // --- UPDATED: Fetch only staples ---
     useEffect(() => {
-        setIsLoading(true);
-        Promise.all([
-            axios.get('/api/pantry'),
-            axios.get('/api/ingredients/staples')
-        ]).then(([pantryRes, staplesRes]) => {
-            setPantryItems(pantryRes.data);
+        setIsStaplesLoading(true);
+        axios.get('/api/ingredients/staples')
+        .then(staplesRes => {
             setStaples(staplesRes.data);
         }).catch(error => {
             console.error("Error fetching pantry data:", error);
-            // Avoid toast if it's just an initial load 401
             if (!error.response || error.response.status !== 401) {
-                toast.error("Could not load pantry items or staples.");
+                toast.error("Could not load staples.");
             }
         }).finally(() => {
-            setIsLoading(false);
+            setIsStaplesLoading(false);
         });
-    }, []);
+    }, []); // Runs once on mount
 
-    // Handle search input changes
+    // Handle search input changes (no change here)
     useEffect(() => {
         if (searchTerm.length >= 2) {
             const timer = setTimeout(() => {
@@ -52,62 +58,28 @@ const PantryPage = () => {
         }
     }, [searchTerm]);
 
-    const handleAddItem = (itemName) => {
+    // --- UPDATED: Simplified handleAddItem ---
+    const handleAddItem = async (itemName) => {
         if (!itemName || typeof itemName !== 'string' || itemName.trim() === '') {
             toast.warn("Cannot add an empty item name.");
             return;
         }
         const trimmedItemName = itemName.trim();
-
-        // Check case-insensitively
-        if (pantryItems.some(item => item.name.toLowerCase() === trimmedItemName.toLowerCase())) {
-            toast.info(`"${trimmedItemName}" is already in your pantry.`);
-            // Clear search only if the added item matches the current search term
-            if (searchTerm.toLowerCase() === trimmedItemName.toLowerCase()) {
-                setSearchTerm('');
-                setSearchResults([]);
-            }
-            return;
+        
+        // Call the context function
+        const newItem = await addPantryItem(trimmedItemName);
+        
+        // If item was added (not a duplicate) and matches search, clear search
+        if (newItem && searchTerm.toLowerCase() === trimmedItemName.toLowerCase()) {
+            setSearchTerm('');
+            setSearchResults([]);
         }
-
-
-        const optimisticItem = { ingredient_id: Date.now(), name: trimmedItemName, category: 'Unknown' }; // Use unique temp ID
-        // Add optimistically and sort immediately
-        setPantryItems(prev => [...prev, optimisticItem].sort((a, b) => a.name.localeCompare(b.name)));
-
-        axios.post('/api/pantry', { ingredient_name: trimmedItemName })
-            .then(res => {
-                // Replace optimistic item with actual data from backend
-                setPantryItems(prev => prev.map(item => item.ingredient_id === optimisticItem.ingredient_id ? res.data : item)
-                    .sort((a, b) => a.name.localeCompare(b.name))); // Ensure sort order is maintained
-                toast.success(`"${trimmedItemName}" added to pantry!`);
-                // Clear search only if the added item matches the current search term
-                if (searchTerm.toLowerCase() === trimmedItemName.toLowerCase()) {
-                    setSearchTerm('');
-                    setSearchResults([]);
-                }
-            })
-            .catch(error => {
-                console.error("Error adding item:", error);
-                toast.error(`Failed to add "${trimmedItemName}". ${error.response?.data?.detail || ''}`);
-                // Remove optimistic item on failure
-                setPantryItems(prev => prev.filter(item => item.ingredient_id !== optimisticItem.ingredient_id));
-            });
     };
 
-
+    // --- UPDATED: Simplified handleRemoveItem ---
     const handleRemoveItem = (itemId, itemName) => {
-        setPantryItems(prev => prev.filter(item => item.ingredient_id !== itemId)); // Remove optimistically
-        axios.delete(`/api/pantry/${itemId}`)
-            .then(() => {
-                toast.info(`"${itemName}" removed from pantry.`);
-            })
-            .catch(error => {
-                console.error("Error removing item:", error);
-                toast.error(`Failed to remove "${itemName}".`);
-                // If removal fails, might need to re-fetch to restore consistency
-                // fetchPantryItems(); // You would need to extract fetch logic
-            });
+        // Call the context function
+        removePantryItem(itemId, itemName);
     };
 
     const handleScanSuccess = (productName) => {
@@ -129,13 +101,10 @@ const PantryPage = () => {
         setIsProcessingReceipt(true); // Show loading state
         const processingToastId = toast.loading("Uploading and processing receipt...");
 
-        // Create FormData to send the file
         const formData = new FormData();
-        // "file" must match the parameter name in the backend endpoint (file: UploadFile = File(...))
         formData.append("file", imageFile, imageFile.name);
 
         try {
-            // Make the POST request to the backend
             const response = await axios.post('/api/pantry/scan-receipt', formData, {
                 headers: {
                     // 'Content-Type': 'multipart/form-data' // Axios typically sets this correctly for FormData
@@ -144,27 +113,16 @@ const PantryPage = () => {
 
             console.log("Backend response:", response.data);
             toast.update(processingToastId, {
-                render: response.data.message || "Receipt processed (Backend needs full implementation)",
+                render: response.data.message || "Receipt processed",
                 type: "success",
                 isLoading: false,
                 autoClose: 5000,
             });
 
-            // --- TODO: Update pantry based on response ---
-            // Once the backend returns a list of added items in response.data.added_items,
-            // update the pantryItems state more intelligently instead of just re-fetching.
-            // Example (needs backend to return items added):
-            // if (response.data.added_items && response.data.added_items.length > 0) {
-            //    fetchPantryItems(); // Or merge response.data.added_items into pantryItems state
-            // }
-
-            // For now, simple re-fetch might be okay for testing:
-            setIsLoading(true); // Show loading while fetching
-            axios.get('/api/pantry')
-                .then(pantryRes => setPantryItems(pantryRes.data))
-                .catch(err => toast.error("Failed to refresh pantry after receipt scan."))
-                .finally(() => setIsLoading(false));
-            // --- END TODO ---
+            // --- UPDATED: Call context function to refetch pantry ---
+            // This will update the global state, and this component will re-render
+            fetchPantryItems();
+            // --- END UPDATED ---
 
         } catch (error) {
             console.error("Error uploading/processing receipt:", error);
@@ -179,21 +137,8 @@ const PantryPage = () => {
             setIsProcessingReceipt(false); // Hide loading state
         }
     };
-
-    // Helper function to re-fetch pantry (used above)
-    const fetchPantryItems = () => {
-        setIsLoading(true);
-        axios.get('/api/pantry')
-            .then(pantryRes => setPantryItems(pantryRes.data))
-            .catch(error => {
-                console.error("Error fetching pantry data:", error);
-                if (!error.response || error.response.status !== 401) {
-                    toast.error("Could not load pantry items.");
-                }
-            })
-            .finally(() => setIsLoading(false));
-    };
-
+    
+    // --- REMOVED local fetchPantryItems function ---
 
     const categorizedItems = useMemo(() => {
         return pantryItems.reduce((acc, item) => {
@@ -202,13 +147,13 @@ const PantryPage = () => {
             acc[category].push(item);
             return acc;
         }, {});
-    }, [pantryItems]);
+    }, [pantryItems]); // Now depends on global pantryItems
 
     const sortedCategories = useMemo(() => Object.keys(categorizedItems).sort(), [categorizedItems]);
     const sortedStapleCategories = useMemo(() => Object.keys(staples).sort(), [staples]);
 
     // Combined loading state
-    const isPageLoading = isLoading || isProcessingReceipt;
+    const isPageLoading = isAuthLoading || isStaplesLoading || isProcessingReceipt;
 
     return (
         // Add loading class to slightly dim page during processing
@@ -235,7 +180,8 @@ const PantryPage = () => {
             <div className="pantry-layout">
                 <div className="pantry-main-content">
                     <h2>Current Pantry Items</h2>
-                    {isLoading && pantryItems.length === 0 ? ( // Show loading text only on initial load
+                    {/* --- UPDATED: Use isAuthLoading for pantry --- */}
+                    {isAuthLoading ? (
                         <p>Loading pantry...</p>
                     ) : pantryItems.length === 0 ? (
                         <p>Your pantry is empty. Add some items using the sections below!</p>
@@ -289,18 +235,21 @@ const PantryPage = () => {
 
                     <div className="staples-section">
                         <h3>Quick Add Staples</h3>
-                        {sortedStapleCategories.map(category => (
-                            <div key={category} className="staple-category">
-                                <h4>{category}</h4>
-                                <div className="staple-items">
-                                    {staples[category].sort((a, b) => a.name.localeCompare(b.name)).map(staple => (
-                                        <button key={staple.ingredient_id} onClick={() => handleAddItem(staple.name)} disabled={isPageLoading}> {/* Disable button */}
-                                            {staple.name}
-                                        </button>
-                                    ))}
+                        {/* --- NEW: Show loading for staples --- */}
+                        {isStaplesLoading ? <p>Loading staples...</p> : (
+                            sortedStapleCategories.map(category => (
+                                <div key={category} className="staple-category">
+                                    <h4>{category}</h4>
+                                    <div className="staple-items">
+                                        {staples[category].sort((a, b) => a.name.localeCompare(b.name)).map(staple => (
+                                            <button key={staple.ingredient_id} onClick={() => handleAddItem(staple.name)} disabled={isPageLoading}> {/* Disable button */}
+                                                {staple.name}
+                                            </button>
+                                        ))}
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
+                            ))
+                        )}
                     </div>
                 </aside>
             </div>

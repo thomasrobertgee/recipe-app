@@ -18,11 +18,13 @@ The application consists of a Python backend that serves data from a database an
     - Extracts detailed price information, including unit prices (e.g., per kg).
 - **AI-powered recipe generation** that uses a user's saved preferences and pantry items to create tailored recipes (Note: Recipes are now generated globally and not auto-saved to user profiles).
 - **AI-powered Recipe Modification:** Users can request modifications to any recipe (e.g., "make this vegan", "double the servings"), and the AI will generate a new, updated version.
-- **My Pantry Feature:** Users can add from a categorized list of staple ingredients to their personal pantry.
+- **My Pantry Feature:** Users can add from a categorized list of staple ingredients to their personal pantry. Pantry state is managed globally via React Context.
 - **Barcode Scanning:** Users can scan product barcodes using their device camera to quickly add items to their pantry (utilizes Open Food Facts API via backend proxy).
 - **Receipt Scanning (Beta):** Users can upload or take a photo of a receipt. Google Cloud Vision OCR extracts text, and OpenAI API parses items to add them to the pantry.
 - **Recipe Ratings & Filtering:** Users can rate recipes and filter/sort them.
-- **Intelligent Shopping List:** A dynamic list that consolidles ingredients, calculates costs, and tracks spending against a user's budget.
+- **Intelligent Shopping List:**
+    - A dynamic list that consolidles ingredients, calculates costs, and tracks spending against a user's budget.
+    - **Smart Pantry Sync:** Automatically cross-references ingredients with the user's pantry (managed via Context). Items already owned are moved to an "Already in pantry" section, allowing users to override and move items back to the main list if needed. Cost calculations exclude items marked as already in the pantry.
 - **Interactive Cook Mode:** A persistent, step-by-step cooking interface with integrated, clickable timers to guide users while cooking.
 - **Supplier Portal:**
     - Separate registration for local suppliers (e.g., butchers, greengrocerrs).
@@ -43,7 +45,7 @@ The application consists of a Python backend that serves data from a database an
 Here are some of the planned features to evolve the app from an MVP into a full-featured product.
 
 ### New Core Features
-1.  **"Smart Pantry" Shopping List Sync:** Automatically cross-reference a recipe's ingredients with the user's "My Pantry" list. Any items the user already has will be moved to an "Already in your pantry" section of the shopping list, preventing duplicate purchases.
+1.  ~~**"Smart Pantry" Shopping List Sync:** Automatically cross-reference a recipe's ingredients with the user's "My Pantry" list. Any items the user already has will be moved to an "Already in your pantry" section of the shopping list, preventing duplicate purchases.~~ (Implemented!)
 2.  **Price-Drop Alerts ("Stock Up" Notifier):** Create a "Watchlist" for staple items. If the scraper finds a price that is significantly lower than the item's historical average, send the user an in-app notification.
 
 ### Existing Feature Improvements
@@ -105,6 +107,7 @@ A collection of ideas for improving the application's User Interface, primarily 
 - **Build Tool:** Vite
 - **HTTP Client:** Axios
 - **Routing:** React Router
+- **State Management:** React Context API
 - **Authentication:** **@react-oauth/google**
 - **Barcode Scanning:** **react-zxing**
 - **Drag & Drop:** **@dnd-kit/core, @dnd-kit/sortable, @dnd-kit/utilities**

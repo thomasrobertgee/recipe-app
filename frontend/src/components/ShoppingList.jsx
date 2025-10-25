@@ -1,6 +1,7 @@
 // src/components/ShoppingList.jsx
 
 import React, { useState, useEffect, useMemo } from 'react';
+// --- REMOVED: axios import ---
 import { useAuth } from '../context/AuthContext';
 // --- UPDATED: Import the new fuzzy matching function ---
 import { getSimplePrice, findBestSpecialMatch } from '../utils/priceUtils';
@@ -12,7 +13,8 @@ const ShoppingList = ({ allSpecials, recipes: recipesProp, isEmbedded = false })
         selectedRecipes: globalRecipes, // Renamed to avoid conflict
         userProfile, 
         clearShoppingList,
-        removeIngredientFromList // --- FIX: Use the new function from context ---
+        removeIngredientFromList, // --- FIX: Use the new function from context ---
+        pantryIdSet // --- NEW: Get pantryIdSet from context ---
     } = useAuth();
     
     // --- *** UPDATED: Use recipesProp if provided, else use globalRecipes *** ---
@@ -20,12 +22,20 @@ const ShoppingList = ({ allSpecials, recipes: recipesProp, isEmbedded = false })
     
     const [checkedItems, setCheckedItems] = useState(() => JSON.parse(localStorage.getItem('checkedItems') || '[]'));
     
+    // --- NEW: State for overrides (no change) ---
+    const [forceBuyIds, setForceBuyIds] = useState(new Set()); // IDs to "buy anyway"
+    
     useEffect(() => { localStorage.setItem('checkedItems', JSON.stringify(checkedItems)); }, [checkedItems]);
+
+    // --- REMOVED: useEffect for fetching pantry items ---
+    
+    // --- REMOVED: useMemo for local pantryIdSet ---
 
     const shoppingListData = useMemo(() => {
         // --- *** UPDATED: Check recipesToDisplay *** ---
         if (!recipesToDisplay || recipesToDisplay.length === 0) {
-            return { consolidatedItems: [], totalCost: 0 };
+            // --- UPDATED: Return all parts of the data structure ---
+            return { consolidatedItems: [], itemsToBuy: [], itemsInPantry: [], totalCost: 0 };
         }
 
         const itemsMap = new Map();
@@ -54,20 +64,38 @@ const ShoppingList = ({ allSpecials, recipes: recipesProp, isEmbedded = false })
         });
         
         const consolidatedItems = Array.from(itemsMap.values());
+        
+        // --- NEW: Partition the list ---
+        const itemsToBuy = [];
+        const itemsInPantry = [];
+        
+        for (const item of consolidatedItems) {
+            if (forceBuyIds.has(item.id)) {
+                itemsToBuy.push(item); // User forced it to the buy list
+            } else if (pantryIdSet.has(item.id) && !isEmbedded) { // Check global pantryIdSet
+                itemsInPantry.push(item); // Item is in pantry
+            } else {
+                itemsToBuy.push(item); // Not in pantry, or this is an embedded list
+            }
+        }
+        // --- END NEW ---
 
-        const totalCost = consolidatedItems.reduce((total, item) => {
+        // --- UPDATED: Calculate cost from itemsToBuy only ---
+        const totalCost = itemsToBuy.reduce((total, item) => {
             if (item.priceString) {
                 return total + (getSimplePrice(item.priceString) * item.count);
             }
             return total;
         }, 0);
 
-        return { consolidatedItems, totalCost };
+        // --- UPDATED: Return partitioned lists and new cost ---
+        return { itemsToBuy, itemsInPantry, totalCost };
 
-    // --- *** UPDATED: Dependency is now recipesToDisplay *** ---
-    }, [recipesToDisplay, allSpecials]);
+    // --- *** UPDATED: Dependency is now recipesToDisplay, pantryIdSet, forceBuyIds, isEmbedded *** ---
+    }, [recipesToDisplay, allSpecials, pantryIdSet, forceBuyIds, isEmbedded]);
 
-    const { consolidatedItems, totalCost } = shoppingListData;
+    // --- UPDATED: Destructure new lists ---
+    const { itemsToBuy, itemsInPantry, totalCost } = shoppingListData;
 
     const handleCheckItem = (itemId) => {
       if (checkedItems.includes(itemId)) {
@@ -83,6 +111,19 @@ const ShoppingList = ({ allSpecials, recipes: recipesProp, isEmbedded = false })
         clearShoppingList();
       }
     };
+
+    // --- NEW: Handlers to move items between lists (no change) ---
+    const handleMoveToBuyList = (itemId) => {
+        setForceBuyIds(prev => new Set(prev).add(itemId));
+    };
+    const handleMoveToPantry = (itemId) => {
+        setForceBuyIds(prev => {
+            const next = new Set(prev);
+            next.delete(itemId);
+            return next;
+        });
+    };
+    // --- END NEW ---
 
     const budget = userProfile?.weekly_budget;
     const budgetPercentage = (budget && budget > 0) ? (totalCost / budget) : 0;
@@ -112,14 +153,17 @@ const ShoppingList = ({ allSpecials, recipes: recipesProp, isEmbedded = false })
               </div>
             )}
             
-            {consolidatedItems.length === 0 ? (
+            {/* --- UPDATED: Check itemsToBuy and itemsInPantry --- */}
+            {itemsToBuy.length === 0 && itemsInPantry.length === 0 ? (
                 <p>Select recipes to start your list.</p>
             ) : (
                 <>
+                    {/* --- UPDATED: Map over itemsToBuy --- */}
                     <ul>
-                        {consolidatedItems.sort((a, b) => a.name.localeCompare(b.name)).map(item => {
+                        {itemsToBuy.sort((a, b) => a.name.localeCompare(b.name)).map(item => {
                             const isChecked = checkedItems.includes(item.id);
                             const lineItemPrice = item.priceString ? getSimplePrice(item.priceString) * item.count : 0;
+                            const wasForceAdded = forceBuyIds.has(item.id); // Check if it was forced
                             return (
                                 <li key={item.id} className={isChecked ? 'checked' : ''}>
                                     <label className="checkbox-label">
@@ -132,9 +176,13 @@ const ShoppingList = ({ allSpecials, recipes: recipesProp, isEmbedded = false })
                                     <div className="item-details">
                                       {item.count > 1 && <span className="item-quantity">({item.count})</span>}
                                       {lineItemPrice > 0 && <span className="item-price">${lineItemPrice.toFixed(2)}</span>}
-                                      {/* --- *** UPDATED: Conditionally show remove button *** --- */}
+                                      {/* --- *** UPDATED: Conditional Button *** --- */}
                                       {!isEmbedded && (
-                                          <button className="remove-item-btn" onClick={() => removeIngredientFromList(item.id)}>×</button>
+                                          wasForceAdded ? (
+                                            <button className="move-to-pantry-btn" title="Move back to pantry" onClick={() => handleMoveToPantry(item.id)}>↩️</button>
+                                          ) : (
+                                            <button className="remove-item-btn" onClick={() => removeIngredientFromList(item.id)}>×</button>
+                                          )
                                       )}
                                     </div>
                                 </li>
@@ -148,6 +196,24 @@ const ShoppingList = ({ allSpecials, recipes: recipesProp, isEmbedded = false })
                     </div>
                 </>
             )}
+
+            {/* --- NEW: "Already in Pantry" section --- */}
+            {!isEmbedded && itemsInPantry.length > 0 && (
+                <div className="pantry-items-section">
+                    <h4>Already in your pantry:</h4>
+                    <ul className="pantry-item-list-ul">
+                        {itemsInPantry.sort((a, b) => a.name.localeCompare(b.name)).map(item => (
+                            <li key={item.id} className="pantry-item-in-list">
+                                <span>{item.name} {item.count > 1 ? `(${item.count})` : ''}</span>
+                                <button onClick={() => handleMoveToBuyList(item.id)} className="move-to-list-btn">
+                                    Add to list
+                                </button>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            )}
+            {/* --- END NEW --- */}
         </div>
     );
 };
