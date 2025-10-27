@@ -54,7 +54,7 @@ from ai_service import (
 
 origins = [
     "http://localhost:5173",
-    "http://192.168.1.102:5173" # Make sure this matches your PC's IP if testing mobile
+    "http://192.168.1.102:5173" # Home network
 ]
 
 # --- Directory to save uploaded receipts (optional) ---
@@ -733,7 +733,7 @@ def lookup_barcode(barcode: str):
         raise HTTPException(status_code=500, detail="Internal server error during barcode lookup.")
 
 
-# --- *** NEW MEAL PLAN API ENDPOINTS *** ---
+# --- *** UPDATED MEAL PLAN API ENDPOINTS *** ---
 @app.get("/api/meal-plan", response_model=List[MealPlanEntryRead])
 def get_meal_plan(
     session: Session = Depends(get_session),
@@ -746,15 +746,13 @@ def get_meal_plan(
         select(MealPlanEntry)
         .where(MealPlanEntry.user_id == current_user.id)
         .options(
-            # Eagerly load the recipe, its links, and the ingredient for each link
             selectinload(MealPlanEntry.recipe)
             .selectinload(Recipe.links)
             .selectinload(RecipeIngredientLink.ingredient)
         )
-        .order_by(MealPlanEntry.plan_date.asc()) # Order by date
+        .order_by(MealPlanEntry.plan_date.asc(), MealPlanEntry.meal_type.asc()) # Order by date, then meal type
     ).all()
 
-    # Manually construct the response to include full RecipeResponse
     response_list = []
     for entry in meal_plan_entries:
         if not entry.recipe:
@@ -778,13 +776,16 @@ def get_meal_plan(
             average_rating=avg_rating
         )
 
+        # Include new fields in the response
         response_list.append(
             MealPlanEntryRead(
                 id=entry.id,
                 user_id=entry.user_id,
                 recipe_id=entry.recipe_id,
                 plan_date=entry.plan_date,
-                recipe=recipe_response # Assign the fully formed RecipeResponse
+                meal_type=entry.meal_type, # Include meal_type
+                use_for_leftovers=entry.use_for_leftovers, # Include leftovers flag
+                recipe=recipe_response
             )
         )
 
@@ -798,17 +799,26 @@ def add_to_meal_plan(
     current_user: User = Depends(get_current_user)
 ):
     """
-    Adds a recipe to the user's meal plan for a specific date.
+    Adds a recipe to the user's meal plan for a specific date and meal type.
     """
+    # Validate meal_type
+    if entry_data.meal_type not in ["Lunch", "Dinner"]:
+        raise HTTPException(status_code=400, detail="Invalid meal type. Must be 'Lunch' or 'Dinner'.")
+
     # Check if recipe exists
     recipe = session.get(Recipe, entry_data.recipe_id)
     if not recipe:
         raise HTTPException(status_code=404, detail="Recipe not found")
 
+    # Optional: Check for conflicts (e.g., adding Lunch if Dinner already exists for that day with leftovers?) - Add later if needed
+
+    # Create new entry including new fields
     new_entry = MealPlanEntry(
         user_id=current_user.id,
         recipe_id=entry_data.recipe_id,
-        plan_date=entry_data.plan_date
+        plan_date=entry_data.plan_date,
+        meal_type=entry_data.meal_type,
+        use_for_leftovers=entry_data.use_for_leftovers # Get from request, defaults to False in schema/model
     )
 
     session.add(new_entry)
@@ -829,8 +839,7 @@ def add_to_meal_plan(
         ).first()
 
         if not full_entry or not full_entry.recipe:
-             # Should not happen, but indicates an issue retrieving after commit
-            raise HTTPException(status_code=500, detail="Failed to retrieve full meal plan entry after creation.")
+             raise HTTPException(status_code=500, detail="Failed to retrieve full meal plan entry after creation.")
 
         # Construct the RecipeResponse part for the return value
         recipe = full_entry.recipe
@@ -848,11 +857,14 @@ def add_to_meal_plan(
             average_rating=avg_rating
         )
 
+        # Include new fields in the response
         return MealPlanEntryRead(
             id=full_entry.id,
             user_id=full_entry.user_id,
             recipe_id=full_entry.recipe_id,
             plan_date=full_entry.plan_date,
+            meal_type=full_entry.meal_type,
+            use_for_leftovers=full_entry.use_for_leftovers,
             recipe=recipe_response
         )
 

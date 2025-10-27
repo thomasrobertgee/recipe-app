@@ -100,35 +100,27 @@ class RecipeResponse(SQLModel):
         data.update(kwargs)
 
         # Create the response model
-        # Pydantic should handle the extra 'average_rating' field now
-        # if it's defined in the model above.
-        return cls(
-            id=data['id'],
-            title=data['title'],
-            description=data['description'],
-            instructions=data['instructions'],
-            ingredients=data['ingredients'],
-            tags=data.get('tags', []), # Use .get for safety
-            total_rating=data['total_rating'],
-            rating_count=data['rating_count'],
-            # Pydantic will now expect average_rating
-            average_rating=data['average_rating']
-        )
+        return cls(**data)
+
 
 class PriceHistoryCreate(SQLModel):
     ingredient_name: str
     price: str
     store: str
     category: Optional[str] = None
+    # --- NEW: Expiry date for suppliers ---
+    expiry_date: Optional[date] = None
 
 class PriceHistoryRead(SQLModel):
     id: int
     ingredient_id: int
-    date_recorded: str
+    date_recorded: str # Keep as string for consistent API response
     price: str
     store: str
     ingredient_name: Optional[str] = None
     category: Optional[str] = None
+    # --- NEW: Expiry date for suppliers ---
+    expiry_date: Optional[date] = None
 
 class GenerateRequest(SQLModel):
     specials: List[PriceHistoryRead]
@@ -156,20 +148,23 @@ class BarcodeLookupResponse(SQLModel):
     product_name: Optional[str] = None
     error: Optional[str] = None
 
-# --- *** NEW MEAL PLAN SCHEMAS *** ---
+
+# --- *** UPDATED MEAL PLAN SCHEMAS *** ---
 class MealPlanEntryCreate(SQLModel):
     recipe_id: int
-    # --- *** FIX: Renamed 'date' to 'plan_date' *** ---
     plan_date: date # Expects a date object or string in "YYYY-MM-DD" format
+    meal_type: str # NEW: Expect "Lunch" or "Dinner"
+    use_for_leftovers: Optional[bool] = False # NEW: Optional, defaults to False
 
 class MealPlanEntryRead(SQLModel):
     id: int
     user_id: int
     recipe_id: int
-    # --- *** FIX: Renamed 'date' to 'plan_date' *** ---
     plan_date: date
+    meal_type: str # NEW
+    use_for_leftovers: bool # NEW
     recipe: RecipeResponse # Nest the full recipe details
-# --- *** END NEW MEAL PLAN SCHEMAS *** ---
+# --- *** END UPDATED MEAL PLAN SCHEMAS *** ---
 
 # --- NEW: Response schema for receipt scanning ---
 class ReceiptScanResponse(SQLModel):

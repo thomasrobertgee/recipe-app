@@ -31,7 +31,7 @@ class UserRecipeRatingLink(SQLModel, table=True):
         default=None, foreign_key="recipe.id", primary_key=True
     )
     rating: float = Field(default=0, ge=1, le=5)
-    
+
     user: "User" = Relationship(back_populates="ratings")
     recipe: "Recipe" = Relationship(back_populates="ratings")
 
@@ -42,7 +42,7 @@ class SupplierProfile(SQLModel, table=True):
     user_id: int = Field(foreign_key="user.id", unique=True, index=True)
     business_name: str = Field(index=True)
     address: Optional[str] = None
-    
+
     user: "User" = Relationship(back_populates="supplier_profile")
 # --- END NEW MODEL ---
 
@@ -61,17 +61,18 @@ class RecipeIngredientLink(SQLModel, table=True):
     ingredient: "Ingredient" = Relationship(back_populates="links")
 
 
-# --- *** NEW MEAL PLAN MODEL *** ---
+# --- *** UPDATED MEAL PLAN MODEL *** ---
 class MealPlanEntry(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     user_id: int = Field(foreign_key="user.id", index=True)
     recipe_id: int = Field(foreign_key="recipe.id", index=True)
-    # --- *** FIX: Renamed 'date' to 'plan_date' to avoid type clash *** ---
     plan_date: date = Field(index=True) # The specific day this recipe is planned for
-    
+    meal_type: str = Field(default="Dinner", index=True) # NEW: Lunch or Dinner
+    use_for_leftovers: bool = Field(default=False) # NEW: Leftovers flag
+
     user: "User" = Relationship(back_populates="meal_plan_entries")
     recipe: "Recipe" = Relationship(back_populates="meal_plan_entries")
-# --- *** END NEW MEAL PLAN MODEL *** ---
+# --- *** END UPDATED MEAL PLAN MODEL *** ---
 
 
 class User(SQLModel, table=True):
@@ -85,22 +86,22 @@ class User(SQLModel, table=True):
     dietary_restrictions: Optional[str] = Field(default=None)
     preferred_cuisines: Optional[str] = Field(default=None)
     cooking_skill: Optional[str] = Field(default="beginner") # beginner, intermediate, advanced
-    
+
     # --- NEW ONBOARDING FIELDS ---
     adult_count: int = Field(default=1)
     child_count: int = Field(default=0)
     weekly_budget: Optional[int] = Field(default=None)
     has_completed_onboarding: bool = Field(default=False)
     # --- END NEW ONBOARDING FIELDS ---
-    
+
     # --- NEW RELATIONSHIP ---
     supplier_profile: Optional["SupplierProfile"] = Relationship(back_populates="user")
     # --- END NEW RELATIONSHIP ---
-    
+
     saved_recipes: List["Recipe"] = Relationship(back_populates="saved_by_users", link_model=UserRecipeLink)
     pantry_items: List["Ingredient"] = Relationship(back_populates="users_with_in_pantry", link_model=UserPantryLink)
     ratings: List["UserRecipeRatingLink"] = Relationship(back_populates="user")
-    
+
     # --- *** NEW MEAL PLAN RELATIONSHIP *** ---
     meal_plan_entries: List["MealPlanEntry"] = Relationship(back_populates="user")
 
@@ -111,7 +112,7 @@ class Recipe(SQLModel, table=True):
     description: str
     instructions: str
     tags: List[str] = Field(sa_column=Column(JSON), default=[])
-    
+
     # Rating Caching
     total_rating: int = Field(default=0)
     rating_count: int = Field(default=0)
@@ -119,7 +120,7 @@ class Recipe(SQLModel, table=True):
     links: List[RecipeIngredientLink] = Relationship(back_populates="recipe")
     saved_by_users: List[User] = Relationship(back_populates="saved_recipes", link_model=UserRecipeLink)
     ratings: List[UserRecipeRatingLink] = Relationship(back_populates="recipe")
-    
+
     # --- *** NEW MEAL PLAN RELATIONSHIP *** ---
     meal_plan_entries: List["MealPlanEntry"] = Relationship(back_populates="recipe")
 
@@ -139,7 +140,9 @@ class PriceHistory(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     ingredient_id: int = Field(foreign_key="ingredient.id")
     date_recorded: date = Field(default_factory=date.today, index=True)
-    price: str 
+    price: str
     store: str = Field(index=True)
+    # --- NEW: Optional expiry date for supplier specials ---
+    expiry_date: Optional[date] = Field(default=None, index=True)
 
     ingredient: Ingredient = Relationship(back_populates="price_history")

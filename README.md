@@ -35,15 +35,15 @@ The application consists of a Python backend that serves data from a database an
 - **Interactive Cook Mode:** A persistent, step-by-step cooking interface with integrated, clickable timers to guide users while cooking.
 - **Supplier Portal:**
     - Separate registration for local suppliers (e.g., butchers, greengrocerrs).
-    - Dedicated portal for suppliers to log in and manage their own weekly specials (add/delete items and prices).
+    - Dedicated portal for suppliers to log in and manage their own weekly specials (add/delete items and prices, including expiry dates).
     - Supplier specials appear alongside supermarket specials for all users.
 - **Meal Planner & Weekly Budgeting:**
-    - Dedicated "Meal Plan" page with a 7-day calendar view.
-    - Users can drag and drop saved recipes onto specific days.
+    - Dedicated "Meal Plan" page with a weekly layout featuring separate **Lunch** and **Dinner** drop zones for each day.
+    - Users can drag and drop saved recipes onto specific meal slots. Backend support added for `meal_type` and `use_for_leftovers` flags.
     - Displays consolidated ingredients and estimated cost for the current plan, tracked against the user's weekly budget.
     - Button to add all planned recipes to the main shopping list.
 - Full CRUD functionality for recipes and specials.
-- **Recent Bug Fixes:** Addressed issues related to dashboard layout spacing, meal plan date filtering (timezone), receipt scanning database transactions, AI prompt formatting for instructions and receipt items, JSON serialization errors, recipe rating display updates, login redirection for suppliers, and various frontend styling inconsistencies.
+- **Recent Bug Fixes:** Addressed issues related to dashboard layout spacing, meal plan date filtering (timezone), receipt scanning database transactions, AI prompt formatting for instructions and receipt items, JSON serialization errors, recipe rating display updates, login redirection for suppliers, missing Link import, and various frontend styling inconsistencies.
 
 ---
 
@@ -62,7 +62,7 @@ Here are some of the planned features to evolve the app from an MVP into a full-
     * Add the corresponding ingredients to the user's pantry.
     * Remove the checked items from the shopping list.
     * (Optional) Log the purchase (items, date, cost) to a history section, potentially linked to the budget tracker.
-6.  **Meal Planner "Leftovers" Integration:** Add a "Use for leftovers?" toggle when adding a recipe to the meal plan. This would add a "Leftovers" block to the next day's lunch and prevent those ingredients from being double-counted in the weekly shopping list.
+6.  **Meal Planner "Leftovers" Integration:** Add a "Use for leftovers?" toggle when adding/viewing a recipe in the meal plan UI. Update shopping list logic to ignore ingredients from recipes marked as leftovers for the next day's lunch.
 7.  **Dynamic Cook Mode Scaling:** Add a dropdown (e.g., "0.5x", "1x", "2x") to the "Cook Mode" interface that dynamically updates all ingredient quantities within the step-by-step instructions.
 
 ### New AI & Data Features
@@ -272,7 +272,7 @@ You can test the locally running application on your mobile phone if it's connec
 
 ## API Endpoints
 - **`GET /api/meal-plan`**: Get all meal plan entries for the current user.
-- **`POST /api/meal-plan`**: Add a recipe to the meal plan for a specific date.
+- **`POST /api/meal-plan`**: Add a recipe to the meal plan for a specific date and meal type.
 - **`DELETE /api/meal-plan/{entry_id}`**: Remove an entry from the meal plan.
 - **`GET /api/recipes`**: Retrieves a list of all recipes (filter/sort options available).
 - **`POST /api/recipes`**: Create a new recipe (admin/future feature).

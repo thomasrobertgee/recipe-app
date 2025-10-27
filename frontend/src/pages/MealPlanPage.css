@@ -12,101 +12,180 @@
 .add-plan-to-list-btn {
     padding: 8px 15px; font-size: 0.95rem; font-weight: 600; color: #fff;
     background-color: #28a745; border: none; border-radius: 5px; cursor: pointer;
-    transition: background-color 0.2s ease; margin-left: auto; margin-right: 20px;
+    transition: background-color 0.2s ease; margin-left: auto; /* Push to right */
+    /* Remove right margin if not needed: margin-right: 20px; */
 }
 .add-plan-to-list-btn:hover { background-color: #218838; }
 .add-plan-to-list-btn:disabled { background-color: #cccccc; cursor: not-allowed; }
 
 .page-header p {
-    flex-basis: 100%; margin-top: 10px; text-align: center; color: #555;
+    flex-basis: 100%; margin-top: 10px; text-align: left; color: #555; /* Align left */
 }
 
 .meal-plan-layout {
     display: grid; grid-template-columns: 2fr 5fr 3fr; gap: 20px; width: 100%;
-    height: calc(100vh - 180px);
+    /* Adjusted height calculation if header height changes */
+    height: calc(100vh - 180px); /* Adjust as needed */
 }
 
-.meal-plan-recipes-list, .meal-plan-calendar, .meal-plan-info-column {
+/* --- Column 1: Recipes List --- */
+.meal-plan-recipes-list {
     background-color: #f9f9f9; border-radius: 8px; padding: 15px;
     overflow-y: auto; height: 100%; box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
-
-.meal-plan-recipes-list h2, .meal-plan-calendar h2, .meal-plan-info-column h2 {
+.meal-plan-recipes-list h2 {
     text-align: center; margin-top: 0; margin-bottom: 15px; border-bottom: 2px solid #eee;
     padding-bottom: 10px; position: sticky; top: -15px; background: #f9f9f9; z-index: 10;
 }
-.meal-plan-calendar h2 { background: #fff; }
-
 .meal-plan-recipes-list .recipes-container { display: flex; flex-direction: column; gap: 10px; }
-.meal-plan-recipes-list .recipe-tile { width: 100%; margin: 0; padding: 8px; background-color: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+.meal-plan-recipes-list .recipe-tile { /* Style the draggable RecipeTile */
+    width: 100%; margin: 0; padding: 8px; background-color: #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-radius: 4px;
+}
 .meal-plan-recipes-list .recipe-tile-title { font-size: 0.95rem; }
 .meal-plan-recipes-list .recipe-tile-info { font-size: 0.8rem; }
 
-.meal-plan-calendar { background-color: #ffffff; }
-.calendar-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
-.calendar-day { background-color: #fdfdfd; border: 1px dashed #ddd; border-radius: 6px; min-height: 200px; padding: 10px; transition: background-color 0.2s ease, border 0.2s ease; }
-.calendar-day h3 { margin-top: 0; text-align: center; font-size: 1.1rem; color: #444; }
-.day-recipe-list { display: flex; flex-direction: column; gap: 10px; min-height: 50px; }
-.day-recipe-list > p { color: #aaa; text-align: center; font-style: italic; margin-top: 20px; }
 
+/* --- Column 2: Calendar --- */
+.meal-plan-calendar {
+    background-color: #ffffff; border-radius: 8px; padding: 15px;
+    overflow-y: auto; height: 100%; box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+/* Removed title h2 style */
+.calendar-days-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0; /* Remove gap between day groups */
+}
+.calendar-day-group {
+    border-bottom: 1px solid #ddd; /* Separator line */
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+}
+.calendar-day-group:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+.day-group-header {
+    text-align: center;
+    font-size: 1.1rem;
+    color: #444;
+    margin: 0 0 0.75rem 0; /* Space below header */
+    padding-bottom: 0.5rem;
+    border-bottom: 1px dashed #eee; /* Light line under day header */
+}
+.day-slots {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Two equal columns for Lunch/Dinner */
+    gap: 10px; /* Space between Lunch and Dinner slots */
+}
+.calendar-slot {
+    background-color: #fdfdfd; border: 1px dashed #ddd; border-radius: 6px;
+    padding: 10px; transition: background-color 0.2s ease, border 0.2s ease;
+    min-height: 150px; /* Ensure minimum drop area */
+    display: flex; /* Use flexbox for vertical layout */
+    flex-direction: column;
+}
+.calendar-slot h4 { /* Lunch/Dinner Title */
+    margin: 0 0 8px 0;
+    text-align: center;
+    font-size: 0.9rem;
+    color: #777;
+    font-weight: 600;
+}
+.slot-recipe-list {
+    display: flex; flex-direction: column; gap: 8px; /* Space between recipes */
+    flex-grow: 1; /* Allow list to fill space */
+    min-height: 50px; /* Minimum height before "Drop here" appears */
+}
+.slot-recipe-list > p { /* "Drop here" text */
+    color: #aaa; text-align: center; font-style: italic; margin-top: 20px;
+    font-size: 0.9rem;
+}
 .planned-recipe-tile { position: relative; }
-.planned-recipe-tile .recipe-tile { width: 100%; padding: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+.planned-recipe-tile .recipe-tile { /* Style the placed RecipeTile */
+    width: 100%; padding: 8px; background-color: #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-radius: 4px;
+}
 .delete-plan-item-btn {
     position: absolute; top: 2px; right: 2px; width: 20px; height: 20px; border-radius: 50%;
-    border: none; background-color: rgba(255, 0, 0, 0.7); color: white; font-size: 14px;
+    border: none; background-color: rgba(255, 0, 0, 0.6); color: white; font-size: 14px;
     font-weight: bold; line-height: 18px; text-align: center; cursor: pointer; opacity: 0;
     transition: opacity 0.2s ease, background-color 0.2s ease; z-index: 2;
 }
 .planned-recipe-tile:hover .delete-plan-item-btn { opacity: 1; }
-.delete-plan-item-btn:hover { background-color: rgba(255, 0, 0, 1); }
+.delete-plan-item-btn:hover { background-color: rgba(255, 0, 0, 0.9); }
 
-/* --- Updated Column 3 Styles --- */
+
+/* --- Column 3: Plan Info --- */
+.meal-plan-info-column {
+    background-color: #f9f9f9; border-radius: 8px; padding: 15px;
+    overflow-y: auto; height: 100%; box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+.meal-plan-info-column h2 {
+    text-align: center; margin-top: 0; margin-bottom: 15px; border-bottom: 2px solid #eee;
+    padding-bottom: 10px; position: sticky; top: -15px; background: #f9f9f9; z-index: 10;
+}
 .meal-plan-info-column .budget-tracker {
     text-align: center; font-size: 1rem; padding: 10px; background-color: #fff;
     border: 1px solid #eee; border-radius: 6px; margin-bottom: 15px;
 }
-.meal-plan-info-column .budget-tracker.over-budget { /* Style for over budget */
-    border-color: #f5c6cb;
-    background-color: #f8d7da;
+.meal-plan-info-column .budget-tracker.over-budget {
+    border-color: #f5c6cb; background-color: #f8d7da;
 }
-.meal-plan-info-column .budget-warning { /* Style for warning text */
-    color: #dc3545;
-    font-weight: bold;
+.meal-plan-info-column .budget-warning {
+    color: #dc3545; font-weight: bold;
 }
 .meal-plan-info-column .budget-tracker strong { color: #333; }
-.meal-plan-info-column p { color: #777; text-align: center; font-style: italic; margin-top: 20px; }
-
-/* --- NEW: Plan Ingredients List Styles --- */
+.meal-plan-info-column p { /* Placeholder text style */
+    color: #777; text-align: center; font-style: italic; margin-top: 20px;
+}
+.meal-plan-info-column h4 { /* Ingredients Needed Title */
+    margin: 1.5rem 0 0.5rem 0;
+    color: #444;
+    font-size: 1rem;
+}
 .plan-ingredients-list {
-    list-style: none;
-    padding: 0;
-    margin: 15px 0 0 0; /* Add margin above list */
+    list-style: none; padding: 0; margin: 0;
     border-top: 1px solid #eee; /* Separator */
 }
 .plan-ingredient-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 8px 5px;
-    border-bottom: 1px solid #f0f0f0;
-    font-size: 0.9rem;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 5px; border-bottom: 1px solid #f0f0f0; font-size: 0.9rem;
 }
-.plan-ingredient-item:last-child {
-    border-bottom: none;
-}
-.plan-ingredient-name {
-    font-weight: 500;
-    color: #444;
-}
+.plan-ingredient-item:last-child { border-bottom: none; }
+.plan-ingredient-name { font-weight: 500; color: #444; }
 .plan-ingredient-price {
-    font-weight: 500;
-    color: #007bff;
-    font-size: 0.85rem;
-    text-align: right;
+    font-weight: 500; color: #007bff; font-size: 0.85rem; text-align: right;
 }
 .plan-ingredient-store {
-    display: block;
-    font-size: 0.75rem;
-    color: #6c757d;
+    display: block; font-size: 0.75rem; color: #6c757d;
 }
-/* --- END NEW --- */
+
+/* Responsive adjustments if needed */
+@media (max-width: 1200px) {
+    .meal-plan-layout {
+        grid-template-columns: 1fr 2fr 1fr; /* Adjust column ratios */
+    }
+}
+@media (max-width: 992px) {
+    .meal-plan-layout {
+        grid-template-columns: 1fr; /* Stack columns */
+        height: auto; /* Allow height to adjust */
+    }
+    .meal-plan-recipes-list, .meal-plan-calendar, .meal-plan-info-column {
+        height: auto; /* Remove fixed height */
+        max-height: 60vh; /* Limit height when stacked */
+    }
+    .meal-plan-info-column { order: 1; } /* Move info column below calendar */
+    .meal-plan-recipes-list { order: 2; } /* Move recipes list last */
+}
+@media (max-width: 576px) {
+    .day-slots {
+        grid-template-columns: 1fr; /* Stack Lunch/Dinner on mobile */
+    }
+    .calendar-slot {
+        min-height: 100px; /* Reduce min height */
+    }
+}

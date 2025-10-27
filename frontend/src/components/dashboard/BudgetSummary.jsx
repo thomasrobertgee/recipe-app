@@ -1,5 +1,7 @@
 // src/components/dashboard/BudgetSummary.jsx
 import React, { useMemo } from 'react';
+// --- NEW: Import Link ---
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useUI } from '../../context/UIContext';
 import { getSimplePrice, findBestSpecialMatch } from '../../utils/priceUtils'; // Need price utils
@@ -52,7 +54,7 @@ const BudgetSummary = ({ allSpecials }) => { // Needs allSpecials
                 <button onClick={toggleSidebar} className="module-link button-link">View List →</button>
             </div>
             {!budget || budget <= 0 ? (
-                 <p>Set a weekly budget in your <Link to="/profile">profile</Link> to track spending.</p>
+                 <p>Set a weekly budget in your <Link to="/profile">profile</Link> to track spending.</p> // Error was here
             ) : (
                 <div className="budget-summary-content">
                     <div className="budget-info">
