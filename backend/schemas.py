@@ -80,7 +80,7 @@ class RecipeResponse(SQLModel):
     rating_count: int
     # --- *** FIX: Add average_rating field *** ---
     average_rating: float = 0.0 # Default to 0.0, ensure it's a float
-    # --- *** END FIX *** ---
+    # --- *** END FIX --- ---
 
     # --- Your existing from_orm method (no changes needed here now) ---
     @classmethod
@@ -171,3 +171,15 @@ class ReceiptScanResponse(SQLModel):
     message: str
     detected_items: List[str]
 # --- END NEW ---
+
+# --- *** UPDATED: Schemas for Global Search ---
+class RecipeSearchResult(SQLModel):
+    id: int
+    title: str
+
+class GlobalSearchResponse(SQLModel):
+    recipes: List[RecipeSearchResult]
+    ingredients: List[PantryItem]
+    specials: List[PriceHistoryRead]
+    has_more: bool = False # --- NEW FIELD ---
+# --- *** END UPDATED SCHEMAS *** ---

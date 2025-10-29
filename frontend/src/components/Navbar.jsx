@@ -4,6 +4,7 @@ import { NavLink, useNavigate } from 'react-router-dom'; // Added useNavigate
 import { useAuth } from '../context/AuthContext';
 import { useUI } from '../context/UIContext';
 import './Navbar.css';
+import GlobalSearch from './GlobalSearch'; // --- IMPORT REMAINS ---
 
 const Navbar = () => {
     const { token, userProfile, logout, selectedRecipes } = useAuth();
@@ -50,11 +51,16 @@ const Navbar = () => {
                         <NavLink to="/profile" className={getNavLinkClass}>Profile</NavLink>
                     </>
                 )}
-                 {token && userProfile && userProfile.role === 'supplier' && (
+                {token && userProfile && userProfile.role === 'supplier' && (
                     // --- Supplier Link ---
-                     <NavLink to="/portal/dashboard" className={getNavLinkClass}>Supplier Portal</NavLink>
-                 )}
+                    <NavLink to="/portal/dashboard" className={getNavLinkClass}>Supplier Portal</NavLink>
+                )}
             </div>
+
+            {/* --- NEW: Global Search moved here, between links and auth --- */}
+            {token && userProfile && userProfile.role === 'consumer' && (
+                <GlobalSearch />
+            )}
 
             {/* --- Auth/Utility Links (using your structure) --- */}
             <div className="nav-auth">

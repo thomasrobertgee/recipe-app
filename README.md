@@ -11,6 +11,8 @@ The application consists of a Python backend that serves data from a database an
 - **Full User Authentication:** Users can register, log in, and maintain a persistent session using JWTs.
 - **Google OAuth 2.0 Login:** Users can sign up or log in using their Google accounts.
 - **New User Onboarding:** A multi-step modal guides new users through setting up their profile preferences (household size, budget, dietary needs, cuisines, skill level).
+- **Global Navbar Search:** A persistent search bar in the main navbar (for consumers) allows searching across recipes, ingredients, and today's specials. Displays a quick dropdown with top results and links to a full search results page.
+- **Dedicated Search Results Page:** A `/search` page displays all results for a query, organized into tabs for Recipes, Specials, and Ingredients, with clickable result tiles.
 - **Improved Dashboard:** A personalized hub featuring:
     * **Quick Actions:** Buttons for core functions (generate recipes, scan items, navigate). Placed first for mobile visibility.
     * **Notifications Preview:** Displays dismissible placeholder notifications (backend pending).
@@ -55,22 +57,22 @@ Here are some of the planned features to evolve the app from an MVP into a full-
 1.  **Price-Drop Alerts ("Stock Up" Notifier):** Create a "Watchlist" for staple items. If the scraper finds a price that is significantly lower than the item's historical average, send the user an in-app notification.
 2.  **Low Pantry Stock Alerts:** Implement a basic quantity tracking system for pantry items. Allow users to set a "low stock" threshold (e.g., "Notify me when below 2 units"). The dashboard could highlight items nearing this threshold.
 3.  **Notification System (Backend):** Implement backend logic and database models to generate, store, and manage notifications for users based on triggers like low stock, new specials for watched items/suppliers, etc. Create API endpoints for fetching and managing notification status.
-4.  **Global Navbar Search:** Add a persistent search bar to the main navbar that returns results from Recipes, My Pantry, and Specials simultaneously.
-5.  **"Quick Add to List" from Pantry:** Add a button next to items in "My Pantry" to send them directly to the shopping list for restocking.
-6.  **Offline Shopping List Support:** Use `localStorage` to cache the current shopping list, ensuring it's available in-store when network connectivity is poor.
+4.  **"Quick Add to List" from Pantry:** Add a button next to items in "My Pantry" to send them directly to the shopping list for restocking.
+5.  **Offline Shopping List Support:** Use `localStorage` to cache the current shopping list, ensuring it's available in-store when network connectivity is poor.
 
 ### Existing Feature Improvements
-7.  **Smarter Shopping List (Sort by Aisle):** Automatically group items on the "Intelligent Shopping List" based on their ingredient category (e.g., "Fruit & Vegetables," "Meat & Seafood") to optimize the in-store shopping experience.
-8.  **Shopping List Completion:** When items are checked off in the shopping list, provide an "Add Checked Items to Pantry" button. Clicking this would:
+6.  **Smarter Shopping List (Sort by Aisle):** Automatically group items on the "Intelligent Shopping List" based on their ingredient category (e.g., "Fruit & Vegetables," "Meat & Seafood") to optimize the in-store shopping experience.
+7.  **Shopping List Completion:** When items are checked off in the shopping list, provide an "Add Checked Items to Pantry" button. Clicking this would:
     * Add the corresponding ingredients to the user's pantry.
     * Remove the checked items from the shopping list.
     * (Optional) Log the purchase (items, date, cost) to a history section, potentially linked to the budget tracker.
-9.  **Meal Planner "Leftovers" Integration:** Add a "Use for leftovers?" toggle when adding/viewing a recipe in the meal plan UI. Update shopping list logic to ignore ingredients from recipes marked as leftovers for the next day's lunch.
-10. **Dynamic Cook Mode Scaling:** Add a dropdown (e.g., "0.5x", "1x", "2x") to the "Cook Mode" interface that dynamically updates all ingredient quantities within the step-by-step instructions.
-11. **Save Generated AI Recipes:** Add a "Save Recipe" button to the UI for AI-generated recipes, allowing users to save them to "My Saved Recipes" with one click.
-12. **Expandable Meal Planner Drag-and-Drop:** Allow users to drag-and-drop recipes from *all* sources (All Recipes, Community Recipes) onto the meal plan, not just saved recipes.
-13. **Supplier Portal Analytics:** Provide a simple, anonymous analytics dashboard for suppliers (e.g., "Your special was viewed X times").
-14. **Collapsible Pantry Categories:** Make the category headers in the "My Pantry" page collapsible to make the list easier to manage as it grows.
+8.  **Meal Planner "Leftovers" Integration:** Add a "Use for leftovers?" toggle when adding/viewing a recipe in the meal plan UI. Update shopping list logic to ignore ingredients from recipes marked as leftovers for the next day's lunch.
+9.  **Dynamic Cook Mode Scaling:** Add a dropdown (e.g., "0.5x", "1x", "2x") to the "Cook Mode" interface that dynamically updates all ingredient quantities within the step-by-step instructions.
+10. **Save Generated AI Recipes:** Add a "Save Recipe" button to the UI for AI-generated recipes, allowing users to save them to "My Saved Recipes" with one click.
+11. **Expandable Meal Planner Drag-and-Drop:** Allow users to drag-and-drop recipes from *all* sources (All Recipes, Community Recipes) onto the meal plan, not just saved recipes.
+12. **Supplier Portal Analytics:** Provide a simple, anonymous analytics dashboard for suppliers (e.g., "Your special was viewed X times").
+13. **Collapsible Pantry Categories:** Make the category headers in the "My Pantry" page collapsible to make the list easier to manage as it grows.
+14. **Full Search Results:** Update the backend search endpoint (`/api/search`) to optionally return *all* matching results (not just the top 5) when requested by the dedicated search results page.
 
 ### New AI & Data Features
 15. **AI Ingredient Identification (from Photo):** Use Google Cloud Vision's *object detection* to allow users to take a photo of their fridge or pantry. The API will identify items (e.g., "Carrot," "Lemon"), which the user can then add to their pantry with one click.
@@ -290,6 +292,7 @@ You can test the locally running application on your mobile phone if it's connec
 - **`POST /api/recipes/modify`**: Get an AI-modified version of a recipe (doesn't save automatically).
 - **`DELETE /api/recipes/{recipe_id}`**: Delete a specific recipe.
 - **`GET /docs`**: View the interactive API documentation (Swagger UI).
+- **`GET /api/search`**: Performs global search across recipes, ingredients, and specials (accepts `q` and `limit` query parameters).
 - **`GET /api/barcode-lookup/{barcode}`**: Proxies a lookup to the Open Food Facts API.
 - **`POST /api/pantry/scan-receipt`**: Receives receipt image, performs OCR/AI processing, returns detected items for user confirmation.
 - **`GET /api/pantry`**: Get current user's pantry items.

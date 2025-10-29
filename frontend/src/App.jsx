@@ -30,6 +30,8 @@ import SupplierDashboardPage from './pages/SupplierDashboardPage';
 import SupplierSignUpPage from './pages/SupplierSignUpPage';
 // --- *** NEW MEAL PLAN IMPORT *** ---
 import MealPlanPage from './pages/MealPlanPage';
+// --- *** NEW SEARCH PAGE IMPORT *** ---
+import SearchResultsPage from './pages/SearchResultsPage';
 // --- END NEW IMPORTS ---
 
 function App() {
@@ -41,7 +43,7 @@ function App() {
 
   useEffect(() => {
     if (token) {
-      axios.get('http://127.0.0.1:8000/api/prices/today')
+      axios.get('/api/prices/today') // Use relative URL now
         .then(response => setAllSpecials(response.data))
         .catch(error => console.error("Could not fetch specials in App.jsx", error));
     }
@@ -81,7 +83,7 @@ function App() {
             <Route path="/" element={<HomePage />} />
             <Route path="/signup" element={<SignUpPage />} />
             <Route path="/login" element={<LoginPage />} />
-            
+
             {/* --- NEW Supplier Public Routes --- */}
             <Route path="/portal/signup" element={<SupplierSignUpPage />} />
 
@@ -95,6 +97,8 @@ function App() {
               <Route path="/pantry" element={<PantryPage />} />
               {/* --- *** NEW MEAL PLAN ROUTE *** --- */}
               <Route path="/meal-plan" element={<MealPlanPage />} />
+              {/* --- *** NEW SEARCH ROUTE *** --- */}
+              <Route path="/search" element={<SearchResultsPage />} />
             </Route>
 
             {/* --- NEW Supplier Protected Routes --- */}
@@ -112,7 +116,7 @@ function App() {
       </div>
       {/* --- NEW: Render CookMode if there is an active recipe --- */}
       {activeRecipe && <CookMode />}
-      
+
       {/* --- NEW: Render Footer --- */}
       <Footer />
     </div>

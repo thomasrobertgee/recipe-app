@@ -8,6 +8,8 @@ from typing import List, Optional, Dict
 # --- FIX: Import SQLModel here ---
 from sqlmodel import SQLModel, Session, select, func, delete, Float # Added SQLModel
 # --- END FIX ---
+# --- *** NEW IMPORT FOR COUNT *** ---
+from sqlalchemy import func as sql_func, select as sql_select
 from sqlalchemy.orm import selectinload
 from datetime import date
 import os
@@ -41,7 +43,9 @@ from schemas import (
     # --- *** NEW MEAL PLAN IMPORTS *** ---
     MealPlanEntryCreate, MealPlanEntryRead,
     # --- NEW IMPORT ---
-    ReceiptScanResponse
+    ReceiptScanResponse,
+    # --- *** NEW SEARCH IMPORTS *** ---
+    GlobalSearchResponse, RecipeSearchResult # Keep existing imports
 )
 from security import get_password_hash, verify_password, create_access_token, get_current_user
 # --- IMPORT NEW AI FUNCTION ---
@@ -681,6 +685,60 @@ def search_ingredients(q: str, session: Session = Depends(get_session)):
     search_term = f"%{q.lower()}%"
     ingredients = session.exec(select(Ingredient).where(func.lower(Ingredient.name).like(search_term)).limit(10)).all()
     return [PantryItem(ingredient_id=ing.id, name=ing.name, category=ing.category) for ing in ingredients]
+
+# --- *** UPDATED: Global Search Endpoint with Limit and has_more flag *** ---
+@app.get("/api/search", response_model=GlobalSearchResponse)
+def global_search(
+    q: str = Query(..., min_length=2),
+    limit: int = Query(5, ge=1, le=20), # Add limit parameter
+    session: Session = Depends(get_session)
+):
+    """
+    Performs a global search across recipes, ingredients, and today's specials,
+    respecting a limit and indicating if more results exist.
+    """
+    search_term = f"%{q.lower()}%"
+    has_more = False # Flag to indicate if total results exceed limit in any category
+
+    # --- Search Recipes ---
+    recipe_query = select(Recipe.id, Recipe.title).where(func.lower(Recipe.title).like(search_term))
+    # Get total count first
+    recipe_count = session.exec(sql_select(sql_func.count()).select_from(recipe_query.subquery())).scalar_one()
+    # Fetch limited results
+    recipe_results = session.exec(recipe_query.limit(limit)).all()
+    recipes = [RecipeSearchResult(id=r.id, title=r.title) for r in recipe_results]
+    if recipe_count > limit: has_more = True
+
+    # --- Search Ingredients ---
+    ingredient_query = select(Ingredient).where(func.lower(Ingredient.name).like(search_term))
+    ingredient_count = session.exec(sql_select(sql_func.count()).select_from(ingredient_query.subquery())).scalar_one()
+    ingredient_results = session.exec(ingredient_query.limit(limit)).all()
+    ingredients = [PantryItem(ingredient_id=ing.id, name=ing.name, category=ing.category) for ing in ingredient_results]
+    if ingredient_count > limit: has_more = True
+
+    # --- Search Today's Specials ---
+    today = date.today()
+    # Base query for specials matching the term
+    special_base_query = select(PriceHistory)\
+        .join(Ingredient)\
+        .where(PriceHistory.date_recorded == today)\
+        .where(func.lower(Ingredient.name).like(search_term))
+    # Count total matching specials
+    special_count = session.exec(sql_select(sql_func.count()).select_from(special_base_query.subquery())).scalar_one()
+    # Fetch limited results with eager loading
+    special_results = session.exec(
+        special_base_query.options(selectinload(PriceHistory.ingredient)).limit(limit)
+    ).all()
+    specials = [
+        PriceHistoryRead(
+            id=p.id, ingredient_id=p.ingredient_id, date_recorded=p.date_recorded.isoformat(), price=p.price,
+            store=p.store, ingredient_name=p.ingredient.name, category=p.ingredient.category
+        ) for p in special_results if p.ingredient
+    ]
+    if special_count > limit: has_more = True
+
+    return GlobalSearchResponse(recipes=recipes, ingredients=ingredients, specials=specials, has_more=has_more)
+# --- *** END UPDATED SEARCH ENDPOINT *** ---
 
 @app.get("/api/ingredients/staples", response_model=Dict[str, List[PantryItem]])
 def get_staple_ingredients(session: Session = Depends(get_session)):

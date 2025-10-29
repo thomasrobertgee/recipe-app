@@ -80,7 +80,7 @@
     border-color: #4caf50 !important; /* Ensure border stays */
 }
 .login-button-nav:active {
-     transform: translateY(1px);
+    transform: translateY(1px);
 }
 /* Ensure active NavLink state doesn't add underline/border */
 .login-button-nav.active {
@@ -158,3 +158,5 @@
 .sidebar-tab:active {
     transform: translateY(1px);
 }
+
+/* --- REMOVED RULE FOR .nav-auth .global-search-container --- */
