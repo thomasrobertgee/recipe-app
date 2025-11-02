@@ -36,7 +36,7 @@ The application consists of a Python backend that serves data from a database an
     * **Smart Pantry Sync:** Automatically cross-references ingredients with the user's pantry (managed via Context). Items already owned are moved to an "Already in pantry" section, allowing users to override and move items back to the main list if needed. Cost calculations exclude items marked as already in the pantry.
 - **Interactive Cook Mode:** A persistent, step-by-step cooking interface with integrated, clickable timers to guide users while cooking.
 - **Supplier Portal:**
-    - Separate registration for local suppliers (e.g., butchers, greengrocerrs).
+    - Separate registration for local suppliers (e.g., butchers, greengrocers).
     - Dedicated portal for suppliers to log in and manage their own weekly specials (add/delete items and prices, including expiry dates).
     - Supplier specials appear alongside supermarket specials for all users.
 - **Meal Planner & Weekly Budgeting:**
@@ -304,3 +304,69 @@ You can test the locally running application on your mobile phone if it's connec
 - **`GET /api/supplier/specials`**: (Supplier only) Get specials added by the logged-in supplier today.
 - **`POST /api/supplier/specials`**: (Supplier only) Add/update a special for the logged-in supplier.
 - **`DELETE /api/supplier/specials/{price_id}`**: (Supplier only) Delete a specific special added by the logged-in supplier.
+
+---
+
+## 🧭 Supplier Focus Pivot: Project Roadmap
+
+This section outlines our strategic pivot, moving the app's focus from a general supermarket specials app to a **B2B2C platform centered on local suppliers** (e.g., butchers, greengrocers, bakers).
+
+### The Strategy
+The core value proposition is to become **"The Local Catalogue"**—a single, discoverable hub for consumers to find specials from their local businesses.
+
+To solve the "chicken & egg" marketplace problem, we will **prioritize building a sellable B2B product first.** We must provide clear, tangible value to suppliers (local businesses) to get them to sign up. Once we have a critical mass of suppliers in a target area, the value for consumers becomes automatic.
+
+The supermarket scraper becomes a secondary, "price comparison" feature, not the main attraction.
+
+### Priority Roadmap
+We will implement the following features in a phased approach to build a product we can confidently take to businesses.
+
+#### Phase 1: Build the Core "Local" Functionality (Must-Haves)
+These features are non-negotiable for building a product that is functional and sellable to a business.
+
+1.  **Implement Location-Based Filtering (The #1 Priority):**
+    * **Backend:** Add a `postcode` field to both the `User` and `SupplierProfile` models.
+    * **Frontend:** Add a "Postcode" field to the consumer `OnboardingModal.jsx` and the `SupplierSignUpPage.jsx`.
+    * **API:** Modify the main specials endpoint (`GET /api/prices/today`) to accept a `postcode` query and *only* return specials from suppliers in that user's area.
+
+2.  **Create a Simple Supplier Analytics Dashboard (The #1 Sales Tool):**
+    * **Backend:** Implement a simple mechanism to track "views" on each `PriceHistory` item and "saves" (when a user adds a supplier's item to their shopping list).
+    * **Frontend:** In the `SupplierDashboardPage.jsx`, add a prominent module: "Your specials were viewed **250** times this week" and "Your items were added to **15** shopping lists."
+
+3.  **Enhance Supplier Profiles (The "Digital Storefront"):**
+    * **Backend:** Add `logo_url`, `business_type` (e.g., enum: 'Butcher', 'Baker', 'Greengrocer'), `description`, and `opening_hours` to the `SupplierProfile` model.
+    * **Frontend:** Add a new "My Profile" tab to the `SupplierDashboardPage.jsx` where they can edit this information.
+
+4.  **Create a "Local Supplier" Discovery Page (The "Catalogue"):**
+    * **Frontend:** Create a new page (e.g., `/suppliers`) for consumers. It lists all suppliers (filtered by their postcode from #1), showing their logo, business type, and description (from #3).
+    * **Frontend:** Make each supplier "clickable," leading to a public profile page that shows their info and *all* their currently active specials.
+
+#### Phase 2: Improve Usability & Refine the Pitch (Key Differentiators)
+These features make the platform sticky for suppliers and refine our sales pitch.
+
+5.  **Refocus the Consumer UI on "Local First":**
+    * **Frontend:** On the consumer `DashboardPage.jsx` and `SpecialsPage.jsx`, create a new, default "Local Specials" tab. This tab *only* shows items from suppliers.
+    * **Frontend:** Move the supermarket specials (from `scraper.py`) to a *secondary* tab, like "Supermarket Comparison."
+
+6.  **Implement Special "Expiry Dates" (Supplier Ease-of-Use):**
+    * **Backend:** Use the existing optional `expiry_date` field in the `PriceHistory` model.
+    * **Frontend:** In `SupplierDashboardPage.jsx`, add an "Active Until" date picker to the "Add Special" form (defaulting to 7 days).
+    * **API:** Change the `GET /api/prices/today` logic to return items where `expiry_date >= today` OR `date_recorded == today`.
+
+7.  **Supplier Dashboard "Quick-Add" (Retention Feature):**
+    * **Frontend:** On the `SupplierDashboardPage.jsx`, add a "Previously Added Items" list. Clicking one pre-fills the "Add Special" form, requiring only a new price and date.
+
+#### Phase 3: Build Engagement & Marketing Value (The "Sizzle")
+These features create a community and provide high-value, low-cost marketing incentives.
+
+8.  **"Follow a Supplier" Feature:**
+    * **Backend:** Create a new many-to-many link table (`UserSupplierFollow`) between `User` and `SupplierProfile`.
+    * **Frontend:** Add a "Follow" button to supplier profiles. On the consumer's dashboard, add a "My Favourite Shops" module showing specials *only* from their followed suppliers.
+
+9.  **Refine the "For Suppliers" Landing Page (The "Brochure"):**
+    * **Frontend:** Rework the `LandingPage.jsx` "For Suppliers" section. Use strong copy: "Join your local food community," "Stop competing with the giants," "List your specials in 2 minutes."
+    * **Frontend:** Include screenshots of the new `SupplierDashboardPage.jsx`, explicitly showing the **Analytics (#2)** and **Quick-Add (#7)** features.
+
+10. **Implement a "Featured Supplier" Module:**
+    * **Backend:** Create a simple way for an *admin* (you) to flag a `SupplierProfile` as `is_featured`.
+    * **Frontend:** On the consumer `DashboardPage.jsx`, add a "Featured Local Shop" module that prominently displays this supplier's profile. This is a powerful, free incentive for businesses to join.
