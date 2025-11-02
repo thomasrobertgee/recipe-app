@@ -42,8 +42,10 @@ class SupplierProfile(SQLModel, table=True):
     user_id: int = Field(foreign_key="user.id", unique=True, index=True)
     business_name: str = Field(index=True)
     address: Optional[str] = None
+    postcode: Optional[str] = Field(default=None, index=True) # <-- NEW FIELD
 
     user: "User" = Relationship(back_populates="supplier_profile")
+    price_history: List["PriceHistory"] = Relationship(back_populates="supplier_profile") # <-- NEW RELATIONSHIP
 # --- END NEW MODEL ---
 
 
@@ -91,6 +93,7 @@ class User(SQLModel, table=True):
     adult_count: int = Field(default=1)
     child_count: int = Field(default=0)
     weekly_budget: Optional[int] = Field(default=None)
+    postcode: Optional[str] = Field(default=None, index=True) # <-- NEW FIELD
     has_completed_onboarding: bool = Field(default=False)
     # --- END NEW ONBOARDING FIELDS ---
 
@@ -118,7 +121,7 @@ class Recipe(SQLModel, table=True):
     rating_count: int = Field(default=0)
 
     links: List[RecipeIngredientLink] = Relationship(back_populates="recipe")
-    saved_by_users: List[User] = Relationship(back_populates="saved_recipes", link_model=UserRecipeLink)
+    saved_by_users: List[User] = Relationship(back_populates="saved_by_users", link_model=UserRecipeLink)
     ratings: List[UserRecipeRatingLink] = Relationship(back_populates="recipe")
 
     # --- *** NEW MEAL PLAN RELATIONSHIP *** ---
@@ -142,7 +145,13 @@ class PriceHistory(SQLModel, table=True):
     date_recorded: date = Field(default_factory=date.today, index=True)
     price: str
     store: str = Field(index=True)
+    
     # --- NEW: Optional expiry date for supplier specials ---
     expiry_date: Optional[date] = Field(default=None, index=True)
+
+    # --- NEW: Link to supplier profile for efficient joins ---
+    supplier_profile_id: Optional[int] = Field(default=None, foreign_key="supplierprofile.id", index=True)
+    supplier_profile: Optional["SupplierProfile"] = Relationship(back_populates="price_history")
+    # --- END NEW ---
 
     ingredient: Ingredient = Relationship(back_populates="price_history")

@@ -9,7 +9,7 @@ from typing import List, Optional, Dict
 from sqlmodel import SQLModel, Session, select, func, delete, Float # Added SQLModel
 # --- END FIX ---
 # --- *** NEW IMPORT FOR COUNT *** ---
-from sqlalchemy import func as sql_func, select as sql_select
+from sqlalchemy import func as sql_func, select as sql_select, or_ # <-- NEW: Import or_
 from sqlalchemy.orm import selectinload
 from datetime import date
 import os
@@ -226,7 +226,7 @@ def create_user(user: UserCreate, session: Session = Depends(get_session)):
     return new_user
 
 
-# --- NEW SUPPLIER REGISTRATION ---
+# --- *** UPDATED: SUPPLIER REGISTRATION with Postcode *** ---
 @app.post("/register/supplier", response_model=UserRead)
 def create_supplier(request: SupplierRegistrationRequest, session: Session = Depends(get_session)):
     existing_user = session.exec(select(User).where(User.email == request.user.email)).first()
@@ -253,7 +253,8 @@ def create_supplier(request: SupplierRegistrationRequest, session: Session = Dep
     new_profile = SupplierProfile(
         user_id=new_user.id,
         business_name=request.profile.business_name,
-        address=request.profile.address
+        address=request.profile.address,
+        postcode=request.profile.postcode # <-- NEW FIELD ADDED
     )
     session.add(new_profile)
     try:
@@ -266,7 +267,7 @@ def create_supplier(request: SupplierRegistrationRequest, session: Session = Dep
         raise HTTPException(status_code=500, detail="Failed to save supplier profile.")
 
     return new_user
-# --- END NEW SUPPLIER REGISTRATION ---
+# --- *** END UPDATED SUPPLIER REGISTRATION *** ---
 
 
 @app.post("/token", response_model=Token)
@@ -686,12 +687,13 @@ def search_ingredients(q: str, session: Session = Depends(get_session)):
     ingredients = session.exec(select(Ingredient).where(func.lower(Ingredient.name).like(search_term)).limit(10)).all()
     return [PantryItem(ingredient_id=ing.id, name=ing.name, category=ing.category) for ing in ingredients]
 
-# --- *** UPDATED: Global Search Endpoint with Limit and has_more flag *** ---
+# --- *** UPDATED: Global Search Endpoint with Postcode/Expiry/FK Refactor *** ---
 @app.get("/api/search", response_model=GlobalSearchResponse)
 def global_search(
     q: str = Query(..., min_length=2),
     limit: int = Query(5, ge=1, le=20), # Add limit parameter
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user) # <-- NEW: Need user for postcode
 ):
     """
     Performs a global search across recipes, ingredients, and today's specials,
@@ -699,12 +701,12 @@ def global_search(
     """
     search_term = f"%{q.lower()}%"
     has_more = False # Flag to indicate if total results exceed limit in any category
+    user_postcode = current_user.postcode
+    supermarkets = ["Coles", "Woolworths", "Aldi"]
 
     # --- Search Recipes ---
     recipe_query = select(Recipe.id, Recipe.title).where(func.lower(Recipe.title).like(search_term))
-    # Get total count first
     recipe_count = session.exec(sql_select(sql_func.count()).select_from(recipe_query.subquery())).scalar_one()
-    # Fetch limited results
     recipe_results = session.exec(recipe_query.limit(limit)).all()
     recipes = [RecipeSearchResult(id=r.id, title=r.title) for r in recipe_results]
     if recipe_count > limit: has_more = True
@@ -716,23 +718,45 @@ def global_search(
     ingredients = [PantryItem(ingredient_id=ing.id, name=ing.name, category=ing.category) for ing in ingredient_results]
     if ingredient_count > limit: has_more = True
 
-    # --- Search Today's Specials ---
+    # --- Search Today's Specials (Refactored) ---
     today = date.today()
+    
     # Base query for specials matching the term
     special_base_query = select(PriceHistory)\
         .join(Ingredient)\
-        .where(PriceHistory.date_recorded == today)\
+        .outerjoin(SupplierProfile, PriceHistory.supplier_profile_id == SupplierProfile.id)\
+        .where(
+            or_( # Use expiry date logic
+                PriceHistory.date_recorded == today,
+                PriceHistory.expiry_date >= today
+            )
+        )\
         .where(func.lower(Ingredient.name).like(search_term))
+    # --- *** FIX: CORRECTED INDENTATION *** ---
+    # The closing parenthesis ')' was indented too far.
+    # It should align with the 'select()' statement.
+    
+    # Apply postcode filter
+    if user_postcode:
+        special_base_query = special_base_query.where(
+            (PriceHistory.store.in_(supermarkets)) |
+            (SupplierProfile.postcode == user_postcode)
+        )
+
     # Count total matching specials
-    special_count = session.exec(sql_select(sql_func.count()).select_from(special_base_query.subquery())).scalar_one()
+    special_count_query = sql_select(sql_func.count()).select_from(special_base_query.subquery())
+    special_count = session.exec(special_count_query).scalar_one()
+    
     # Fetch limited results with eager loading
     special_results = session.exec(
         special_base_query.options(selectinload(PriceHistory.ingredient)).limit(limit)
     ).all()
+    
     specials = [
         PriceHistoryRead(
             id=p.id, ingredient_id=p.ingredient_id, date_recorded=p.date_recorded.isoformat(), price=p.price,
-            store=p.store, ingredient_name=p.ingredient.name, category=p.ingredient.category
+            store=p.store, ingredient_name=p.ingredient.name, category=p.ingredient.category,
+            expiry_date=p.expiry_date # Include expiry date in response
         ) for p in special_results if p.ingredient
     ]
     if special_count > limit: has_more = True
@@ -975,8 +999,11 @@ def get_supplier_specials(
     db_prices = session.exec(
         select(PriceHistory)
         .where(
-            PriceHistory.store == profile.business_name,
-            PriceHistory.date_recorded == today
+            PriceHistory.supplier_profile_id == profile.id, # <-- USE FK ID
+            or_( # Use expiry date logic
+                PriceHistory.date_recorded == today,
+                PriceHistory.expiry_date >= today
+            )
         )
         .options(selectinload(PriceHistory.ingredient)) # Eager load ingredient
     ).all()
@@ -985,10 +1012,12 @@ def get_supplier_specials(
     return [
         PriceHistoryRead(
             id=p.id, ingredient_id=p.ingredient_id, date_recorded=p.date_recorded.isoformat(), price=p.price,
-            store=p.store, ingredient_name=p.ingredient.name, category=p.ingredient.category
+            store=p.store, ingredient_name=p.ingredient.name, category=p.ingredient.category,
+            expiry_date=p.expiry_date # Include expiry date in response
         ) for p in db_prices
     ]
 
+# --- *** UPDATED: create_supplier_special with Expiry Date & FK Refactor *** ---
 @app.post("/api/supplier/specials", response_model=PriceHistoryRead)
 def create_supplier_special(
     price_data: PriceHistoryCreate,
@@ -1011,20 +1040,23 @@ def create_supplier_special(
     today = date.today()
 
     # Check if a record for this ingredient+store+date already exists
+    # We should check for an *active* special, not just one recorded today
     existing_record = session.exec(select(PriceHistory).where(
         PriceHistory.ingredient_id == ingredient.id,
-        PriceHistory.store == profile.business_name,
-        PriceHistory.date_recorded == today
+        PriceHistory.supplier_profile_id == profile.id, # <-- USE FK ID
+        or_( # Check for active specials
+            PriceHistory.date_recorded == today,
+            PriceHistory.expiry_date >= today
+        )
     )).first()
 
     if existing_record:
-        # Update existing record if price differs
-        if existing_record.price != price_data.price:
-            print(f"Updating price for {ingredient.name} at {profile.business_name} from {existing_record.price} to {price_data.price}")
-            existing_record.price = price_data.price
-            session.add(existing_record)
-        else:
-            print(f"Price for {ingredient.name} at {profile.business_name} is unchanged. Skipping update.")
+        # Update existing record
+        print(f"Updating price for {ingredient.name} at {profile.business_name} from {existing_record.price} to {price_data.price}")
+        existing_record.price = price_data.price
+        existing_record.expiry_date = price_data.expiry_date # <-- UPDATE EXPIRY
+        existing_record.date_recorded = today # Update recorded date to today
+        session.add(existing_record)
         record_to_return = existing_record
     else:
         # Create new price record
@@ -1033,7 +1065,9 @@ def create_supplier_special(
             ingredient_id=ingredient.id,
             price=price_data.price,
             store=profile.business_name,
-            date_recorded=today
+            date_recorded=today,
+            expiry_date=price_data.expiry_date, # <-- ADD EXPIRY
+            supplier_profile_id=profile.id # <-- SET THE FOREIGN KEY
             # Category is stored on the Ingredient model, not PriceHistory
         )
         session.add(record_to_return)
@@ -1056,8 +1090,10 @@ def create_supplier_special(
         price=record_to_return.price,
         store=record_to_return.store,
         ingredient_name=ingredient.name, # Get name from ingredient model
-        category=ingredient.category # Get category from ingredient model
+        category=ingredient.category, # Get category from ingredient model
+        expiry_date=record_to_return.expiry_date # <-- RETURN EXPIRY
     )
+# --- *** END UPDATED create_supplier_special *** ---
 
 @app.delete("/api/supplier/specials/{price_id}", status_code=204)
 def delete_supplier_special(
@@ -1074,8 +1110,8 @@ def delete_supplier_special(
         return
 
     # Security check: Ensure the special belongs to the supplier trying to delete it
-    if special.store != profile.business_name:
-        print(f"Forbidden: Supplier {profile.business_name} tried to delete special ID {price_id} belonging to {special.store}")
+    if special.supplier_profile_id != profile.id: # <-- USE FK ID
+        print(f"Forbidden: Supplier {profile.business_name} (ID: {profile.id}) tried to delete special ID {price_id} belonging to supplier ID {special.supplier_profile_id}")
         raise HTTPException(status_code=403, detail="Not authorized to delete this special.")
 
     try:
@@ -1155,15 +1191,44 @@ def generate_recipes_endpoint(request: GenerateRequest, session: Session = Depen
     return {"message": f"Successfully generated and saved {saved_recipes_count} new recipes to the database."}
 # --- *** END Updated generate_recipes_endpoint *** ---
 
+# --- *** UPDATED: get_todays_prices with Postcode Filtering & FK Refactor *** ---
 @app.get("/api/prices/today", response_model=List[PriceHistoryRead])
-def get_todays_prices(session: Session = Depends(get_session)):
+def get_todays_prices(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user) # <-- NEW DEPENDENCY
+):
     today = date.today()
-    # Eager load ingredient for each price history record
-    db_prices = session.exec(
-        select(PriceHistory)
-        .where(PriceHistory.date_recorded == today)
+    user_postcode = current_user.postcode
+    supermarkets = ["Coles", "Woolworths", "Aldi"] # Define national supermarkets
+
+    # Base query
+    query = select(PriceHistory)\
+        .outerjoin(SupplierProfile, PriceHistory.supplier_profile_id == SupplierProfile.id)\
+        .where(
+            or_( # Check for active specials
+                PriceHistory.date_recorded == today,
+                PriceHistory.expiry_date >= today
+            )
+        )\
         .options(selectinload(PriceHistory.ingredient))
-    ).all()
+    # --- *** FIX: CORRECTED INDENTATION *** ---
+    # The closing parenthesis ')' was removed from its own line.
+    # The '.where()' and '.options()' are now correctly chained.
+    
+    if user_postcode:
+        # Filter the query:
+        # 1. Include if it's a supermarket (store IN supermarkets)
+        # 2. OR if the joined SupplierProfile's postcode matches the user's
+        query = query.where(
+            (PriceHistory.store.in_(supermarkets)) |
+            (SupplierProfile.postcode == user_postcode)
+        )
+    
+    # If no user_postcode, the "where" filter is not added,
+    # so we get all active specials from supermarkets + all suppliers.
+    
+    db_prices = session.exec(query).all()
+    
     # Map results to the response schema
     return [
         PriceHistoryRead(
@@ -1172,10 +1237,12 @@ def get_todays_prices(session: Session = Depends(get_session)):
             date_recorded=p.date_recorded.isoformat(),
             price=p.price,
             store=p.store,
-            ingredient_name=p.ingredient.name if p.ingredient else "Unknown", # Handle potential missing ingredient?
-            category=p.ingredient.category if p.ingredient else None
+            ingredient_name=p.ingredient.name if p.ingredient else "Unknown",
+            category=p.ingredient.category if p.ingredient else None,
+            expiry_date=p.expiry_date # <-- NEW: Include expiry date in response
         ) for p in db_prices
     ]
+# --- *** END UPDATED get_todays_prices *** ---
 
 @app.post("/api/prices", response_model=PriceHistoryRead)
 def create_price_record(price_data: PriceHistoryCreate, session: Session = Depends(get_session)):
@@ -1210,7 +1277,8 @@ def create_price_record(price_data: PriceHistoryCreate, session: Session = Depen
             ingredient_id=ingredient.id,
             price=price_data.price,
             store=price_data.store,
-            date_recorded=today
+            date_recorded=today,
+            # Note: This generic endpoint doesn't set supplier_profile_id
         )
         session.add(new_record)
         print(f"Created new price for {ingredient.name} at {price_data.store} for {today}")
@@ -1234,18 +1302,25 @@ def create_price_record(price_data: PriceHistoryCreate, session: Session = Depen
         price=record_to_return.price,
         store=record_to_return.store,
         ingredient_name=ingredient.name,
-        category=ingredient.category
+        category=ingredient.category,
+        expiry_date=record_to_return.expiry_date # Return expiry date (will be None here)
     )
 
 @app.delete("/api/prices/today")
 def delete_todays_prices(session: Session = Depends(get_session)):
     today = date.today()
     try:
-        statement = delete(PriceHistory).where(PriceHistory.date_recorded == today)
+        # Also delete expired specials
+        statement = delete(PriceHistory).where(
+            or_(
+                PriceHistory.date_recorded == today,
+                PriceHistory.expiry_date < today # Clean up old, expired specials
+            )
+        )
         result = session.exec(statement)
         deleted_count = result.rowcount
         session.commit() # Commit the deletion
-        print(f"Deleted {deleted_count} price records for {today}.")
+        print(f"Deleted {deleted_count} price records for {today} (and expired ones).")
         return {"message": f"Today's {deleted_count} price records have been cleared."}
     except Exception as e:
         session.rollback()
@@ -1275,7 +1350,8 @@ def get_price_history_for_ingredient(ingredient_id: int, session: Session = Depe
             price=h.price,
             store=h.store,
             ingredient_name=ingredient.name, # Use name from the fetched ingredient
-            category=ingredient.category # Use category from the fetched ingredient
+            category=ingredient.category, # Use category from the fetched ingredient
+            expiry_date=h.expiry_date # Include expiry date
         ) for h in history
     ]
 

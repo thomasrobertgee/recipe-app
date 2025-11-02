@@ -12,6 +12,7 @@ const SupplierSignUpPage = () => {
     const [confirmPassword, setConfirmPassword] = useState('');
     const [businessName, setBusinessName] = useState('');
     const [address, setAddress] = useState('');
+    const [postcode, setPostcode] = useState(''); // <-- NEW STATE
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const navigate = useNavigate();
@@ -32,13 +33,15 @@ const SupplierSignUpPage = () => {
             },
             profile: {
                 business_name: businessName,
-                address: address || null
+                address: address || null,
+                postcode: postcode || null // <-- NEW FIELD IN PAYLOAD
             }
         };
 
         try {
             // We use axios directly here, not a context function
-            await axios.post('http://127.0.0.1:8000/register/supplier', registrationData);
+            // --- FIX: Use relative path for API call ---
+            await axios.post('/register/supplier', registrationData);
             
             toast.success("Registration successful! Please log in.");
             navigate('/login');
@@ -80,6 +83,17 @@ const SupplierSignUpPage = () => {
                         id="address"
                         value={address}
                         onChange={(e) => setAddress(e.target.value)}
+                    />
+                </div>
+                {/* --- NEW POSTCODE FIELD --- */}
+                <div className="form-group">
+                    <label htmlFor="postcode">Postcode (Optional)</label>
+                    <input
+                        type="text"
+                        id="postcode"
+                        value={postcode}
+                        onChange={(e) => setPostcode(e.target.value)}
+                        placeholder="e.g. 3025"
                     />
                 </div>
 

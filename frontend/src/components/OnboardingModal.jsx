@@ -21,6 +21,7 @@ const OnboardingModal = ({ onClose }) => {
   
   // --- State to hold all the data ---
   const [profileData, setProfileData] = useState({
+    postcode: "", // <-- NEW FIELD
     adult_count: userProfile?.adult_count || 1,
     child_count: userProfile?.child_count || 0,
     has_budget: false,
@@ -131,6 +132,7 @@ const OnboardingModal = ({ onClose }) => {
     ].filter(Boolean);
 
     const payload = {
+      postcode: profileData.postcode || null, // <-- NEW FIELD IN PAYLOAD
       adult_count: profileData.adult_count,
       child_count: profileData.child_count,
       weekly_budget: profileData.has_budget ? profileData.weekly_budget : null,
@@ -155,12 +157,13 @@ const OnboardingModal = ({ onClose }) => {
   const renderStep = () => {
     switch (step) {
       case 1: return <StepWelcome onNext={handleNext} />;
-      case 2: return <StepHousehold data={profileData} onChange={handleHouseholdChange} onNext={handleNext} />;
-      case 3: return <StepBudget data={profileData} onChange={handleChange} onNext={handleNext} onBack={handleBack} />;
-      case 4: return <StepDietary data={profileData} onChange={handleChange} onAdd={handleAddCustomItem} onRemove={handleRemoveCustomItem} onNext={handleNext} onBack={handleBack} />;
-      case 5: return <StepCuisines data={profileData} onChange={handleChange} onAdd={handleAddCustomItem} onRemove={handleRemoveCustomItem} onNext={handleNext} onBack={handleBack} />;
-      case 6: return <StepSkill data={profileData} onChange={handleChange} onNext={handleNext} onBack={handleBack} />;
-      case 7: return <StepReview data={profileData} onBack={handleBack} onSubmit={handleSubmit} error={error} />;
+      case 2: return <StepLocation data={profileData} onChange={handleChange} onNext={handleNext} onBack={handleBack} />; // <-- NEW STEP
+      case 3: return <StepHousehold data={profileData} onChange={handleHouseholdChange} onNext={handleNext} onBack={handleBack} />;
+      case 4: return <StepBudget data={profileData} onChange={handleChange} onNext={handleNext} onBack={handleBack} />;
+      case 5: return <StepDietary data={profileData} onChange={handleChange} onAdd={handleAddCustomItem} onRemove={handleRemoveCustomItem} onNext={handleNext} onBack={handleBack} />;
+      case 6: return <StepCuisines data={profileData} onChange={handleChange} onAdd={handleAddCustomItem} onRemove={handleRemoveCustomItem} onNext={handleNext} onBack={handleBack} />;
+      case 7: return <StepSkill data={profileData} onChange={handleChange} onNext={handleNext} onBack={handleBack} />;
+      case 8: return <StepReview data={profileData} onBack={handleBack} onSubmit={handleSubmit} error={error} />;
       default: return null;
     }
   };
@@ -178,15 +181,41 @@ const OnboardingModal = ({ onClose }) => {
 
 const StepWelcome = ({ onNext }) => (
   <div className="modal-step step-welcome">
-    <h2>Welcome to RecipeApp!</h2>
-    <p>Let's set up your profile to get the most personalized recipes. This will only take a minute.</p>
+    <h2>Welcome to The Local Catalogue!</h2> {/* <-- Updated Name */}
+    <p>Let's set up your profile to get the most personalized recipes and find specials from stores near you.</p>
     <button onClick={onNext} className="modal-btn primary">Let's Get Started</button>
   </div>
 );
 
-const StepHousehold = ({ data, onChange, onNext }) => (
+// --- NEW STEP COMPONENT ---
+const StepLocation = ({ data, onChange, onNext, onBack }) => (
   <div className="modal-step">
-    <h3>Step 1: Household</h3>
+    <h3>Step 1: Your Location</h3>
+    <p>What's your postcode? This helps us find specials from local businesses right in your neighbourhood.</p>
+    <div className="form-group" style={{ padding: '1rem 0' }}>
+      <label htmlFor="postcode">Postcode</label>
+      <input
+        type="text"
+        id="postcode"
+        name="postcode"
+        className="modal-input"
+        value={data.postcode}
+        onChange={onChange}
+        placeholder="e.g. 3025"
+        maxLength="4"
+      />
+    </div>
+    <div className="modal-nav">
+      <button onClick={onBack} className="modal-btn">Back</button>
+      <button onClick={onNext} className="modal-btn primary" disabled={!data.postcode}>Next</button>
+    </div>
+  </div>
+);
+
+
+const StepHousehold = ({ data, onChange, onNext, onBack }) => (
+  <div className="modal-step">
+    <h3>Step 2: Household</h3> {/* <-- Updated Step Number */}
     <p>How many people are you typically cooking for?</p>
     <div className="household-counter">
       <label>Adults</label>
@@ -205,7 +234,7 @@ const StepHousehold = ({ data, onChange, onNext }) => (
       </div>
     </div>
     <div className="modal-nav">
-      <span /> {/* Placeholder for alignment */}
+      <button onClick={onBack} className="modal-btn">Back</button> {/* <-- Added Back Button */}
       <button onClick={onNext} className="modal-btn primary" disabled={data.adult_count === 0 && data.child_count === 0}>Next</button>
     </div>
   </div>
@@ -213,7 +242,7 @@ const StepHousehold = ({ data, onChange, onNext }) => (
 
 const StepBudget = ({ data, onChange, onNext, onBack }) => (
   <div className="modal-step">
-    <h3>Step 2: Budget</h3>
+    <h3>Step 3: Budget</h3> {/* <-- Updated Step Number */}
     <p>Do you have a weekly food budget you'd like to stick to?</p>
     <div className="toggle-switch">
       <label className="switch">
@@ -252,7 +281,7 @@ const StepBudget = ({ data, onChange, onNext, onBack }) => (
 // --- UPDATED ---
 const StepDietary = ({ data, onChange, onAdd, onRemove, onNext, onBack }) => (
   <div className="modal-step">
-    <h3>Step 3: Dietary Needs</h3>
+    <h3>Step 4: Dietary Needs</h3> {/* <-- Updated Step Number */}
     <p>Please select any dietary restrictions.</p>
     <div className="checkbox-grid">
       {DIETARY_OPTIONS.map(option => (
@@ -303,7 +332,7 @@ const StepDietary = ({ data, onChange, onAdd, onRemove, onNext, onBack }) => (
 // --- UPDATED ---
 const StepCuisines = ({ data, onChange, onAdd, onRemove, onNext, onBack }) => (
   <div className="modal-step">
-    <h3>Step 4: Tastes</h3>
+    <h3>Step 5: Tastes</h3> {/* <-- Updated Step Number */}
     <p>What are your favorite cuisines?</p>
     <div className="checkbox-grid">
       {CUISINE_OPTIONS.map(option => (
@@ -353,7 +382,7 @@ const StepCuisines = ({ data, onChange, onAdd, onRemove, onNext, onBack }) => (
 
 const StepSkill = ({ data, onChange, onNext, onBack }) => (
   <div className="modal-step">
-    <h3>Step 5: Cooking Skill</h3>
+    <h3>Step 6: Cooking Skill</h3> {/* <-- Updated Step Number */}
     <p>How would you rate your cooking skill?</p>
     <div className="radio-group">
       {SKILL_OPTIONS.map(option => (
@@ -383,9 +412,10 @@ const StepReview = ({ data, onBack, onSubmit, error }) => {
   
   return (
     <div className="modal-step">
-      <h3>Final Step: Review</h3>
+      <h3>Final Step: Review</h3> {/* <-- Updated Step Number */}
       <p>Does this all look correct?</p>
       <div className="review-summary">
+        <p><strong>Your Postcode:</strong> {data.postcode}</p> {/* <-- NEW FIELD */}
         <p><strong>Household:</strong> {data.adult_count} Adults, {data.child_count} Children</p>
         <p><strong>Budget:</strong> {data.has_budget ? `$${data.weekly_budget} / week` : "No budget set"}</p>
         <p><strong>Dietary Needs:</strong> {dietary}</p>

@@ -23,6 +23,7 @@ class UserRead(SQLModel):
     adult_count: int
     child_count: int
     weekly_budget: Optional[int] = None
+    postcode: Optional[str] = None # <-- NEW FIELD
     has_completed_onboarding: bool
 
 class UserUpdate(SQLModel):
@@ -34,6 +35,7 @@ class UserUpdate(SQLModel):
     adult_count: Optional[int] = None
     child_count: Optional[int] = None
     weekly_budget: Optional[int] = None
+    postcode: Optional[str] = None # <-- NEW FIELD
     has_completed_onboarding: Optional[bool] = None
 
 class Token(SQLModel):
@@ -47,6 +49,7 @@ class GoogleLoginRequest(SQLModel):
 class SupplierProfileCreate(SQLModel):
     business_name: str
     address: Optional[str] = None
+    postcode: Optional[str] = None # <-- NEW FIELD
 
 class SupplierProfileRead(SupplierProfileCreate):
     id: int
@@ -179,7 +182,7 @@ class RecipeSearchResult(SQLModel):
 
 class GlobalSearchResponse(SQLModel):
     recipes: List[RecipeSearchResult]
-    ingredients: List[PantryItem]
+    ingredients: List[PantryItem] # <-- *** FIX: Was PType, now PantryItem ***
     specials: List[PriceHistoryRead]
     has_more: bool = False # --- NEW FIELD ---
 # --- *** END UPDATED SCHEMAS *** ---
