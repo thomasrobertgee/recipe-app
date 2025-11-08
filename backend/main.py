@@ -40,12 +40,14 @@ from schemas import (
     RecipeModificationRequest, GoogleLoginRequest,
     BarcodeLookupResponse,
     SupplierRegistrationRequest, SupplierProfileRead, # <-- NEW IMPORTS
-    # --- *** NEW MEAL PLAN IMPORTS *** ---
+    # --- *** NEW MEAL PLAN IMPORTS ---
     MealPlanEntryCreate, MealPlanEntryRead,
     # --- NEW IMPORT ---
     ReceiptScanResponse,
-    # --- *** NEW SEARCH IMPORTS *** ---
-    GlobalSearchResponse, RecipeSearchResult # Keep existing imports
+    # --- *** NEW SEARCH IMPORTS ---
+    GlobalSearchResponse, RecipeSearchResult, # Keep existing imports
+    # --- *** NEW SUPPLIER PROFILE UPDATE IMPORT *** ---
+    SupplierProfileUpdate
 )
 from security import get_password_hash, verify_password, create_access_token, get_current_user
 # --- IMPORT NEW AI FUNCTION ---
@@ -226,7 +228,7 @@ def create_user(user: UserCreate, session: Session = Depends(get_session)):
     return new_user
 
 
-# --- *** UPDATED: SUPPLIER REGISTRATION with Postcode *** ---
+# --- *** UPDATED: SUPPLIER REGISTRATION with Storefront Fields *** ---
 @app.post("/register/supplier", response_model=UserRead)
 def create_supplier(request: SupplierRegistrationRequest, session: Session = Depends(get_session)):
     existing_user = session.exec(select(User).where(User.email == request.user.email)).first()
@@ -254,7 +256,13 @@ def create_supplier(request: SupplierRegistrationRequest, session: Session = Dep
         user_id=new_user.id,
         business_name=request.profile.business_name,
         address=request.profile.address,
-        postcode=request.profile.postcode # <-- NEW FIELD ADDED
+        postcode=request.profile.postcode,
+        # --- NEW: Save optional fields ---
+        logo_url=request.profile.logo_url,
+        business_type=request.profile.business_type,
+        description=request.profile.description,
+        opening_hours=request.profile.opening_hours
+        # --- END NEW ---
     )
     session.add(new_profile)
     try:
@@ -752,13 +760,37 @@ def global_search(
         special_base_query.options(selectinload(PriceHistory.ingredient)).limit(limit)
     ).all()
     
-    specials = [
-        PriceHistoryRead(
-            id=p.id, ingredient_id=p.ingredient_id, date_recorded=p.date_recorded.isoformat(), price=p.price,
-            store=p.store, ingredient_name=p.ingredient.name, category=p.ingredient.category,
-            expiry_date=p.expiry_date # Include expiry date in response
-        ) for p in special_results if p.ingredient
-    ]
+    # --- *** NEW: Increment View Count for Supplier Specials *** ---
+    supplier_specials_updated = False
+    for p in special_results:
+        if p.supplier_profile_id is not None:
+            p.view_count = (p.view_count or 0) + 1
+            session.add(p)
+            supplier_specials_updated = True
+    
+    if supplier_specials_updated:
+        try:
+            session.commit()
+            print(f"--- [global_search] Incremented view counts for {len([p for p in special_results if p.supplier_profile_id])} supplier specials.")
+            # Refresh objects if necessary after commit, though only count changed
+            for p in special_results:
+                session.refresh(p)
+        except Exception as e:
+            session.rollback()
+            print(f"--- [global_search] Error committing view count updates: {e}")
+    # --- *** END NEW *** ---
+
+    # NEW (add supplier_profile_id):
+            specials = [
+                PriceHistoryRead(
+                    id=p.id, ingredient_id=p.ingredient_id, date_recorded=p.date_recorded.isoformat(), price=p.price,
+                    store=p.store, ingredient_name=p.ingredient.name, category=p.ingredient.category,
+                    expiry_date=p.expiry_date,
+                    view_count=p.view_count or 0,
+                    save_count=p.save_count or 0,
+                    supplier_profile_id=p.supplier_profile_id # <-- ADD THIS LINE
+                ) for p in special_results if p.ingredient
+            ]
     if special_count > limit: has_more = True
 
     return GlobalSearchResponse(recipes=recipes, ingredients=ingredients, specials=specials, has_more=has_more)
@@ -771,7 +803,7 @@ def get_staple_ingredients(session: Session = Depends(get_session)):
     for staple in staples:
         category = staple.category or "Other"
         if category not in categorized_staples: categorized_staples[category] = []
-        categorized_staples[category].append(PantryItem(ingredient_id=staple.id, name=staple.name, category=staple.category))
+        categorized_staples[category].append(PantryItem(ingredient_id=ing.id, name=ing.name, category=ing.category))
     # Sort categories alphabetically before returning
     return dict(sorted(categorized_staples.items()))
 
@@ -988,7 +1020,59 @@ def remove_from_meal_plan(
 # --- *** END NEW MEAL PLAN API ENDPOINTS *** ---
 
 
-# --- NEW SUPPLIER PORTAL API ---
+# --- *** NEW/UPDATED SUPPLIER PORTAL API *** ---
+
+# --- NEW: Get supplier's own profile ---
+@app.get("/api/supplier/profile", response_model=SupplierProfileRead)
+def get_supplier_profile(
+    profile: SupplierProfile = Depends(get_current_supplier)
+):
+    """Gets the profile for the currently logged-in supplier."""
+    # The dependency already fetches the profile, so we just return it.
+    # The dependency ensures it's not None.
+    return profile
+# --- END NEW ---
+
+# --- NEW: Update supplier's own profile ---
+@app.put("/api/supplier/profile", response_model=SupplierProfileRead)
+def update_supplier_profile(
+    profile_update: SupplierProfileUpdate,
+    profile: SupplierProfile = Depends(get_current_supplier),
+    session: Session = Depends(get_session)
+):
+    """Updates the profile for the currently logged-in supplier."""
+    
+    # Convert Pydantic model to dict, excluding unset fields
+    update_data = profile_update.model_dump(exclude_unset=True)
+    
+    if not update_data:
+        # No fields were provided in the request
+        return profile # Return the unchanged profile
+
+    profile_updated = False
+    for key, value in update_data.items():
+        # Update only if value is provided and different
+        if value is not None and getattr(profile, key) != value:
+            setattr(profile, key, value)
+            profile_updated = True
+
+    if profile_updated:
+        session.add(profile)
+        try:
+            session.commit()
+            session.refresh(profile)
+            print(f"Supplier profile updated for supplier ID: {profile.id}")
+        except Exception as e:
+            session.rollback()
+            print(f"Error committing supplier profile update for supplier ID {profile.id}: {e}")
+            raise HTTPException(status_code=500, detail="Failed to save profile updates.")
+    else:
+        print(f"No supplier profile changes detected for supplier ID: {profile.id}")
+
+    return profile
+# --- END NEW ---
+
+
 @app.get("/api/supplier/specials", response_model=List[PriceHistoryRead])
 def get_supplier_specials(
     profile: SupplierProfile = Depends(get_current_supplier),
@@ -1013,9 +1097,50 @@ def get_supplier_specials(
         PriceHistoryRead(
             id=p.id, ingredient_id=p.ingredient_id, date_recorded=p.date_recorded.isoformat(), price=p.price,
             store=p.store, ingredient_name=p.ingredient.name, category=p.ingredient.category,
-            expiry_date=p.expiry_date # Include expiry date in response
+            expiry_date=p.expiry_date,
+            view_count=p.view_count or 0,
+            save_count=p.save_count or 0,
+            supplier_profile_id=p.supplier_profile_id # <-- ADD THIS LINE
         ) for p in db_prices
     ]
+
+# --- *** NEW: Supplier Quick-Add Endpoint *** ---
+@app.get("/api/supplier/previous-items", response_model=List[PantryItem])
+def get_supplier_previous_items(
+    profile: SupplierProfile = Depends(get_current_supplier),
+    session: Session = Depends(get_session)
+):
+    """
+    Gets a unique list of all ingredients previously added as specials
+    by the logged-in supplier.
+    """
+    # This query selects distinct ingredient IDs from PriceHistory
+    # for the given supplier, then joins with Ingredient to get details.
+    
+    # 1. Get distinct ingredient IDs
+    distinct_ingredient_ids_query = select(PriceHistory.ingredient_id)\
+        .where(PriceHistory.supplier_profile_id == profile.id)\
+        .distinct()
+    
+    distinct_ingredient_ids = session.exec(distinct_ingredient_ids_query).all()
+
+    if not distinct_ingredient_ids:
+        return []
+
+    # 2. Fetch Ingredient details for those IDs
+    ingredients_query = select(Ingredient)\
+        .where(Ingredient.id.in_(distinct_ingredient_ids))\
+        .order_by(Ingredient.name)
+        
+    ingredients = session.exec(ingredients_query).all()
+
+    # 3. Map to response schema
+    return [
+        PantryItem(ingredient_id=ing.id, name=ing.name, category=ing.category)
+        for ing in ingredients
+    ]
+# --- *** END NEW *** ---
+
 
 # --- *** UPDATED: create_supplier_special with Expiry Date & FK Refactor *** ---
 @app.post("/api/supplier/specials", response_model=PriceHistoryRead)
@@ -1067,7 +1192,9 @@ def create_supplier_special(
             store=profile.business_name,
             date_recorded=today,
             expiry_date=price_data.expiry_date, # <-- ADD EXPIRY
-            supplier_profile_id=profile.id # <-- SET THE FOREIGN KEY
+            supplier_profile_id=profile.id, # <-- SET THE FOREIGN KEY
+            view_count=0, # <-- NEW: Initialize analytics
+            save_count=0  # <-- NEW: Initialize analytics
             # Category is stored on the Ingredient model, not PriceHistory
         )
         session.add(record_to_return)
@@ -1091,7 +1218,10 @@ def create_supplier_special(
         store=record_to_return.store,
         ingredient_name=ingredient.name, # Get name from ingredient model
         category=ingredient.category, # Get category from ingredient model
-        expiry_date=record_to_return.expiry_date # <-- RETURN EXPIRY
+        expiry_date=record_to_return.expiry_date, # <-- RETURN EXPIRY
+        view_count=record_to_return.view_count or 0,
+        save_count=record_to_return.save_count or 0,
+        supplier_profile_id=record_to_return.supplier_profile_id # <-- ADD THIS LINE
     )
 # --- *** END UPDATED create_supplier_special *** ---
 
@@ -1123,8 +1253,133 @@ def delete_supplier_special(
         session.rollback()
         print(f"Error deleting special ID {price_id} for supplier {profile.business_name}: {e}")
         raise HTTPException(status_code=500, detail="Failed to delete special.")
+    
+# --- *** NEW: Follow/Unfollow Endpoints *** ---
+@app.post("/api/supplier/{supplier_id}/follow", status_code=201)
+def follow_supplier(
+    supplier_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
+    """Adds a supplier to the user's followed list."""
+    supplier = session.get(SupplierProfile, supplier_id)
+    if not supplier:
+        raise HTTPException(status_code=404, detail="Supplier not found.")
 
-# --- END NEW SUPPLIER PORTAL API ---
+    # Eager load the user's followed_suppliers list
+    user = session.exec(
+        select(User).where(User.id == current_user.id)
+        .options(selectinload(User.followed_suppliers))
+    ).first()
+
+    if not user:
+        # This should not happen if get_current_user worked
+        raise HTTPException(status_code=404, detail="User not found.")
+
+    # Check if already followed
+    if not any(s.id == supplier_id for s in user.followed_suppliers):
+        user.followed_suppliers.append(supplier)
+        session.add(user)
+        try:
+            session.commit()
+            print(f"User {user.id} followed supplier {supplier_id}")
+            return {"message": "Supplier followed successfully."}
+        except Exception as e:
+            session.rollback()
+            print(f"Error following supplier: {e}")
+            raise HTTPException(status_code=500, detail="Could not follow supplier.")
+    
+    return {"message": "Supplier already followed."}
+
+
+@app.delete("/api/supplier/{supplier_id}/follow", status_code=204)
+def unfollow_supplier(
+    supplier_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
+    """Removes a supplier from the user's followed list."""
+    supplier = session.get(SupplierProfile, supplier_id)
+    if not supplier:
+        # Idempotent: If supplier doesn't exist, we can't be following them.
+        return
+
+    # Eager load the user's followed_suppliers list
+    user = session.exec(
+        select(User).where(User.id == current_user.id)
+        .options(selectinload(User.followed_suppliers))
+    ).first()
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found.")
+
+    # Find the supplier in the user's list
+    supplier_to_remove = next((s for s in user.followed_suppliers if s.id == supplier_id), None)
+
+    if supplier_to_remove:
+        user.followed_suppliers.remove(supplier_to_remove)
+        session.add(user)
+        try:
+            session.commit()
+            print(f"User {user.id} unfollowed supplier {supplier_id}")
+        except Exception as e:
+            session.rollback()
+            print(f"Error unfollowing supplier: {e}")
+            raise HTTPException(status_code=500, detail="Could not unfollow supplier.")
+    
+    # Return 204 No Content whether they were followed or not (idempotent)
+    return
+# --- *** END NEW *** ---
+
+# --- *** NEW: Get User's Followed Suppliers *** ---
+@app.get("/api/users/me/followed-suppliers", response_model=List[int])
+def get_followed_suppliers(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Gets a list of IDs for all suppliers the current user follows.
+    """
+    # Eager load the user's followed_suppliers list
+    user = session.exec(
+        select(User).where(User.id == current_user.id)
+        .options(selectinload(User.followed_suppliers))
+    ).first()
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found.")
+
+    # Return just the list of IDs
+    return [supplier.id for supplier in user.followed_suppliers]
+# --- *** END NEW *** ---
+
+# --- *** NEW: Featured Supplier Endpoint *** ---
+@app.get("/api/suppliers/featured", response_model=List[SupplierProfileRead])
+def get_featured_suppliers(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user) # To get user's postcode
+):
+    """
+    Gets a list of featured suppliers, filtered by the user's postcode.
+    """
+    user_postcode = current_user.postcode
+    if not user_postcode:
+        # Don't show featured suppliers if we don't know the user's area
+        return []
+
+    featured_suppliers = session.exec(
+        select(SupplierProfile)
+        .where(
+            SupplierProfile.is_featured == True,
+            SupplierProfile.postcode == user_postcode
+        )
+        .order_by(SupplierProfile.business_name)
+    ).all()
+    
+    return featured_suppliers
+# --- *** END NEW *** ---
+
+# --- *** END NEW/UPDATED SUPPLIER PORTAL API *** ---
 
 
 @app.get("/")
@@ -1228,6 +1483,26 @@ def get_todays_prices(
     # so we get all active specials from supermarkets + all suppliers.
     
     db_prices = session.exec(query).all()
+
+    # --- *** NEW: Increment View Count for Supplier Specials *** ---
+    supplier_specials_updated = False
+    for p in db_prices:
+        if p.supplier_profile_id is not None:
+            p.view_count = (p.view_count or 0) + 1
+            session.add(p)
+            supplier_specials_updated = True
+    
+    if supplier_specials_updated:
+        try:
+            session.commit()
+            print(f"--- [get_todays_prices] Incremented view counts for {len([p for p in db_prices if p.supplier_profile_id])} supplier specials.")
+            # Refresh objects after commit to ensure data is current for the response
+            for p in db_prices:
+                session.refresh(p)
+        except Exception as e:
+            session.rollback()
+            print(f"--- [get_todays_prices] Error committing view count updates: {e}")
+    # --- *** END NEW *** ---
     
     # Map results to the response schema
     return [
@@ -1239,10 +1514,47 @@ def get_todays_prices(
             store=p.store,
             ingredient_name=p.ingredient.name if p.ingredient else "Unknown",
             category=p.ingredient.category if p.ingredient else None,
-            expiry_date=p.expiry_date # <-- NEW: Include expiry date in response
+            expiry_date=p.expiry_date, # <-- NEW: Include expiry date in response
+            view_count=p.view_count or 0,
+            save_count=p.save_count or 0,
+            supplier_profile_id=p.supplier_profile_id # <-- ADD THIS LINE
         ) for p in db_prices
     ]
 # --- *** END UPDATED get_todays_prices *** ---
+
+# --- *** NEW: Endpoint to track saves *** ---
+@app.post("/api/prices/{price_id}/track-save", status_code=204)
+def track_special_save(
+    price_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user) # Ensure user is logged in
+):
+    """
+    Increments the save_count for a supplier's special.
+    """
+    special = session.get(PriceHistory, price_id)
+    if not special:
+        # Don't raise 404, just log it. Frontend doesn't need to fail.
+        print(f"--- [track-save] PriceHistory item {price_id} not found. Cannot track save.")
+        return
+
+    # Only increment for supplier items
+    if special.supplier_profile_id is not None:
+        special.save_count = (special.save_count or 0) + 1
+        session.add(special)
+        try:
+            session.commit()
+            print(f"--- [track-save] Incremented save_count for supplier special {price_id}.")
+        except Exception as e:
+            session.rollback()
+            print(f"--- [track-save] Error committing save_count update for {price_id}: {e}")
+    else:
+        print(f"--- [track-save] Item {price_id} is a supermarket special. Save not tracked.")
+    
+    # Return 204 No Content
+    return
+# --- *** END NEW ENDPOINT *** ---
+
 
 @app.post("/api/prices", response_model=PriceHistoryRead)
 def create_price_record(price_data: PriceHistoryCreate, session: Session = Depends(get_session)):
@@ -1303,7 +1615,10 @@ def create_price_record(price_data: PriceHistoryCreate, session: Session = Depen
         store=record_to_return.store,
         ingredient_name=ingredient.name,
         category=ingredient.category,
-        expiry_date=record_to_return.expiry_date # Return expiry date (will be None here)
+        expiry_date=record_to_return.expiry_date, # Return expiry date (will be None here)
+        view_count=record_to_return.view_count or 0,
+        save_count=record_to_return.save_count or 0,
+        supplier_profile_id=record_to_return.supplier_profile_id # <-- ADD THIS LINE
     )
 
 @app.delete("/api/prices/today")
@@ -1351,7 +1666,10 @@ def get_price_history_for_ingredient(ingredient_id: int, session: Session = Depe
             store=h.store,
             ingredient_name=ingredient.name, # Use name from the fetched ingredient
             category=ingredient.category, # Use category from the fetched ingredient
-            expiry_date=h.expiry_date # Include expiry date
+            expiry_date=h.expiry_date, # Include expiry date
+            view_count=h.view_count or 0,
+            save_count=h.save_count or 0,
+            supplier_profile_id=h.supplier_profile_id # <-- ADD THIS LINE
         ) for h in history
     ]
 
@@ -1651,6 +1969,88 @@ def delete_all_recipes(session: Session = Depends(get_session)):
         session.rollback()
         print(f"Error deleting all recipes: {e}")
         raise HTTPException(status_code=500, detail="Failed to clear all recipes.")
+
+# --- *** NEW: Supplier Discovery Endpoints *** ---
+@app.get("/api/suppliers", response_model=List[SupplierProfileRead])
+def get_local_suppliers(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Gets a list of all local suppliers, filtered by the user's postcode.
+    """
+    user_postcode = current_user.postcode
+    
+    query = select(SupplierProfile)
+    
+    if user_postcode:
+        # Only return suppliers that match the user's postcode
+        query = query.where(SupplierProfile.postcode == user_postcode)
+    else:
+        # If user has no postcode, should we return all? Or none?
+        # For a "local" app, returning none if postcode is unknown seems reasonable.
+        print(f"--- [get_local_suppliers] User {current_user.id} has no postcode set. Returning empty list.")
+        return []
+        
+    suppliers = session.exec(query.order_by(SupplierProfile.business_name)).all()
+    
+    # We can just return the list of SupplierProfile objects,
+    # FastAPI will convert them to SupplierProfileRead schemas.
+    return suppliers
+
+@app.get("/api/supplier/{supplier_id}/profile", response_model=SupplierProfileRead)
+def get_public_supplier_profile(
+    supplier_id: int,
+    session: Session = Depends(get_session)
+):
+    """Gets a single supplier's public profile data."""
+    supplier = session.get(SupplierProfile, supplier_id)
+    if not supplier:
+        raise HTTPException(status_code=404, detail="Supplier not found.")
+    return supplier
+
+@app.get("/api/supplier/{supplier_id}/specials", response_model=List[PriceHistoryRead])
+def get_public_supplier_specials(
+    supplier_id: int,
+    session: Session = Depends(get_session)
+):
+    """Gets all active specials for a single supplier."""
+    today = date.today()
+    
+    # First, check if supplier exists
+    supplier = session.get(SupplierProfile, supplier_id)
+    if not supplier:
+        raise HTTPException(status_code=404, detail="Supplier not found.")
+
+    # Now, find their active specials
+    db_prices = session.exec(
+        select(PriceHistory)
+        .where(
+            PriceHistory.supplier_profile_id == supplier_id,
+            or_(
+                PriceHistory.date_recorded == today,
+                PriceHistory.expiry_date >= today
+            )
+        )
+        .options(selectinload(PriceHistory.ingredient)) # Eager load ingredient
+    ).all()
+    
+    # We don't increment view counts here, as this is for their dedicated page.
+    # We *could* add a separate view counter for "profile views" vs "list views".
+    # For now, let's keep it simple.
+
+    return [
+        PriceHistoryRead(
+            id=p.id, ingredient_id=p.ingredient_id, date_recorded=p.date_recorded.isoformat(), price=p.price,
+            store=p.store, ingredient_name=p.ingredient.name, category=p.ingredient.category,
+            expiry_date=p.expiry_date,
+            view_count=p.view_count or 0,
+            save_count=p.save_count or 0,
+            supplier_profile_id=p.supplier_profile_id # <-- ADD THIS LINE
+        ) for p in db_prices
+    ]
+# --- *** END NEW ENDPOINTS *** ---
+
 
 # --- Placeholder for future endpoints ---
 

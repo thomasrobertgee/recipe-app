@@ -1,221 +1,239 @@
 // src/components/ShoppingList.jsx
-
-import React, { useState, useEffect, useMemo } from 'react';
-// --- REMOVED: axios import ---
+import React, { useMemo, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-// --- UPDATED: Import the new fuzzy matching function ---
-import { getSimplePrice, findBestSpecialMatch } from '../utils/priceUtils';
+import { parsePrice } from '../utils/priceUtils';
 import './ShoppingList.css';
 
-// --- *** UPDATED: Accept recipes prop and isEmbedded prop *** ---
-const ShoppingList = ({ allSpecials, recipes: recipesProp, isEmbedded = false }) => {
-    const { 
-        selectedRecipes: globalRecipes, // Renamed to avoid conflict
-        userProfile, 
-        clearShoppingList,
-        removeIngredientFromList, // --- FIX: Use the new function from context ---
-        pantryIdSet // --- NEW: Get pantryIdSet from context ---
-    } = useAuth();
-    
-    // --- *** UPDATED: Use recipesProp if provided, else use globalRecipes *** ---
-    const recipesToDisplay = recipesProp || globalRecipes;
-    
-    const [checkedItems, setCheckedItems] = useState(() => JSON.parse(localStorage.getItem('checkedItems') || '[]'));
-    
-    // --- NEW: State for overrides (no change) ---
-    const [forceBuyIds, setForceBuyIds] = useState(new Set()); // IDs to "buy anyway"
-    
-    useEffect(() => { localStorage.setItem('checkedItems', JSON.stringify(checkedItems)); }, [checkedItems]);
+const ShoppingList = () => {
+  const {
+    userProfile,
+    selectedRecipes,
+    selectedSpecials, // <-- NEW: Get selected specials
+    handleSelectSpecial, // <-- NEW: Get handler for specials
+    clearShoppingList,
+    pantryIdSet,
+    handleSelectRecipe,
+  } = useAuth();
 
-    // --- REMOVED: useEffect for fetching pantry items ---
-    
-    // --- REMOVED: useMemo for local pantryIdSet ---
+  const [itemsInPantry, setItemsInPantry] = useState(new Set());
 
-    const shoppingListData = useMemo(() => {
-        // --- *** UPDATED: Check recipesToDisplay *** ---
-        if (!recipesToDisplay || recipesToDisplay.length === 0) {
-            // --- UPDATED: Return all parts of the data structure ---
-            return { consolidatedItems: [], itemsToBuy: [], itemsInPantry: [], totalCost: 0 };
+  // --- UPDATED: Consolidate ingredients from recipes AND specials ---
+  const consolidatedList = useMemo(() => {
+    const ingredients = {};
+
+    // 1. Process ingredients from selected recipes
+    selectedRecipes.forEach(({ recipe, quantity }) => {
+      recipe.ingredients.forEach(ing => {
+        const key = ing.ingredient_id || ing.name.toLowerCase();
+        if (!ingredients[key]) {
+          ingredients[key] = {
+            id: ing.ingredient_id,
+            name: ing.name,
+            quantity: [],
+            recipes: [],
+            price: null, // We don't know the price from recipes
+            category: null, // We don't know the category from recipes
+            isSpecial: false,
+          };
         }
+        ingredients[key].quantity.push(`${ing.quantity} (for ${recipe.title} x${quantity})`);
+        ingredients[key].recipes.push(recipe.title);
+      });
+    });
 
-        const itemsMap = new Map();
-
-        // --- *** UPDATED: Iterate over recipesToDisplay *** ---
-        recipesToDisplay.forEach(({ recipe, quantity }) => {
-            recipe.ingredients.forEach(ingredient => {
-                // --- THIS IS THE FIX ---
-                // Use our new "fuzzy match" function instead of a strict ID match.
-                const special = findBestSpecialMatch(ingredient.name, allSpecials);
-                const existingItem = itemsMap.get(ingredient.ingredient_id);
-
-                if (existingItem) {
-                    existingItem.count += quantity;
-                    existingItem.recipeIds.add(recipe.id);
-                } else {
-                    itemsMap.set(ingredient.ingredient_id, {
-                        id: ingredient.ingredient_id,
-                        name: ingredient.name,
-                        priceString: special ? special.price : null,
-                        count: quantity,
-                        recipeIds: new Set([recipe.id]),
-                    });
-                }
-            });
-        });
-        
-        const consolidatedItems = Array.from(itemsMap.values());
-        
-        // --- NEW: Partition the list ---
-        const itemsToBuy = [];
-        const itemsInPantry = [];
-        
-        for (const item of consolidatedItems) {
-            if (forceBuyIds.has(item.id)) {
-                itemsToBuy.push(item); // User forced it to the buy list
-            } else if (pantryIdSet.has(item.id) && !isEmbedded) { // Check global pantryIdSet
-                itemsInPantry.push(item); // Item is in pantry
-            } else {
-                itemsToBuy.push(item); // Not in pantry, or this is an embedded list
-            }
-        }
-        // --- END NEW ---
-
-        // --- UPDATED: Calculate cost from itemsToBuy only ---
-        const totalCost = itemsToBuy.reduce((total, item) => {
-            if (item.priceString) {
-                return total + (getSimplePrice(item.priceString) * item.count);
-            }
-            return total;
-        }, 0);
-
-        // --- UPDATED: Return partitioned lists and new cost ---
-        return { itemsToBuy, itemsInPantry, totalCost };
-
-    // --- *** UPDATED: Dependency is now recipesToDisplay, pantryIdSet, forceBuyIds, isEmbedded *** ---
-    }, [recipesToDisplay, allSpecials, pantryIdSet, forceBuyIds, isEmbedded]);
-
-    // --- UPDATED: Destructure new lists ---
-    const { itemsToBuy, itemsInPantry, totalCost } = shoppingListData;
-
-    const handleCheckItem = (itemId) => {
-      if (checkedItems.includes(itemId)) {
-        setCheckedItems(checkedItems.filter(id => id !== itemId));
+    // 2. Process individually selected specials
+    selectedSpecials.forEach(special => {
+      const key = special.ingredient_id;
+      if (!ingredients[key]) {
+        // This is a new item, add it from the special
+        ingredients[key] = {
+          id: special.ingredient_id,
+          name: special.ingredient_name,
+          quantity: ["1"], // Default quantity for an individual special
+          recipes: ["On Special"], // Mark it as an individual item
+          price: parsePrice(special.price), // <-- Get price
+          category: special.category,
+          isSpecial: true,
+          specialDetails: special, // Store the full special object
+        };
       } else {
-        setCheckedItems([...checkedItems, itemId]);
+        // This ingredient was already in the list from a recipe
+        // We can now update its price if we didn't have one
+        if (!ingredients[key].price) {
+           ingredients[key].price = parsePrice(special.price);
+        }
+        // Add a note that it's also on special
+        ingredients[key].recipes.push("On Special");
+        ingredients[key].isSpecial = true;
+        ingredients[key].specialDetails = special;
       }
-    };
-    
-    // --- FIX for 'Clear All' button ---
-    const handleClearAll = () => {
-      if (window.confirm('Are you sure you want to clear your entire shopping list?')) {
-        clearShoppingList();
+    });
+
+
+    // 3. Check against pantry
+    const pantryIds = pantryIdSet;
+    const initialInPantry = new Set();
+    Object.values(ingredients).forEach(item => {
+      if (pantryIds.has(item.id)) {
+        initialInPantry.add(item.id);
       }
-    };
+    });
+    setItemsInPantry(initialInPantry);
 
-    // --- NEW: Handlers to move items between lists (no change) ---
-    const handleMoveToBuyList = (itemId) => {
-        setForceBuyIds(prev => new Set(prev).add(itemId));
-    };
-    const handleMoveToPantry = (itemId) => {
-        setForceBuyIds(prev => {
-            const next = new Set(prev);
-            next.delete(itemId);
-            return next;
-        });
-    };
-    // --- END NEW ---
+    return Object.values(ingredients).sort((a, b) => a.name.localeCompare(b.name));
+  }, [selectedRecipes, selectedSpecials, pantryIdSet]);
+  // --- END UPDATED ---
 
-    const budget = userProfile?.weekly_budget;
-    const budgetPercentage = (budget && budget > 0) ? (totalCost / budget) : 0;
+  const handlePantryToggle = (itemId) => {
+    setItemsInPantry(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(itemId)) {
+        newSet.delete(itemId);
+      } else {
+        newSet.add(itemId);
+      }
+      return newSet;
+    });
+  };
 
-    return (
-        <div className="shopping-list-container">
-            {/* --- *** UPDATED: Conditionally show header *** --- */}
-            {!isEmbedded && (
-                <div className="shopping-list-header">
-                    <h2>Shopping List</h2>
-                    <button onClick={handleClearAll} className="clear-all-btn">Clear All</button>
-                </div>
-            )}
+  const listToBuy = consolidatedList.filter(item => !itemsInPantry.has(item.id));
+  const listInPantry = consolidatedList.filter(item => itemsInPantry.has(item.id));
 
+  // --- UPDATED: Total cost calculation ---
+  const totalCost = useMemo(() => {
+    let cost = 0;
+    // Only add cost for items we actually intend to buy
+    listToBuy.forEach(item => {
+      if (item.price) { // Price is now available for specials
+        cost += item.price;
+      }
+    });
+    return cost;
+  }, [listToBuy]);
+  // --- END UPDATED ---
+
+  const budget = userProfile?.weekly_budget || 0;
+  const budgetDifference = budget - totalCost;
+
+  return (
+    <div className="shopping-list-container">
+      <h3>Intelligent Shopping List</h3>
+
+      {selectedRecipes.length === 0 && selectedSpecials.length === 0 ? (
+        <p className="empty-list-message">Your list is empty. Add recipes or specials to get started!</p>
+      ) : (
+        <>
+          <div className="budget-tracker">
+            <div className={`budget-total ${budgetDifference < 0 ? 'over-budget' : ''}`}>
+              Est. Total: <strong>${totalCost.toFixed(2)}</strong>
+            </div>
             {budget > 0 && (
-              <div className="budget-tracker">
-                <div className="budget-info">
-                  <span>Budget: ${budget.toFixed(2)}</span>
-                  <span>{(budgetPercentage * 100).toFixed(0)}% Used</span>
-                </div>
-                <div className="progress-bar-container">
-                  <div 
-                    className="progress-bar" 
-                    style={{ width: `${Math.min(budgetPercentage * 100, 100)}%` }}
-                  ></div>
-                </div>
+              <div className="budget-remaining">
+                Budget: ${budget.toFixed(2)} | Remaining: <strong>${budgetDifference.toFixed(2)}</strong>
               </div>
             )}
-            
-            {/* --- UPDATED: Check itemsToBuy and itemsInPantry --- */}
-            {itemsToBuy.length === 0 && itemsInPantry.length === 0 ? (
-                <p>Select recipes to start your list.</p>
-            ) : (
-                <>
-                    {/* --- UPDATED: Map over itemsToBuy --- */}
-                    <ul>
-                        {itemsToBuy.sort((a, b) => a.name.localeCompare(b.name)).map(item => {
-                            const isChecked = checkedItems.includes(item.id);
-                            const lineItemPrice = item.priceString ? getSimplePrice(item.priceString) * item.count : 0;
-                            const wasForceAdded = forceBuyIds.has(item.id); // Check if it was forced
-                            return (
-                                <li key={item.id} className={isChecked ? 'checked' : ''}>
-                                    <label className="checkbox-label">
-                                        {/* --- *** UPDATED: Conditionally show checkbox *** --- */}
-                                        {!isEmbedded && (
-                                            <input type="checkbox" checked={isChecked} onChange={() => handleCheckItem(item.id)} />
-                                        )}
-                                        <strong>{item.name}</strong>
-                                    </label>
-                                    <div className="item-details">
-                                      {item.count > 1 && <span className="item-quantity">({item.count})</span>}
-                                      {lineItemPrice > 0 && <span className="item-price">${lineItemPrice.toFixed(2)}</span>}
-                                      {/* --- *** UPDATED: Conditional Button *** --- */}
-                                      {!isEmbedded && (
-                                          wasForceAdded ? (
-                                            <button className="move-to-pantry-btn" title="Move back to pantry" onClick={() => handleMoveToPantry(item.id)}>↩️</button>
-                                          ) : (
-                                            <button className="remove-item-btn" onClick={() => removeIngredientFromList(item.id)}>×</button>
-                                          )
-                                      )}
-                                    </div>
-                                </li>
-                            );
-                        })}
-                    </ul>
+          </div>
 
-                    <div className="total-cost-section">
-                        <strong>Total Estimated Cost:</strong>
-                        <span>${totalCost.toFixed(2)}</span>
-                    </div>
-                </>
-            )}
+          <button onClick={clearShoppingList} className="clear-list-btn">
+            Clear Full List
+          </button>
 
-            {/* --- NEW: "Already in Pantry" section --- */}
-            {!isEmbedded && itemsInPantry.length > 0 && (
-                <div className="pantry-items-section">
-                    <h4>Already in your pantry:</h4>
-                    <ul className="pantry-item-list-ul">
-                        {itemsInPantry.sort((a, b) => a.name.localeCompare(b.name)).map(item => (
-                            <li key={item.id} className="pantry-item-in-list">
-                                <span>{item.name} {item.count > 1 ? `(${item.count})` : ''}</span>
-                                <button onClick={() => handleMoveToBuyList(item.id)} className="move-to-list-btn">
-                                    Add to list
-                                </button>
-                            </li>
-                        ))}
-                    </ul>
+          {/* --- Section for items to buy --- */}
+          <h4>To Buy ({listToBuy.length})</h4>
+          <ul className="list-section list-to-buy">
+            {listToBuy.map(item => (
+              <li key={item.id} className="shopping-list-item">
+                <input
+                  type="checkbox"
+                  checked={false}
+                  onChange={() => handlePantryToggle(item.id)}
+                  title="Move to pantry"
+                />
+                <span className="item-name">{item.name}</span>
+                {item.price && (
+                  <span className="item-price">${item.price.toFixed(2)}</span>
+                )}
+                <div className="item-details">
+                  {item.isSpecial ? (
+                    <span className="item-source special-source">
+                      {item.specialDetails.store}: {item.specialDetails.price}
+                    </span>
+                  ) : (
+                     item.recipes.map((recipeName, index) => (
+                       <span key={index} className="item-source recipe-source">
+                         from {recipeName}
+                       </span>
+                     ))
+                  )}
                 </div>
-            )}
-            {/* --- END NEW --- */}
-        </div>
-    );
+                 {/* --- NEW: Button to remove individual special --- */}
+                {item.isSpecial && item.recipes.length === 1 && item.recipes[0] === "On Special" && (
+                   <button
+                       onClick={() => handleSelectSpecial(item.specialDetails)}
+                       className="remove-special-btn"
+                       title="Remove this special"
+                   >
+                       &times;
+                   </button>
+                )}
+              </li>
+            ))}
+          </ul>
+
+          {/* --- Section for items already in pantry --- */}
+          {listInPantry.length > 0 && (
+            <>
+              <h4>Already in pantry ({listInPantry.length})</h4>
+              <ul className="list-section list-in-pantry">
+                {listInPantry.map(item => (
+                  <li key={item.id} className="shopping-list-item in-pantry">
+                    <input
+                      type="checkbox"
+                      checked={true}
+                      onChange={() => handlePantryToggle(item.id)}
+                      title="Move back to list"
+                    />
+                    <span className="item-name">{item.name}</span>
+                     {/* --- NEW: Button to remove individual special (from pantry section) --- */}
+                    {item.isSpecial && item.recipes.length === 1 && item.recipes[0] === "On Special" && (
+                       <button
+                           onClick={() => handleSelectSpecial(item.specialDetails)}
+                           className="remove-special-btn"
+                           title="Remove this special"
+                       >
+                           &times;
+                       </button>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+
+          {/* --- Section to show selected recipes (no change) --- */}
+          {selectedRecipes.length > 0 && (
+             <div className="selected-recipes-summary">
+                <h4>From Recipes:</h4>
+                <ul>
+                  {selectedRecipes.map(({ recipe }) => (
+                    <li key={recipe.id}>
+                      <span>{recipe.title}</span>
+                      <button
+                        onClick={() => handleSelectRecipe(recipe)}
+                        className="remove-recipe-btn"
+                        title="Remove recipe from list"
+                      >
+                        &times;
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+             </div>
+          )}
+        </>
+      )}
+    </div>
+  );
 };
 
 export default ShoppingList;

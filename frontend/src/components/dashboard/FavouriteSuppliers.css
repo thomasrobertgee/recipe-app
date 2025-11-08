@@ -1,0 +1,28 @@
+/* src/components/dashboard/FavouriteSuppliers.css */
+
+/* This module reuses styles from QuickActions (quick-specials-list, etc.) */
+/* We just add a different background/border to make it stand out */
+
+.favourite-suppliers-module {
+    background-color: var(--color-primary-light);
+    border: 1px solid var(--color-primary);
+}
+
+.favourite-suppliers-module h3 {
+    color: var(--color-primary-dark);
+    margin-top: 0;
+    border-bottom: 2px solid var(--color-primary);
+    padding-bottom: 0.5rem;
+}
+
+.favourite-suppliers-module .no-specials-message {
+    font-size: 0.9rem;
+    color: var(--color-secondary);
+}
+
+.favourite-suppliers-module .no-specials-message a {
+    display: block;
+    margin-top: 0.5rem;
+    color: var(--color-primary);
+    font-weight: 600;
+}

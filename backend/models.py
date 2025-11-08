@@ -35,18 +35,45 @@ class UserRecipeRatingLink(SQLModel, table=True):
     user: "User" = Relationship(back_populates="ratings")
     recipe: "Recipe" = Relationship(back_populates="ratings")
 
+# --- NEW: User Supplier Follow Link (Many-to-Many) ---
+class UserSupplierFollow(SQLModel, table=True):
+    user_id: Optional[int] = Field(
+        default=None, foreign_key="user.id", primary_key=True
+    )
+    supplier_profile_id: Optional[int] = Field(
+        default=None, foreign_key="supplierprofile.id", primary_key=True
+    )
+# --- END NEW ---
 
-# --- NEW SUPPLIER PROFILE MODEL ---
+
+# --- *** UPDATED SUPPLIER PROFILE MODEL *** ---
 class SupplierProfile(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     user_id: int = Field(foreign_key="user.id", unique=True, index=True)
     business_name: str = Field(index=True)
     address: Optional[str] = None
     postcode: Optional[str] = Field(default=None, index=True) # <-- NEW FIELD
+    
+    # --- NEW: Storefront Fields ---
+    logo_url: Optional[str] = Field(default=None)
+    business_type: Optional[str] = Field(default=None, index=True) # e.g., "Butcher", "Baker"
+    description: Optional[str] = Field(default=None)
+    opening_hours: Optional[str] = Field(default=None) # Could be simple text or JSON
+    # --- END NEW ---
+    
+    # --- NEW: Featured Flag ---
+    is_featured: bool = Field(default=False, index=True)
+    # --- END NEW ---
 
     user: "User" = Relationship(back_populates="supplier_profile")
     price_history: List["PriceHistory"] = Relationship(back_populates="supplier_profile") # <-- NEW RELATIONSHIP
-# --- END NEW MODEL ---
+    
+    # --- NEW: Follow Relationship ---
+    followed_by_users: List["User"] = Relationship(
+        back_populates="followed_suppliers", link_model=UserSupplierFollow
+    )
+    # --- END NEW ---
+# --- *** END UPDATED MODEL *** ---
 
 
 # --- Recipe Ingredient Link (Many-to-Many with data) ---
@@ -108,6 +135,12 @@ class User(SQLModel, table=True):
     # --- *** NEW MEAL PLAN RELATIONSHIP *** ---
     meal_plan_entries: List["MealPlanEntry"] = Relationship(back_populates="user")
 
+    # --- NEW: Follow Relationship ---
+    followed_suppliers: List["SupplierProfile"] = Relationship(
+        back_populates="followed_by_users", link_model=UserSupplierFollow
+    )
+    # --- END NEW ---
+
 
 class Recipe(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -121,7 +154,9 @@ class Recipe(SQLModel, table=True):
     rating_count: int = Field(default=0)
 
     links: List[RecipeIngredientLink] = Relationship(back_populates="recipe")
-    saved_by_users: List[User] = Relationship(back_populates="saved_by_users", link_model=UserRecipeLink)
+    # --- *** FIX: Changed "saved_by_users" to "saved_recipes" *** ---
+    saved_by_users: List[User] = Relationship(back_populates="saved_recipes", link_model=UserRecipeLink)
+    # --- *** END FIX *** ---
     ratings: List[UserRecipeRatingLink] = Relationship(back_populates="recipe")
 
     # --- *** NEW MEAL PLAN RELATIONSHIP *** ---
@@ -152,6 +187,11 @@ class PriceHistory(SQLModel, table=True):
     # --- NEW: Link to supplier profile for efficient joins ---
     supplier_profile_id: Optional[int] = Field(default=None, foreign_key="supplierprofile.id", index=True)
     supplier_profile: Optional["SupplierProfile"] = Relationship(back_populates="price_history")
+    # --- END NEW ---
+
+    # --- NEW: Supplier Analytics ---
+    view_count: int = Field(default=0)
+    save_count: int = Field(default=0)
     # --- END NEW ---
 
     ingredient: Ingredient = Relationship(back_populates="price_history")

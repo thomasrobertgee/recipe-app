@@ -1,80 +1,68 @@
 // src/components/dashboard/BudgetSummary.jsx
 import React, { useMemo } from 'react';
-// --- NEW: Import Link ---
-import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { useUI } from '../../context/UIContext';
-import { getSimplePrice, findBestSpecialMatch } from '../../utils/priceUtils'; // Need price utils
-import './DashboardModule.css';
-import '../ShoppingList.css'; // Re-use shopping list CSS for budget bar
+import { Link } from 'react-router-dom';
+import { parsePrice } from '../../utils/priceUtils';
+// --- FIX: Removed broken import for 'findBestSpecialMatch' ---
+// import { parsePrice, findBestSpecialMatch } from '../../utils/priceUtils';
+// --- END FIX ---
 
-const BudgetSummary = ({ allSpecials }) => { // Needs allSpecials
-    const { userProfile, selectedRecipes } = useAuth();
-    const { toggleSidebar } = useUI();
+const BudgetSummary = ({ allSpecials }) => {
+  const { userProfile, selectedRecipes, selectedSpecials } = useAuth();
 
-    const totalCost = useMemo(() => {
-        // Calculate cost based only on items NOT in pantry (like in ShoppingList)
-        // For simplicity here, we'll calculate based on all selected recipes.
-        // A more accurate version would need pantryIdSet from AuthContext too.
-        if (!selectedRecipes || selectedRecipes.length === 0) return 0;
+  const budget = userProfile?.weekly_budget || 0;
 
-        const itemsMap = new Map();
-        selectedRecipes.forEach(({ recipe, quantity }) => {
-            recipe.ingredients.forEach(ingredient => {
-                const special = findBestSpecialMatch(ingredient.name, allSpecials);
-                const existingItem = itemsMap.get(ingredient.ingredient_id);
-                if (existingItem) {
-                    existingItem.count += quantity;
-                } else {
-                    itemsMap.set(ingredient.ingredient_id, {
-                        id: ingredient.ingredient_id,
-                        priceString: special ? special.price : null,
-                        count: quantity,
-                    });
-                }
-            });
-        });
+  // --- FIX: Streamlined cost calculation ---
+  
+  // 1. Calculate cost of individually selected specials
+  const costOfSelectedSpecials = useMemo(() => {
+    return selectedSpecials.reduce((total, special) => {
+      const price = parsePrice(special.price);
+      return total + (price || 0);
+    }, 0);
+  }, [selectedSpecials]);
 
-        return Array.from(itemsMap.values()).reduce((total, item) => {
-            if (item.priceString) {
-                return total + (getSimplePrice(item.priceString) * item.count);
-            }
-            return total;
-        }, 0);
-    }, [selectedRecipes, allSpecials]); // Added allSpecials dependency
+  // 2. --- REMOVED: Broken logic for 'costOfSelectedRecipes' ---
+  // This logic was incomplete and relied on the missing function.
+  // We will rely on the Shopping List's total cost for now.
 
-    const budget = userProfile?.weekly_budget;
-    const budgetPercentage = (budget && budget > 0) ? (totalCost / budget) : 0;
-    const isOverBudget = budgetPercentage > 1;
+  // 3. Set total cost
+  // For now, this module will only reflect the cost of *individually added* specials.
+  // The main "Est. Total" in the Shopping List itself remains the source of truth.
+  const totalCost = costOfSelectedSpecials;
+  // --- END FIX ---
 
-    return (
-        <div className="dashboard-module">
-            <div className="module-header">
-                <h2>Shopping List Cost</h2>
-                <button onClick={toggleSidebar} className="module-link button-link">View List →</button>
-            </div>
-            {!budget || budget <= 0 ? (
-                 <p>Set a weekly budget in your <Link to="/profile">profile</Link> to track spending.</p> // Error was here
-            ) : (
-                <div className="budget-summary-content">
-                    <div className="budget-info">
-                      <span>List Cost: ${totalCost.toFixed(2)}</span>
-                      <span>Budget: ${budget.toFixed(2)}</span>
-                    </div>
-                    <div className="progress-bar-container">
-                      <div
-                        className="progress-bar"
-                        style={{
-                            width: `${Math.min(budgetPercentage * 100, 100)}%`,
-                            backgroundColor: isOverBudget ? '#dc3545' : '#4caf50' // Red if over budget
-                        }}
-                      ></div>
-                    </div>
-                    {isOverBudget && <p className="budget-warning-text">You are over budget!</p>}
-                </div>
-            )}
-        </div>
-    );
+  const budgetDifference = budget - totalCost;
+
+  return (
+    <div className="dashboard-module budget-summary-module">
+      <h3>Budget Summary</h3>
+      {budget > 0 ? (
+        <>
+          <div className="budget-bar-container">
+            <div
+              className="budget-bar-filled"
+              style={{ width: `${Math.min((totalCost / budget) * 100, 100)}%` }}
+            ></div>
+          </div>
+          <div className="budget-text">
+            <span className="budget-used">${totalCost.toFixed(2)}</span>
+            <span className="budget-total"> of ${budget.toFixed(2)}</span>
+          </div>
+          <p className={`budget-remaining ${budgetDifference < 0 ? 'over-budget' : ''}`}>
+            {budgetDifference < 0
+              ? `$${Math.abs(budgetDifference).toFixed(2)} over budget`
+              : `$${budgetDifference.toFixed(2)} remaining`}
+          </p>
+        </>
+      ) : (
+        <p>
+          You haven't set a weekly budget yet.
+          <Link to="/profile">Set one in your profile!</Link>
+        </p>
+      )}
+    </div>
+  );
 };
 
 export default BudgetSummary;

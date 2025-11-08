@@ -1,73 +1,110 @@
 // src/components/dashboard/QuickActions.jsx
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import axios from 'axios'; // For generate action
-import { toast } from 'react-toastify';
-import { useAuth } from '../../context/AuthContext'; // Need profile/pantry for generate
-import './DashboardModule.css';
+import React, { useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext'; // Import useAuth
+import './DashboardModule.css'; // Re-using styles
 
-const QuickActions = ({ onScanBarcode, onScanReceipt, allSpecials }) => { // Receive specials
-    const navigate = useNavigate();
-    const { userProfile, pantryItems } = useAuth(); // Get user data
-    const [isGenerating, setIsGenerating] = useState(false);
+const QuickActions = ({ onScanBarcode, onScanReceipt, allSpecials }) => {
+    // --- NEW: Tab state and filtering ---
+    const { handleSelectSpecial, selectedSpecials } = useAuth();
+    const [activeTab, setActiveTab] = useState('local'); // 'local' or 'supermarket'
+    const supermarkets = useMemo(() => ['Coles', 'Woolworths', 'Aldi'], []);
 
-     const handleGenerateRecipes = async () => {
-        if (!allSpecials || allSpecials.length === 0) {
-          toast.error("There are no specials loaded to generate recipes from.");
-          return;
-        }
-        if (!userProfile) {
-            toast.error("User profile not loaded yet.");
-            return;
-        }
+    const selectedSpecialIdSet = useMemo(() =>
+        new Set(selectedSpecials.map(s => s.id)),
+        [selectedSpecials]
+    );
 
-        setIsGenerating(true);
-        const toastId = toast.loading("Asking the AI for recipes...");
+    const { localSpecials, supermarketSpecials } = useMemo(() => {
+        if (!allSpecials) return { localSpecials: [], supermarketSpecials: [] }; // Guard against undefined
+        const local = allSpecials.filter(s => !supermarkets.includes(s.store));
+        const supermarket = allSpecials.filter(s => supermarkets.includes(s.store));
+        return { localSpecials: local, supermarketSpecials: supermarket };
+    }, [allSpecials, supermarkets]);
 
-        try {
-          const payload = {
-            specials: allSpecials, // Pass specials down from DashboardPage
-            preferences: userProfile,
-            pantry_items: pantryItems // Already available from AuthContext
-          };
+    const activeSpecials = activeTab === 'local' ? localSpecials : supermarketSpecials;
+    // --- END NEW ---
 
-          const generateResponse = await axios.post('/api/generate-recipes', payload);
-          toast.update(toastId, { render: generateResponse.data.message, type: "success", isLoading: false, autoClose: 5000 });
-          // Optionally navigate to recipes page or refresh something
-        } catch (error) {
-          console.error("Error generating recipes:", error);
-          toast.update(toastId, { render: "An error occurred while generating recipes.", type: "error", isLoading: false, autoClose: 5000 });
-        } finally {
-          setIsGenerating(false);
-        }
-    };
-
+    // --- NEW: Render specials list ---
+    const renderSpecialsList = (specials) => (
+        <ul className="quick-specials-list">
+            {specials.slice(0, 5).map(special => { // Show top 5
+                const isSelected = selectedSpecialIdSet.has(special.id);
+                return (
+                    <li key={special.id} className="quick-special-item">
+                        <div className="quick-special-info">
+                            <span className="special-name">{special.ingredient_name}</span>
+                            <span className="special-store">{special.store}</span>
+                            <span className="special-price">{special.price}</span>
+                        </div>
+                        <button
+                            className={`add-btn ${isSelected ? 'selected' : ''}`}
+                            onClick={() => handleSelectSpecial(special)}
+                            title={isSelected ? "Remove from list" : "Add to list"}
+                        >
+                            {isSelected ? '✓' : '+'}
+                        </button>
+                    </li>
+                );
+            })}
+             {specials.length === 0 && (
+                <p className="no-specials-message">
+                    {activeTab === 'local' ? "No local specials found today." : "No supermarket specials found today."}
+                </p>
+            )}
+        </ul>
+    );
+    // --- END NEW ---
 
     return (
-        <div className="dashboard-module">
-            <h2>Quick Actions</h2>
+        <div className="dashboard-module quick-actions-module">
+            {/* Quick action buttons */}
             <div className="quick-actions-buttons">
-                <button
-                    onClick={handleGenerateRecipes}
-                    className="quick-action-btn generate"
-                    disabled={isGenerating}
-                >
-                    {isGenerating ? 'Generating...' : '✨ Generate Recipes'}
-                </button>
-                 <button onClick={() => navigate('/meal-plan')} className="quick-action-btn meal-plan">
-                    📅 View Meal Plan
-                </button>
-                <button onClick={onScanBarcode} className="quick-action-btn scan-barcode">
-                    📷 Scan Barcode
+                <Link to="/recipes" className="quick-action-btn generate">
+                    💡
+                    <span>Generate Recipes</span>
+                </Link>
+                <button onClick={onScanBarcode} className="quick-action-btn scan-item">
+                    📷
+                    <span>Scan Item</span>
                 </button>
                 <button onClick={onScanReceipt} className="quick-action-btn scan-receipt">
-                     🧾 Scan Receipt
+                    🧾
+                    <span>Scan Receipt</span>
                 </button>
-                 <button onClick={() => navigate('/pantry')} className="quick-action-btn pantry">
-                    🧅 Manage Pantry
-                </button>
-
+                <Link to="/meal-plan" className="quick-action-btn meal-plan">
+                    🗓️
+                    <span>Meal Planner</span>
+                </Link>
             </div>
+
+            {/* --- NEW: Specials preview with tabs --- */}
+            <div className="quick-specials-preview">
+                <h3>Today's Specials</h3>
+                <div className="dashboard-tabs quick-specials-tabs">
+                    <button
+                        className={`tab-btn ${activeTab === 'local' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('local')}
+                    >
+                        Local
+                    </button>
+                    <button
+                        className={`tab-btn ${activeTab === 'supermarket' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('supermarket')}
+                    >
+                        Supermarkets
+                    </button>
+                </div>
+                
+                {renderSpecialsList(activeSpecials)}
+
+                {activeSpecials.length > 5 && (
+                    <Link to="/specials" className="view-all-link">
+                        View all {activeSpecials.length - 5} more...
+                    </Link>
+                )}
+            </div>
+            {/* --- END NEW --- */}
         </div>
     );
 };

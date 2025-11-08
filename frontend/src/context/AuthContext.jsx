@@ -29,8 +29,23 @@ export const AuthProvider = ({ children }) => {
         }
     });
 
+    const [selectedSpecials, setSelectedSpecials] = useState(() => {
+         try {
+            const saved = localStorage.getItem('selectedSpecials');
+            return saved ? JSON.parse(saved) : [];
+        } catch (error) {
+            console.error("Failed to parse selected specials from localStorage", error);
+            return [];
+        }
+    });
+
+
     const [savedRecipes, setSavedRecipes] = useState([]);
     const [pantryItems, setPantryItems] = useState([]);
+    // --- NEW: State for followed suppliers ---
+    const [followedSupplierIds, setFollowedSupplierIds] = useState(new Set());
+    // --- END NEW ---
+
     const pantryIdSet = useMemo(() => new Set(pantryItems.map(item => item.ingredient_id)), [pantryItems]);
 
     const navigate = useNavigate();
@@ -39,6 +54,11 @@ export const AuthProvider = ({ children }) => {
     useEffect(() => {
         localStorage.setItem('selectedRecipes', JSON.stringify(selectedRecipes));
     }, [selectedRecipes]);
+
+    useEffect(() => {
+        localStorage.setItem('selectedSpecials', JSON.stringify(selectedSpecials));
+    }, [selectedSpecials]);
+
 
     const savedRecipeIds = useMemo(() => {
         return new Set(savedRecipes.map(recipe => recipe.id));
@@ -78,6 +98,27 @@ export const AuthProvider = ({ children }) => {
         }
     }, []);
 
+    // --- NEW: Fetch followed suppliers ---
+    const fetchFollowedSuppliers = useCallback(async () => {
+        if (!localStorage.getItem('token')) {
+            setFollowedSupplierIds(new Set());
+            return;
+        }
+        try {
+            const res = await axios.get('/api/users/me/followed-suppliers');
+            setFollowedSupplierIds(new Set(res.data)); // res.data is a list of IDs
+        } catch (error) {
+            console.error("Error fetching followed suppliers:", error);
+            // --- FIX: Removed toast notification ---
+            // if (error.response?.status !== 401) {
+            //     toast.error("Could not load followed suppliers.");
+            // }
+            // --- END FIX ---
+            setFollowedSupplierIds(new Set());
+        }
+    }, []);
+    // --- END NEW ---
+
     const fetchUserProfile = useCallback(async () => {
         setIsLoading(true);
         try {
@@ -86,6 +127,7 @@ export const AuthProvider = ({ children }) => {
             if (res.data) {
                  await fetchSavedRecipes();
                  await fetchPantryItems();
+                 await fetchFollowedSuppliers(); // <-- Called here
             }
         } catch (error) {
             console.error("Error fetching user profile:", error);
@@ -95,8 +137,11 @@ export const AuthProvider = ({ children }) => {
                 setSavedRecipes([]);
                 setSelectedRecipes([]);
                 setPantryItems([]);
+                setSelectedSpecials([]); 
+                setFollowedSupplierIds(new Set()); // <-- NEW
                 localStorage.removeItem('token');
                 localStorage.removeItem('selectedRecipes');
+                localStorage.removeItem('selectedSpecials'); // <-- NEW
                 delete axios.defaults.headers.common['Authorization'];
                 toast.info("Session expired. Please log in again.");
                 navigate('/login');
@@ -104,18 +149,20 @@ export const AuthProvider = ({ children }) => {
         } finally {
             setIsLoading(false);
         }
-    }, [fetchSavedRecipes, fetchPantryItems, navigate]);
+    }, [fetchSavedRecipes, fetchPantryItems, fetchFollowedSuppliers, navigate]); // <-- NEW
 
     useEffect(() => {
         if (token) {
             axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-            fetchUserProfile();
+            fetchUserProfile(); // <-- Called here
         } else {
             delete axios.defaults.headers.common['Authorization'];
             setIsLoading(false);
             setSavedRecipes([]);
             setUserProfile(null);
             setPantryItems([]);
+            setSelectedSpecials([]); 
+            setFollowedSupplierIds(new Set()); // <-- NEW
         }
     }, [token, fetchUserProfile]);
 
@@ -214,8 +261,11 @@ export const AuthProvider = ({ children }) => {
         setSavedRecipes([]);
         setSelectedRecipes([]);
         setPantryItems([]);
+        setSelectedSpecials([]); 
+        setFollowedSupplierIds(new Set()); // <-- NEW
         localStorage.removeItem('token');
         localStorage.removeItem('selectedRecipes');
+        localStorage.removeItem('selectedSpecials'); 
         delete axios.defaults.headers.common['Authorization'];
         navigate('/');
         toast.info("You have been logged out.");
@@ -233,6 +283,40 @@ export const AuthProvider = ({ children }) => {
              }
          });
      };
+
+     const handleSelectSpecial = (special) => {
+        // ... (handleSelectSpecial function remains the same)
+        if (!special || typeof special.id === 'undefined') {
+            console.error("Invalid special object passed to handleSelectSpecial:", special);
+            toast.error("Could not add item to list.");
+            return;
+        }
+        
+        setSelectedSpecials(prevSelected => {
+            const existingIndex = prevSelected.findIndex(item => item.id === special.id);
+            
+            if (existingIndex > -1) {
+                // Item exists, so remove it
+                return prevSelected.filter(item => item.id !== special.id);
+            } else {
+                // Item does not exist, so add it
+                openSidebar(); // Open sidebar when adding
+                
+                // Check if it's a supplier special (store is not Coles, Woolworths, Aldi)
+                const supermarkets = ["Coles", "Woolworths", "Aldi"];
+                if (!supermarkets.includes(special.store)) {
+                    // It's a supplier special, track the save (fire-and-forget)
+                    axios.post(`/api/prices/${special.id}/track-save`)
+                        .then(() => console.log(`Tracked save for supplier special: ${special.id}`))
+                        .catch(err => console.error(`Failed to track save for special ${special.id}:`, err));
+                }
+                
+                // Add the special to the list
+                return [...prevSelected, special];
+            }
+        });
+     };
+
 
       const incrementRecipeQuantity = (recipeId) => {
         // ... (increment function remains the same)
@@ -289,9 +373,39 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    // --- NEW: Follow/Unfollow Handlers ---
+    const followSupplier = useCallback(async (supplierId) => {
+        try {
+            await axios.post(`/api/supplier/${supplierId}/follow`);
+            setFollowedSupplierIds(prev => new Set(prev).add(supplierId));
+            toast.success("Supplier followed!");
+        } catch (error) {
+            console.error("Error following supplier:", error);
+            toast.error(error.response?.data?.detail || "Could not follow supplier.");
+        }
+    }, []);
+
+    const unfollowSupplier = useCallback(async (supplierId) => {
+        try {
+            await axios.delete(`/api/supplier/${supplierId}/follow`);
+            setFollowedSupplierIds(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(supplierId);
+                return newSet;
+            });
+            toast.info("Supplier unfollowed.");
+        } catch (error) {
+            console.error("Error unfollowing supplier:", error);
+            toast.error(error.response?.data?.detail || "Could not unfollow supplier.");
+        }
+    }, []);
+    // --- END NEW ---
+
+
     const clearShoppingList = () => {
         // ... (clearShoppingList function remains the same)
         setSelectedRecipes([]);
+        setSelectedSpecials([]); 
     };
 
     const removeIngredientFromList = (ingredientIdToRemove) => {
@@ -355,10 +469,18 @@ export const AuthProvider = ({ children }) => {
         <AuthContext.Provider value={{
             token, userProfile, user: userProfile, isLoading, loading: isLoading,
             login, loginWithGoogle, logout, fetchUserProfile,
+            
             selectedRecipes, handleSelectRecipe, incrementRecipeQuantity, decrementRecipeQuantity,
+            
+            selectedSpecials, handleSelectSpecial,
+
             savedRecipes, savedRecipeIds, saveRecipe, unsaveRecipe, fetchSavedRecipes,
             clearShoppingList, removeIngredientFromList,
-            pantryItems, pantryIdSet, addPantryItem, removePantryItem, fetchPantryItems
+            pantryItems, pantryIdSet, addPantryItem, removePantryItem, fetchPantryItems,
+
+            // --- NEWLY EXPOSED ---
+            followedSupplierIds, followSupplier, unfollowSupplier
+            // --- END NEW ---
         }}>
             {children}
         </AuthContext.Provider>

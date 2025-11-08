@@ -1,10 +1,9 @@
-// frontend/src/pages/SupplierSignUpPage.jsx
-
+// src/pages/SupplierSignUpPage.jsx
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-toastify';
-import './AuthForm.css'; // Reusing your existing auth form styling
+import './AuthForm.css';
 
 const SupplierSignUpPage = () => {
     const [email, setEmail] = useState('');
@@ -12,98 +11,74 @@ const SupplierSignUpPage = () => {
     const [confirmPassword, setConfirmPassword] = useState('');
     const [businessName, setBusinessName] = useState('');
     const [address, setAddress] = useState('');
-    const [postcode, setPostcode] = useState(''); // <-- NEW STATE
-    const [loading, setLoading] = useState(false);
+    // --- NEW: Postcode state ---
+    const [postcode, setPostcode] = useState('');
+    // --- END NEW ---
+    
     const [error, setError] = useState(null);
+    const [isLoading, setIsLoading] = useState(false);
     const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setError(null);
         if (password !== confirmPassword) {
-            setError('Passwords do not match.');
+            setError("Passwords do not match");
             return;
         }
-        setError(null);
-        setLoading(true);
 
-        const registrationData = {
-            user: {
-                email: email,
-                password: password
-            },
-            profile: {
-                business_name: businessName,
-                address: address || null,
-                postcode: postcode || null // <-- NEW FIELD IN PAYLOAD
-            }
-        };
+        if (!businessName) {
+             setError("Business name is required");
+             return;
+        }
+        
+        // --- NEW: Postcode validation ---
+        if (!postcode) {
+             setError("Postcode is required");
+             return;
+        }
+        // --- END NEW ---
 
+        setIsLoading(true);
         try {
-            // We use axios directly here, not a context function
-            // --- FIX: Use relative path for API call ---
-            await axios.post('/register/supplier', registrationData);
+            const payload = {
+                user: {
+                    email,
+                    password
+                },
+                profile: {
+                    business_name: businessName,
+                    address: address || null,
+                    postcode: postcode, // <-- NEW: Send postcode
+                    // Other profile fields (logo_url, etc.) are optional
+                    // and can be filled in on their profile page
+                }
+            };
             
-            toast.success("Registration successful! Please log in.");
+            await axios.post('/register/supplier', payload);
+            
+            toast.success("Supplier account created! Please log in.");
             navigate('/login');
 
         } catch (err) {
-            console.error("Supplier registration failed:", err.response);
-            const errorMessage = err.response?.data?.detail || "An unknown error occurred. Please try again.";
-            setError(errorMessage);
-            toast.error(errorMessage);
+            console.error("Supplier signup error:", err);
+            setError(err.response?.data?.detail || "An unknown error occurred.");
+            toast.error(err.response?.data?.detail || "Signup failed.");
         } finally {
-            setLoading(false);
+            setIsLoading(false);
         }
     };
 
     return (
-        // --- Reusing the structure from SignUpPage.jsx ---
-        <div className="auth-container">
+        <div className="auth-form-container">
             <form className="auth-form" onSubmit={handleSubmit}>
-                <h2>Supplier Registration</h2>
-                <p style={{ textAlign: 'center', marginTop: '-1rem', color: '#555' }}>
-                    Create an account for your business to post local specials.
-                </p>
+                <h2>Create Your Supplier Account</h2>
+                <p>Start listing your specials and reach local customers.</p>
                 
-                {/* --- Business Information Section --- */}
-                <div className="form-group">
-                    <label htmlFor="businessName">Business Name</label>
-                    <input
-                        type="text"
-                        id="businessName"
-                        value={businessName}
-                        onChange={(e) => setBusinessName(e.target.value)}
-                        required
-                    />
-                </div>
-                <div className="form-group">
-                    <label htmlFor="address">Address (Optional)</label>
-                    <input
-                        type="text"
-                        id="address"
-                        value={address}
-                        onChange={(e) => setAddress(e.target.value)}
-                    />
-                </div>
-                {/* --- NEW POSTCODE FIELD --- */}
-                <div className="form-group">
-                    <label htmlFor="postcode">Postcode (Optional)</label>
-                    <input
-                        type="text"
-                        id="postcode"
-                        value={postcode}
-                        onChange={(e) => setPostcode(e.target.value)}
-                        placeholder="e.g. 3025"
-                    />
-                </div>
+                {error && <div className="error-message">{error}</div>}
 
-                {/* --- Account Credentials Section --- */}
-                <div className="auth-divider">
-                    <span>Account Details</span>
-                </div>
-                
                 <div className="form-group">
-                    <label htmlFor="email">Email</label>
+                    <label htmlFor="email">Email Address</label>
                     <input
                         type="email"
                         id="email"
@@ -112,7 +87,6 @@ const SupplierSignUpPage = () => {
                         required
                     />
                 </div>
-                
                 <div className="form-group">
                     <label htmlFor="password">Password</label>
                     <input
@@ -124,7 +98,6 @@ const SupplierSignUpPage = () => {
                         required
                     />
                 </div>
-                
                 <div className="form-group">
                     <label htmlFor="confirmPassword">Confirm Password</label>
                     <input
@@ -135,16 +108,53 @@ const SupplierSignUpPage = () => {
                         required
                     />
                 </div>
+
+                <hr className="form-divider" />
                 
-                {error && <p className="auth-error">{error}</p>}
+                <div className="form-group">
+                    <label htmlFor="businessName">Business Name</label>
+                    <input
+                        type="text"
+                        id="businessName"
+                        value={businessName}
+                        onChange={(e) => setBusinessName(e.target.value)}
+                        required
+                    />
+                </div>
                 
-                <button type="submit" className="auth-button" disabled={loading}>
-                    {loading ? "Registering..." : "Create Account"}
+                {/* --- NEW: Postcode Field --- */}
+                <div className="form-group">
+                    <label htmlFor="postcode">Postcode</label>
+                    <input
+                        type="text"
+                        id="postcode"
+                        placeholder="e.g. 3000"
+                        value={postcode}
+                        onChange={(e) => setPostcode(e.target.value)}
+                        required
+                    />
+                </div>
+                {/* --- END NEW --- */}
+
+                <div className="form-group">
+                    <label htmlFor="address">Address (Optional)</label>
+                    <input
+                        type="text"
+                        id="address"
+                        placeholder="e.g. 123 Main St, Suburb"
+                        value={address}
+                        onChange={(e) => setAddress(e.target.value)}
+                    />
+                </div>
+                
+                <button type="submit" className="btn btn-primary" disabled={isLoading}>
+                    {isLoading ? 'Creating Account...' : 'Sign Up'}
                 </button>
-                
-                <p className="auth-switch">
-                    Already have an account? <Link to="/login">Log In</Link>
-                </p>
+
+                <div className="form-footer">
+                    <p>Already have an account? <Link to="/login">Log In</Link></p>
+                    <p>Are you a home cook? <Link to="/signup">Sign up here</Link></p>
+                </div>
             </form>
         </div>
     );

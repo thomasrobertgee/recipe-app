@@ -12,11 +12,14 @@ import BudgetSummary from '../components/dashboard/BudgetSummary';
 import RecentActivity from '../components/dashboard/RecentActivity';
 import QuickActions from '../components/dashboard/QuickActions';
 import NotificationsModule from '../components/dashboard/NotificationsModule';
+import FeaturedSupplier from '../components/dashboard/FeaturedSupplier';
+// --- NEW: Import Favourite Suppliers ---
+import FavouriteSuppliers from '../components/dashboard/FavouriteSuppliers';
+// --- END NEW ---
 
 // Import Modals
 import BarcodeScanner from '../components/BarcodeScanner';
 import ReceiptScannerModal from '../components/ReceiptScannerModal';
-// --- NEW: Import Correction Modal ---
 import ReceiptCorrectionModal from '../components/ReceiptCorrectionModal';
 import OnboardingModal from '../components/OnboardingModal';
 
@@ -26,18 +29,19 @@ import './DashboardPage.css';
 import '../components/dashboard/DashboardModule.css';
 
 const DashboardPage = ({ allSpecials }) => {
-  // --- UPDATED: Added pantryItems to destructure ---
-  const { userProfile, isLoading: authIsLoading, addPantryItem, fetchPantryItems, pantryItems } = useAuth();
+  const { userProfile, isLoading: authIsLoading, addPantryItem, pantryItems } = useAuth();
   const [showOnboarding, setShowOnboarding] = useState(false);
 
   // State for scanners
   const [isBarcodeScannerOpen, setIsBarcodeScannerOpen] = useState(false);
   const [isReceiptScannerOpen, setIsReceiptScannerOpen] = useState(false);
   const [isProcessingReceipt, setIsProcessingReceipt] = useState(false);
-  // --- NEW: State for correction modal (copied from PantryPage) ---
   const [itemsToCorrect, setItemsToCorrect] = useState([]);
   const [isCorrectionModalOpen, setIsCorrectionModalOpen] = useState(false);
 
+  // State for Featured Supplier
+  const [featuredSupplier, setFeaturedSupplier] = useState(null);
+  const [isFeaturedLoading, setIsFeaturedLoading] = useState(true);
 
   useEffect(() => {
     if (!authIsLoading && userProfile && userProfile.has_completed_onboarding === false) {
@@ -46,6 +50,32 @@ const DashboardPage = ({ allSpecials }) => {
       setShowOnboarding(false);
     }
   }, [userProfile, authIsLoading]);
+
+  // Fetch Featured Supplier
+  useEffect(() => {
+    // Only fetch if user is logged in and not onboarding
+    if (userProfile && userProfile.has_completed_onboarding) {
+        setIsFeaturedLoading(true);
+        axios.get('/api/suppliers/featured')
+            .then(res => {
+                // The API returns a list, we'll just feature the first one.
+                if (res.data && res.data.length > 0) {
+                    setFeaturedSupplier(res.data[0]);
+                } else {
+                    setFeaturedSupplier(null);
+                }
+            })
+            .catch(err => {
+                console.error("Error fetching featured supplier:", err);
+                // Don't toast error for this, it's not critical
+            })
+            .finally(() => {
+                setIsFeaturedLoading(false);
+            });
+    } else {
+         setIsFeaturedLoading(false);
+    }
+  }, [userProfile]);
 
    const handleCloseOnboarding = () => {
         setShowOnboarding(false);
@@ -209,6 +239,13 @@ const DashboardPage = ({ allSpecials }) => {
                 onScanReceipt={() => setIsReceiptScannerOpen(true)} // This button now triggers the updated logic
                 allSpecials={allSpecials}
             />
+            {/* --- NEW: Render Favourite Suppliers --- */}
+            <FavouriteSuppliers allSpecials={allSpecials} />
+            {/* --- END NEW --- */}
+            
+            {!isFeaturedLoading && featuredSupplier && (
+                <FeaturedSupplier supplier={featuredSupplier} />
+            )}
             <NotificationsModule />
             <MealPlanPreview allSpecials={allSpecials} />
             <PantrySnapshot />

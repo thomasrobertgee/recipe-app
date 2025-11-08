@@ -32,7 +32,11 @@ import SupplierSignUpPage from './pages/SupplierSignUpPage';
 import MealPlanPage from './pages/MealPlanPage';
 // --- *** NEW SEARCH PAGE IMPORT *** ---
 import SearchResultsPage from './pages/SearchResultsPage';
-// --- END NEW IMPORTS ---
+// --- *** NEW SUPPLIER DISCOVERY PAGE IMPORT *** ---
+import SupplierDiscoveryPage from './pages/SupplierDiscoveryPage';
+// --- *** FIX: Corrected import path *** ---
+import SupplierPublicProfilePage from './pages/SupplierPublicProfilePage';
+// --- *** END FIX *** ---
 
 function App() {
   const { token, userProfile, logout } = useAuth();
@@ -99,6 +103,10 @@ function App() {
               <Route path="/meal-plan" element={<MealPlanPage />} />
               {/* --- *** NEW SEARCH ROUTE *** --- */}
               <Route path="/search" element={<SearchResultsPage />} />
+              {/* --- *** NEW SUPPLIER DISCOVERY ROUTE *** --- */}
+              <Route path="/suppliers" element={<SupplierDiscoveryPage />} />
+              {/* --- *** NEW: Supplier Public Profile Route *** --- */}
+              <Route path="/supplier/:supplierId" element={<SupplierPublicProfilePage />} />
             </Route>
 
             {/* --- NEW Supplier Protected Routes --- */}

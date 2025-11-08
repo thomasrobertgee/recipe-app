@@ -45,20 +45,44 @@ class Token(SQLModel):
 class GoogleLoginRequest(SQLModel):
     token: str
 
-# --- NEW SUPPLIER SCHEMAS ---
-class SupplierProfileCreate(SQLModel):
+# --- *** UPDATED SUPPLIER SCHEMAS *** ---
+class SupplierProfileBase(SQLModel):
     business_name: str
     address: Optional[str] = None
-    postcode: Optional[str] = None # <-- NEW FIELD
+    postcode: Optional[str] = None
+    # --- NEW: Storefront Fields ---
+    logo_url: Optional[str] = None
+    business_type: Optional[str] = None
+    description: Optional[str] = None
+    opening_hours: Optional[str] = None
+    # --- NEW: Featured Flag (read-only for suppliers) ---
+    is_featured: bool = Field(default=False)
 
-class SupplierProfileRead(SupplierProfileCreate):
+class SupplierProfileCreate(SupplierProfileBase):
+    pass # Inherits all fields
+
+class SupplierProfileRead(SupplierProfileBase):
     id: int
     user_id: int
+    # Make sure is_featured is included in the read model
+    is_featured: bool
+
+class SupplierProfileUpdate(SQLModel):
+    # All fields are optional for updates
+    business_name: Optional[str] = None
+    address: Optional[str] = None
+    postcode: Optional[str] = None
+    logo_url: Optional[str] = None
+    business_type: Optional[str] = None
+    description: Optional[str] = None
+    opening_hours: Optional[str] = None
+    # Note: 'is_featured' is intentionally omitted.
+    # This should only be set by an admin (future feature).
 
 class SupplierRegistrationRequest(SQLModel):
     user: UserCreate
     profile: SupplierProfileCreate
-# --- END NEW SCHEMAS ---
+# --- *** END UPDATED SCHEMAS *** ---
 
 class IngredientInRecipe(SQLModel):
     name: str
@@ -124,6 +148,13 @@ class PriceHistoryRead(SQLModel):
     category: Optional[str] = None
     # --- NEW: Expiry date for suppliers ---
     expiry_date: Optional[date] = None
+    # --- NEW: Analytics Fields ---
+    view_count: int = 0
+    save_count: int = 0
+    # --- NEW: Supplier FK ---
+    supplier_profile_id: Optional[int] = None
+    # --- END NEW ---
+
 
 class GenerateRequest(SQLModel):
     specials: List[PriceHistoryRead]

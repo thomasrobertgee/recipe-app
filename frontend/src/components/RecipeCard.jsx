@@ -1,116 +1,109 @@
 // src/components/RecipeCard.jsx
-
-import React, { useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { calculateSingleRecipeCost } from '../utils/priceUtils';
+import { useCookMode } from '../context/CookModeContext'; // <-- NEW
+import RecipeDetail from './RecipeDetail';
 import StarRating from './StarRating';
 import './RecipeCard.css';
 
-// --- Destructure onRate from props ---
-const RecipeCard = ({ recipe, onClick, onDelete, allSpecials, onRate }) => {
-    const {
-        // --- Use savedRecipeIds which is the Set ---
-        savedRecipeIds,
-        // --- Use saveRecipe/unsaveRecipe functions ---
-        saveRecipe,
-        unsaveRecipe,
-        selectedRecipes,
-        handleSelectRecipe, // Keep using this name if context provides it
-        incrementRecipeQuantity,
-        decrementRecipeQuantity
-    } = useAuth();
+const RecipeCard = ({ recipe, allSpecials, onUpdateRating }) => {
+  const [isDetailVisible, setIsDetailVisible] = useState(false);
+  const { handleSelectRecipe, selectedRecipes, savedRecipeIds, saveRecipe, unsaveRecipe } = useAuth();
+  const { startCookMode } = useCookMode(); // <-- NEW
 
-    const cost = useMemo(() => calculateSingleRecipeCost(recipe, allSpecials), [recipe, allSpecials]);
-    // --- Check savedRecipeIds Set correctly ---
-    const isSaved = savedRecipeIds ? savedRecipeIds.has(recipe.id) : false; // Add safety check for savedRecipeIds
+  const isSelected = selectedRecipes.some(item => item.recipe.id === recipe.id);
+  const isSaved = savedRecipeIds.has(recipe.id);
 
-    // Ensure selectedRecipes is an array before using .find()
-    const selectedItem = Array.isArray(selectedRecipes) ? selectedRecipes.find(item => item.recipe.id === recipe.id) : undefined;
-    const isSelected = !!selectedItem;
-    const currentQuantity = selectedItem ? selectedItem.quantity : 0;
+  // --- REMOVED: Broken cost badge logic ---
 
-    const handleSaveClick = (e) => {
-        e.stopPropagation();
-        if (isSaved) {
-            unsaveRecipe(recipe.id);
-        } else {
-             // Assuming saveRecipe now takes the full recipe object based on context changes
-            saveRecipe(recipe);
-        }
-    };
-    const handleDeleteClick = (e) => {
-        e.stopPropagation();
-        if (window.confirm(`Are you sure you want to delete "${recipe.title}"?`)) {
-            onDelete(recipe.id);
-        }
-    };
+  const handleToggleDetail = () => {
+    setIsDetailVisible(!isDetailVisible);
+  };
 
-    const handleIncrement = (e) => {
-        e.stopPropagation();
-        incrementRecipeQuantity(recipe.id);
-    };
-    const handleDecrement = (e) => {
-        e.stopPropagation();
-        decrementRecipeQuantity(recipe.id);
-    };
-    const handleAddClick = (e) => {
-        e.stopPropagation();
-        handleSelectRecipe(recipe);
-    };
+  const handleSaveClick = (e) => {
+    e.stopPropagation(); // Prevent modal from opening
+    if (isSaved) {
+      unsaveRecipe(recipe.id);
+    } else {
+      saveRecipe(recipe);
+    }
+  };
 
-    // --- Add safety check for average_rating ---
-    const displayRating = typeof recipe.average_rating === 'number' ? recipe.average_rating : 0;
-    const displayRatingText = typeof recipe.average_rating === 'number' ? recipe.average_rating.toFixed(1) : 'N/A';
+  const handleSelectClick = (e) => {
+    e.stopPropagation(); // Prevent modal from opening
+    handleSelectRecipe(recipe);
+  };
 
-    // Added 'is-saved' class to main div if isSaved is true
-    return (
-        <div className={`recipe-card ${isSelected ? 'selected' : ''} ${isSaved ? 'is-saved' : ''}`} onClick={onClick}>
-            <div className="card-header-actions">
-                {/* --- *** FIX: Removed "Save" text *** --- */}
-                <button className={`save-btn ${isSaved ? 'saved' : ''}`} onClick={handleSaveClick}>{isSaved ? '♥' : '♡'}</button>
-                {/* --- *** END FIX *** --- */}
-                {onDelete && <button className="delete-btn" onClick={handleDeleteClick}>×</button>}
-            </div>
-            <div className="card-content">
-                <div className="card-title-row">
-                    <h2>{recipe.title}</h2>
-                    {cost > 0 && (<div className="recipe-cost">${cost.toFixed(2)}</div>)}
-                </div>
-                {recipe.description && <p>{recipe.description}</p>}
-                <div className="card-rating-display">
-                    <StarRating rating={displayRating} readOnly={true} />
-                    {recipe.rating_count > 0 && (
-                        <span className="rating-value">({displayRatingText})</span>
-                    )}
-                     {recipe.rating_count === 0 && (
-                          <span className="rating-value">(No ratings yet)</span>
-                     )}
-                </div>
-                {recipe.tags && recipe.tags.length > 0 && (
-                    <div className="card-tags">
-                        {recipe.tags.slice(0, 3).map(tag => (
-                            <span key={tag} className="tag">{tag}</span>
-                        ))}
-                    </div>
-                )}
-            </div>
-            <div className="card-bottom-action">
-                {isSelected ? (
-                    <div className="quantity-stepper">
-                        <button onClick={handleDecrement}>-</button>
-                        <span>{currentQuantity}</span>
-                        <button onClick={handleIncrement}>+</button>
-                    </div>
-                ) : (
-                     handleSelectRecipe && (
-                          <button onClick={handleAddClick} className="select-btn">
-                              Add to Shopping List
-                          </button>
-                     )
-                )}
-            </div>
+  // --- NEW: Cook Mode Handler ---
+  const handleCookClick = (e) => {
+     e.stopPropagation(); // Prevent modal from opening
+     startCookMode(recipe);
+  };
+
+
+  return (
+    <>
+      <div className="recipe-card" onClick={handleToggleDetail}>
+        <div className="recipe-card-header">
+           {/* --- NEW: Cook Mode Button --- */}
+          <button
+            className="cook-mode-btn"
+            onClick={handleCookClick}
+            title="Start Cook Mode"
+          >
+            🔥
+          </button>
+          
+          <button
+            className={`save-recipe-btn ${isSaved ? 'saved' : ''}`}
+            onClick={handleSaveClick}
+            title={isSaved ? "Remove from saved" : "Save recipe"}
+          >
+            {isSaved ? '★' : '☆'}
+          </button>
         </div>
-    );
+
+        {/* <div className="recipe-card-image">
+          <img src="https://via.placeholder.com/300x200" alt={recipe.title} />
+        </div> */}
+
+        <div className="recipe-card-content">
+          <h3 className="recipe-card-title">{recipe.title}</h3>
+          
+          <div className="recipe-card-rating">
+            <StarRating
+              rating={recipe.average_rating}
+              totalRatings={recipe.rating_count}
+            />
+          </div>
+
+          <p className="recipe-card-description">{recipe.description}</p>
+          
+          <div className="recipe-card-tags">
+            {recipe.tags && recipe.tags.map((tag, index) => (
+              <span key={index} className="recipe-card-tag">{tag}</span>
+            ))}
+            {/* --- REMOVED: costBadge display --- */}
+          </div>
+          
+          <button
+            className={`recipe-card-select-btn ${isSelected ? 'selected' : ''}`}
+            onClick={handleSelectClick}
+          >
+            {isSelected ? '✓ Added to List' : '+ Add to List'}
+          </button>
+        </div>
+      </div>
+
+      {isDetailVisible && (
+        <RecipeDetail
+          recipe={recipe}
+          onClose={handleToggleDetail}
+          onUpdateRating={onUpdateRating} // Pass the handler down
+        />
+      )}
+    </>
+  );
 };
 
 export default RecipeCard;

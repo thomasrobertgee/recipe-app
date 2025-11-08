@@ -1,0 +1,135 @@
+/* src/pages/SupplierDiscoveryPage.css */
+
+.supplier-profile-notice {
+    background-color: var(--color-light-grey);
+    border: 1px solid var(--color-border);
+    padding: 1.5rem;
+    border-radius: 8px;
+    text-align: center;
+}
+.supplier-profile-notice p {
+    margin: 0;
+    font-size: 1.1rem;
+}
+.supplier-profile-notice a {
+    color: var(--color-primary);
+    font-weight: 600;
+}
+
+.supplier-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.5rem;
+}
+
+/* --- NEW: Make Link non-styled --- */
+.supplier-card-link {
+    text-decoration: none;
+    color: inherit;
+    display: flex; /* Ensure card stretches */
+}
+/* --- END NEW --- */
+
+
+.supplier-card {
+    background-color: #fff;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    display: flex;
+    flex-direction: column;
+    transition: box-shadow 0.2s ease;
+    width: 100%; /* Fill the link wrapper */
+}
+
+.supplier-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.supplier-card-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.supplier-logo {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--color-border);
+    flex-shrink: 0;
+}
+
+.supplier-card-title {
+    display: flex;
+    flex-direction: column;
+}
+
+.supplier-card-title h3 {
+    margin: 0;
+    font-size: 1.4rem;
+    color: var(--color-primary-dark);
+}
+
+.supplier-type {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--color-secondary);
+    background-color: var(--color-light-grey);
+    padding: 0.25rem 0.5rem;
+    border-radius: 5px;
+    align-self: flex-start;
+}
+
+.supplier-card-body {
+    padding: 1.5rem;
+    flex-grow: 1;
+}
+
+.supplier-description {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin: 0 0 1rem 0;
+    /* --- NEW: Truncate long descriptions --- */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 3; /* Show 3 lines */
+    -webkit-box-orient: vertical;
+    /* --- END NEW --- */
+}
+
+.supplier-info {
+    font-size: 0.9rem;
+    color: var(--color-secondary);
+    margin: 0.5rem 0;
+}
+.supplier-info strong {
+    color: var(--color-dark);
+    font-weight: 600;
+}
+
+
+.supplier-card-footer {
+    padding: 1rem 1.5rem;
+    background-color: #f9f9f9;
+    border-top: 1px solid var(--color-border);
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem; /* --- NEW: Add gap --- */
+}
+
+.supplier-card-footer .btn-secondary[disabled] {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+/* --- NEW: Small button variant --- */
+.btn-small {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+}
+/* --- END NEW --- */

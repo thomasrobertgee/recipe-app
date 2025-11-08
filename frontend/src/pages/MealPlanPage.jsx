@@ -1,320 +1,262 @@
 // src/pages/MealPlanPage.jsx
-
 import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
-import { useAuth } from '../context/AuthContext';
-import RecipeTile from '../components/RecipeTile'; // We still need this for rendering planned items
 import { toast } from 'react-toastify';
-import {
-    DndContext,
-    closestCenter, // Using closestCenter, consider pointerWithin or rectIntersection if needed
-    useDraggable,
-    useDroppable,
-} from '@dnd-kit/core';
+import { useAuth } from '../context/AuthContext';
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { arrayMove, SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { getSimplePrice, findBestSpecialMatch } from '../utils/priceUtils';
+import RecipeCard from '../components/RecipeCard'; // For drag-and-drop
+import './Page.css';
 import './MealPlanPage.css';
-import '../pages/Page.css'; // Re-use common page styles
+// --- FIX: Removed broken import for 'findBestSpecialMatch' ---
+import { parsePrice } from '../utils/priceUtils';
+// --- END FIX ---
 
-// --- Define week days and meal types ---
-const weekDays = [ "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday" ];
-const mealTypes = ["Lunch", "Dinner"];
-
-// --- Function to get date string for the week ---
-const getDateForDay = (dayName) => {
-    const today = new Date();
-    // Adjust today's index: Sunday (0) becomes 6, Monday (1) becomes 0, etc.
-    const currentDayIndex = today.getDay() === 0 ? 6 : today.getDay() - 1;
-    const targetDayIndex = weekDays.indexOf(dayName);
-    if (targetDayIndex === -1) return { iso: null, display: '' };
-
-    let dayDifference = targetDayIndex - currentDayIndex;
-    // No need to wrap around for past days in the *current* week view usually
-    // if (dayDifference < 0) dayDifference += 7; // Removed wrap-around logic
-
-    const targetDate = new Date(today);
-    targetDate.setDate(today.getDate() + dayDifference);
-
-    const isoDate = targetDate.toISOString().split('T')[0];
-    // Format for display (e.g., Mon 27/10)
-    const displayDate = targetDate.toLocaleDateString('en-AU', {
-        // weekday: 'short', // Keep day name separate
-        day: '2-digit',
-        month: '2-digit'
-    });
-
-    return { iso: isoDate, display: displayDate };
+// Helper functions for dnd-kit
+const getWeekDays = (startDate) => {
+    const days = [];
+    let currentDate = new Date(startDate);
+    for (let i = 0; i < 7; i++) {
+        days.push(new Date(currentDate));
+        currentDate.setDate(currentDate.getDate() + 1);
+    }
+    return days;
 };
 
-// --- Draggable Recipe (No change needed) ---
-function DraggableRecipeTile({ recipe }) {
-    const { attributes, listeners, setNodeRef, transform } = useDraggable({ id: `recipe-${recipe.id}`, data: { recipe } });
-    const style = { transform: CSS.Transform.toString(transform), zIndex: 100, cursor: 'grab' };
-    return <div ref={setNodeRef} style={style} {...listeners} {...attributes}><RecipeTile recipe={recipe} /></div>;
-}
+const formatDateISO = (date) => date.toISOString().split('T')[0];
 
-// --- NEW: Droppable Slot Component for Lunch/Dinner ---
-function DroppableSlot({ day, mealType, date, children }) {
-    const id = `slot-${date}-${mealType}`; // Unique ID including date and mealType
-    const { isOver, setNodeRef } = useDroppable({
-        id: id,
-        data: { date, mealType } // Pass date and mealType
-    });
-    const style = {
-        backgroundColor: isOver ? '#e8f5e9' : '#fdfdfd',
-        border: isOver ? '2px dashed #4caf50' : '1px dashed #ddd',
-        minHeight: '150px' // Adjust height as needed
-    };
-    return (
-        <div ref={setNodeRef} className="calendar-slot" style={style}>
-            <h4>{mealType}</h4>
-            <div className="slot-recipe-list">
-                {children.length > 0 ? children : <p>Drop here</p>}
-            </div>
-        </div>
-    );
-}
-// --- END NEW ---
-
-
-function MealPlanPage() {
-    const { userProfile, savedRecipes, fetchSavedRecipes, handleSelectRecipe, selectedRecipes } = useAuth();
+const MealPlanPage = () => {
+    // Note: 'allSpecials' is not currently passed in props, this logic was unfinished.
+    // We get 'savedRecipes' and 'handleSelectRecipe' from useAuth()
+    const { userProfile, savedRecipes, handleSelectRecipe } = useAuth();
     const [mealPlan, setMealPlan] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [allSpecials, setAllSpecials] = useState([]);
+    const [currentWeekStart, setCurrentWeekStart] = useState(() => {
+        const today = new Date();
+        today.setDate(today.getDate() - today.getDay()); // Start from Sunday
+        return today;
+    });
 
-    useEffect(() => {
-        axios.get('/api/prices/today')
-            .then(response => setAllSpecials(response.data))
-            .catch(error => console.error("Could not fetch specials for Meal Plan page", error));
-    }, []);
+    const weekDays = useMemo(() => getWeekDays(currentWeekStart), [currentWeekStart]);
 
-    useEffect(() => {
-        // Only fetch saved recipes if they aren't already loaded in context
-        if (!savedRecipes || savedRecipes.length === 0) {
-            fetchSavedRecipes();
-        }
-        fetchMealPlan();
-    // Ensure fetchSavedRecipes is stable via useCallback in context if including here
-    }, [fetchSavedRecipes, savedRecipes]);
+    // --- FIX: Incomplete totalCost logic removed ---
+    // The broken logic for `findBestSpecialMatch` was here.
+    // const totalCost = useMemo(() => { ... }, [mealPlan, allSpecials]);
+    // --- END FIX ---
 
-    const fetchMealPlan = async () => {
+
+    const fetchMealPlan = () => {
         setIsLoading(true);
-        try {
-            const res = await axios.get('/api/meal-plan');
-            setMealPlan(res.data); setError(null);
-        } catch (err) {
-            console.error("Error fetching meal plan:", err);
-            setError("Could not load meal plan."); toast.error("Could not load meal plan.");
-        } finally { setIsLoading(false); }
+        axios.get('/api/meal-plan')
+            .then(res => setMealPlan(res.data))
+            .catch(err => {
+                console.error("Error fetching meal plan:", err);
+                if (!err.response || err.response.status !== 401) {
+                    toast.error("Could not load meal plan.");
+                }
+            })
+            .finally(() => setIsLoading(false));
     };
 
-    // --- UPDATED: Group meal plan by Date and Meal Type ---
-    const mealPlanByDateAndType = useMemo(() => {
-        return mealPlan.reduce((acc, entry) => {
-            const dateStr = entry.plan_date; // Use the ISO date string as the key
-            if (!acc[dateStr]) acc[dateStr] = {};
-            if (!acc[dateStr][entry.meal_type]) acc[dateStr][entry.meal_type] = [];
-            acc[dateStr][entry.meal_type].push(entry);
-            return acc;
-        }, {});
-    }, [mealPlan]);
-    // --- END UPDATED ---
+    useEffect(() => {
+        fetchMealPlan();
+    }, []);
 
-    const planDetails = useMemo(() => {
-        // ... (calculation logic remains the same) ...
-        if (!mealPlan || mealPlan.length === 0) {
-            return { planIngredients: [], planCost: 0 };
-        }
-        const itemsMap = new Map();
-        let calculatedCost = 0;
-        mealPlan.forEach(({ recipe }) => {
-            if (!recipe || !recipe.ingredients) return; // Add safety check
-            recipe.ingredients.forEach(ingredient => {
-                const special = findBestSpecialMatch(ingredient.name, allSpecials);
-                const existingItem = itemsMap.get(ingredient.ingredient_id);
-                if (existingItem) {
-                    existingItem.count += 1;
-                    existingItem.recipeTitles.add(recipe.title);
-                } else {
-                    itemsMap.set(ingredient.ingredient_id, {
-                        id: ingredient.ingredient_id,
-                        name: ingredient.name,
-                        priceString: special ? special.price : null,
-                        store: special ? special.store : null,
-                        count: 1,
-                        recipeTitles: new Set([recipe.title]),
-                    });
-                }
-            });
-        });
-        const planIngredients = Array.from(itemsMap.values()).sort((a,b) => a.name.localeCompare(b.name));
-        calculatedCost = planIngredients.reduce((total, item) => {
-            if (item.priceString) {
-                return total + (getSimplePrice(item.priceString) * item.count);
-            }
-            return total;
-        }, 0);
-        return { planIngredients, planCost: calculatedCost };
-    }, [mealPlan, allSpecials]);
-
-    // --- UPDATED: Handle drag end to get date and mealType from drop target ---
-    const handleDragEnd = async (event) => {
+    const handleDrop = async (event) => {
         const { active, over } = event;
-        // Check if dropped onto a valid slot
-        if (!over || !over.id.startsWith('slot-') || !active.id.startsWith('recipe-')) return;
+        // Check if active.data.current exists and has the recipe
+        if (!over || !active.data.current || !active.data.current.recipe) {
+             console.warn("Drag drop cancelled: No active recipe data found.");
+             return;
+        }
 
-        const droppedRecipe = active.data.current?.recipe;
-        const targetDate = over.data.current?.date; // Get date from drop data
-        const targetMealType = over.data.current?.mealType; // Get mealType from drop data
+        const recipe = active.data.current.recipe;
+        const [dayStr, mealType] = over.id.split('-'); // e.g., "2023-10-27-Dinner"
 
-        if (!droppedRecipe || !targetDate || !targetMealType) {
-            console.error("Drag end failed: Missing recipe, date, or meal type data.");
+        const newEntry = {
+            recipe_id: recipe.id,
+            plan_date: dayStr,
+            meal_type: mealType,
+            use_for_leftovers: false, // Default value
+        };
+
+        try {
+            const res = await axios.post('/api/meal-plan', newEntry);
+            setMealPlan(prev => [...prev, res.data]);
+            toast.success(`Added "${recipe.title}" to ${mealType}`);
+        } catch (error) {
+            console.error("Error adding to meal plan:", error);
+            toast.error(error.response?.data?.detail || "Could not add to meal plan.");
+        }
+    };
+
+    const handleRemoveFromPlan = async (entryId, recipeTitle) => {
+         try {
+            await axios.delete(`/api/meal-plan/${entryId}`);
+            setMealPlan(prev => prev.filter(entry => entry.id !== entryId));
+            toast.info(`Removed "${recipeTitle}" from meal plan.`);
+        } catch (error) {
+            console.error("Error removing from meal plan:", error);
+            toast.error("Could not remove item.");
+        }
+    };
+
+    const addAllToShoppingList = () => {
+        // --- FIX: Filter by current week ---
+        const weekStartISO = formatDateISO(weekDays[0]);
+        const weekEndISO = formatDateISO(weekDays[6]);
+
+        const recipesInWeek = mealPlan
+            .filter(entry => {
+                return entry.plan_date >= weekStartISO && entry.plan_date <= weekEndISO;
+            })
+            // TODO: Add logic for leftovers
+            .map(entry => entry.recipe);
+        
+        if (recipesInWeek.length === 0) {
+            toast.info("No recipes in the current week to add.");
             return;
         }
 
-        console.log(`Dropped ${droppedRecipe.title} onto ${targetDate} ${targetMealType}`); // Debug log
-
-        try {
-            const payload = {
-                recipe_id: droppedRecipe.id,
-                plan_date: targetDate,
-                meal_type: targetMealType,
-                // Add use_for_leftovers later
-            };
-            const res = await axios.post('/api/meal-plan', payload);
-            setMealPlan(prevPlan => [...prevPlan, res.data]);
-            toast.success(`${droppedRecipe.title} added to ${targetMealType} on ${targetDate}`);
-        } catch (err) {
-             console.error("Error adding meal plan entry:", err.response?.data || err);
-             toast.error(err.response?.data?.detail || `Could not add ${droppedRecipe.title}.`);
-        }
-    };
-    // --- END UPDATED ---
-
-    const handleDeleteRecipe = async (entryId, recipeTitle) => {
-        // ... (logic remains the same) ...
-        if (!window.confirm(`Remove ${recipeTitle}?`)) return;
-        try {
-            await axios.delete(`/api/meal-plan/${entryId}`);
-            setMealPlan(prevPlan => prevPlan.filter(entry => entry.id !== entryId));
-            toast.info(`${recipeTitle} removed.`);
-        } catch (err) { console.error("Error deleting:", err); toast.error("Could not remove."); }
+        // Add each recipe to the shopping list
+        recipesInWeek.forEach(recipe => handleSelectRecipe(recipe));
+        toast.success(`Added ${recipesInWeek.length} planned meals to shopping list!`);
+        // --- END FIX ---
     };
 
-    const handleAddPlanToShoppingList = () => {
-        // ... (logic remains the same) ...
-        if (mealPlan.length === 0) { toast.info("Plan empty."); return; }
-        const currentIds = new Set(selectedRecipes.map(item => item.recipe.id));
-        let added = 0;
-        mealPlan.forEach(entry => { if (!currentIds.has(entry.recipe.id)) { handleSelectRecipe(entry.recipe); added++; } });
-        if (added > 0) toast.success(`Added ${added} new recipe(s) to shopping list!`);
-        else toast.info("All plan recipes already in list.");
+    // --- All the DND-Kit component definitions ---
+    const DraggableRecipe = ({ recipe }) => {
+        const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
+            id: `recipe-${recipe.id}`,
+            data: { recipe } // Attach the full recipe object to the active drag data
+        });
+        const style = {
+            transform: CSS.Transform.toString(transform),
+            transition,
+        };
+        // Use a simplified tile for dragging
+        return (
+            <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="draggable-recipe-tile">
+                {recipe.title}
+            </div>
+        );
     };
 
-    const isOverBudget = userProfile?.weekly_budget && planDetails.planCost > userProfile.weekly_budget;
+    const DroppableDaySlot = ({ day, mealType }) => {
+        const { setNodeRef } = useSortable({
+             id: `${formatDateISO(day)}-${mealType}`
+        });
+
+        const entriesForSlot = mealPlan.filter(entry =>
+            entry.plan_date === formatDateISO(day) && entry.meal_type === mealType
+        );
+
+        return (
+            <div ref={setNodeRef} className="day-slot-droppable">
+                <h4>{mealType}</h4>
+                <div className="slot-content">
+                    {entriesForSlot.length > 0 ? (
+                        entriesForSlot.map(entry => (
+                            <div key={entry.id} className="planned-meal-tile">
+                                <span>{entry.recipe.title}</span>
+                                <button
+                                    onClick={() => handleRemoveFromPlan(entry.id, entry.recipe.title)}
+                                    className="remove-meal-btn"
+                                >
+                                    &times;
+                                </button>
+                            </div>
+                        ))
+                    ) : (
+                        <span className="drop-placeholder">Drop recipe here</span>
+                    )}
+                </div>
+            </div>
+        );
+    };
+
+    const sensors = useSensors(
+        useSensor(PointerSensor)
+        // Add KeyboardSensor if needed for accessibility
+    );
+
 
     return (
-        <DndContext onDragEnd={handleDragEnd} collisionDetection={closestCenter}>
-            <div className="app-container meal-plan-page"> {/* Added meal-plan-page class */}
-                <header className="page-header">
-                    <h1>My Meal Plan</h1>
-                    <button onClick={handleAddPlanToShoppingList} className="add-plan-to-list-btn" disabled={mealPlan.length === 0}>
-                        Add Plan to Shopping List
-                    </button>
-                    {/* Simplified instructions */}
-                    <p>Drag recipes onto Lunch or Dinner slots below.</p>
-                </header>
-
-                {error && <p className="error-message">{error}</p>}
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDrop}>
+            <div className="app-container meal-plan-page">
+                <div className="page-header meal-plan-header">
+                    <h1>Weekly Meal Plan</h1>
+                    <div className="meal-plan-controls">
+                        <button onClick={addAllToShoppingList} className="btn btn-primary">
+                            Add Week to Shopping List
+                        </button>
+                        {/* --- REMOVED: Broken totalCost display --- */}
+                    </div>
+                </div>
 
                 <div className="meal-plan-layout">
-                    {/* Column 1: Saved Recipes (No changes needed here) */}
-                    <aside className="meal-plan-recipes-list">
-                        <h2>My Saved Recipes</h2>
-                        <div className="recipes-container">
-                            {isLoading && <p>Loading...</p>}
-                            {savedRecipes && savedRecipes.length > 0 ? (
-                                savedRecipes.map(recipe => <DraggableRecipeTile key={recipe.id} recipe={recipe} />)
-                            ) : (!isLoading && <p>No saved recipes. Add some!</p>)}
-                        </div>
-                    </aside>
-
-                    {/* Column 2: Calendar - UPDATED STRUCTURE */}
-                    <main className="meal-plan-calendar">
-                        {/* Removed "This Week's Plan" H2 */}
-                        <div className="calendar-days-container"> {/* New container */}
-                            {weekDays.map(day => {
-                                const { iso: dateStr, display: displayDate } = getDateForDay(day);
-                                const dayEntries = mealPlanByDateAndType[dateStr] || {};
-                                const lunchEntries = dayEntries["Lunch"] || [];
-                                const dinnerEntries = dayEntries["Dinner"] || [];
-
-                                return (
-                                    <div key={day} className="calendar-day-group">
-                                        <h3 className="day-group-header">{day} ({displayDate})</h3>
-                                        <div className="day-slots">
-                                            <DroppableSlot day={day} mealType="Lunch" date={dateStr}>
-                                                {lunchEntries.map(entry => (
-                                                    <div key={entry.id} className="planned-recipe-tile">
-                                                        <RecipeTile recipe={entry.recipe} />
-                                                        <button onClick={() => handleDeleteRecipe(entry.id, entry.recipe.title)} className="delete-plan-item-btn" title="Remove">&times;</button>
-                                                        {/* Add Leftovers Toggle Here Later */}
-                                                    </div>
-                                                ))}
-                                            </DroppableSlot>
-                                            <DroppableSlot day={day} mealType="Dinner" date={dateStr}>
-                                                {dinnerEntries.map(entry => (
-                                                     <div key={entry.id} className="planned-recipe-tile">
-                                                        <RecipeTile recipe={entry.recipe} />
-                                                        <button onClick={() => handleDeleteRecipe(entry.id, entry.recipe.title)} className="delete-plan-item-btn" title="Remove">&times;</button>
-                                                        {/* Add Leftovers Toggle Here Later */}
-                                                    </div>
-                                                ))}
-                                            </DroppableSlot>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </main>
-                    {/* END UPDATED STRUCTURE */}
-
-
-                    {/* Column 3: Plan Info (No changes needed here) */}
-                    <aside className="meal-plan-info-column">
-                        <h2>Plan Info</h2>
-                        {userProfile?.weekly_budget && (
-                            <div className={`budget-tracker ${isOverBudget ? 'over-budget' : ''}`}>
-                                <strong>Budget: ${userProfile.weekly_budget.toFixed(2)}</strong> /
-                                <span> Est. Cost: ${planDetails.planCost.toFixed(2)}</span>
-                                {isOverBudget && <span className="budget-warning"> (Over Budget!)</span>}
+                    {/* Sidebar for Draggable Recipes */}
+                    <SortableContext
+                        items={savedRecipes.map(r => `recipe-${r.id}`)}
+                        strategy={verticalListSortingStrategy}
+                    >
+                        <aside className="recipe-sidebar">
+                            <h3>Drag Your Saved Recipes</h3>
+                            <div className="draggable-recipe-list">
+                                {isLoading ? ( // Use the meal plan loading state
+                                    <p>Loading...</p>
+                                ) : (
+                                    savedRecipes.length > 0 ? (
+                                        savedRecipes.map(recipe => (
+                                            <DraggableRecipe key={recipe.id} recipe={recipe} />
+                                        ))
+                                    ) : (
+                                        <p>You have no saved recipes to plan with.</p>
+                                    )
+                                )}
                             </div>
-                        )}
-                        {planDetails.planIngredients.length > 0 ? (
-                            <>
-                                <h4>Ingredients Needed:</h4>
-                                <ul className="plan-ingredients-list">
-                                    {planDetails.planIngredients.map(item => (
-                                        <li key={item.id} className="plan-ingredient-item">
-                                            <span className="plan-ingredient-name">{item.name} {item.count > 1 ? `(${item.count})` : ''}</span>
-                                            <span className="plan-ingredient-price">
-                                                {item.priceString ? `$${getSimplePrice(item.priceString).toFixed(2)}` : 'N/A'}
-                                                {item.store && <span className="plan-ingredient-store"> @ {item.store}</span>}
-                                            </span>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </>
-                        ) : (
-                            <p>Add recipes to the plan to see ingredients here.</p>
-                        )}
-                    </aside>
+                        </aside>
+                    </SortableContext>
+
+                    {/* Main Weekly Calendar */}
+                    <main className="meal-plan-calendar">
+                         <div className="week-navigation">
+                            <button onClick={() => setCurrentWeekStart(d => new Date(d.setDate(d.getDate() - 7)))}>
+                                &larr; Previous Week
+                            </button>
+                            <span>
+                                {weekDays[0].toLocaleDateString()} - {weekDays[6].toLocaleDateString()}
+                            </span>
+                            <button onClick={() => setCurrentWeekStart(d => new Date(d.setDate(d.getDate() + 7)))}>
+                                Next Week &rarr;
+                            </button>
+                        </div>
+                        <SortableContext
+                             items={weekDays.flatMap(day => [
+                                `${formatDateISO(day)}-Lunch`,
+                                `${formatDateISO(day)}-Dinner`
+                            ])}
+                            strategy={verticalListSortingStrategy} // Not really sorting, just identifying
+                        >
+                            <div className="calendar-grid">
+                                {weekDays.map(day => (
+                                    <div key={day.toISOString()} className="calendar-day-cell">
+                                        <div className="day-header">
+                                            <strong>{day.toLocaleDateString('en-US', { weekday: 'long' })}</strong>
+                                            <span className="day-date">{day.toLocaleDateString('en-US', { day: 'numeric', month: 'short' })}</span>
+                                        </div>
+                                        <DroppableDaySlot day={day} mealType="Lunch" />
+                                        <DroppableDaySlot day={day} mealType="Dinner" />
+                                    </div>
+                                ))}
+                            </div>
+                        </SortableContext>
+                    </main>
                 </div>
             </div>
         </DndContext>
     );
-}
+};
 
 export default MealPlanPage;

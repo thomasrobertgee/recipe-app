@@ -1,49 +1,48 @@
 // src/utils/priceUtils.js
 
-export const getSimplePrice = (priceString) => {
-    if (!priceString) return 0;
-    // --- Using original regex to ensure consistency ---
-    const match = priceString.match(/\$(\d+\.?\d*)/);
-    return match ? parseFloat(match[1]) : 0;
-};
+/**
+ * Parses a price string (e.g., "$19.99/kg", "$1.50/ea", "2 for $5.00")
+ * and returns the primary numeric value.
+ * @param {string} priceString - The price string to parse.
+ * @returns {number | null} - The parsed price as a number, or null.
+ */
+export const parsePrice = (priceString) => {
+    if (!priceString) return null;
 
-// --- NEW: Fuzzy matching logic to find the best special for an ingredient ---
-// --- Using original simpler fuzzy match logic ---
-export const findBestSpecialMatch = (ingredientName, allSpecials) => {
-    if (!ingredientName || !allSpecials) return null;
-
-    const lowerCaseIngredient = ingredientName.toLowerCase().trim(); // Added trim for safety
-
-    // 1. Look for an exact match first
-    const exactMatch = allSpecials.find(s => s.ingredient_name.toLowerCase().trim() === lowerCaseIngredient);
-    if (exactMatch) return exactMatch;
-
-    // 2. If no exact match, look for a partial match (ingredient name contains special name)
-    const partialMatchContains = allSpecials.find(s => lowerCaseIngredient.includes(s.ingredient_name.toLowerCase().trim()));
-    if (partialMatchContains) return partialMatchContains;
-
-    // 3. If still no match, look for special name contains ingredient name (more broad)
-    const partialMatchIncludedIn = allSpecials.find(s => s.ingredient_name.toLowerCase().trim().includes(lowerCaseIngredient));
-    if (partialMatchIncludedIn) return partialMatchIncludedIn;
-
-    // If no match found at all
-    return null; // Return null if no match found
-};
-
-// --- Restored calculateSingleRecipeCost function ---
-export const calculateSingleRecipeCost = (recipe, allSpecials) => {
-    if (!recipe || !recipe.ingredients || !allSpecials) return 0;
-
-    const costedSpecials = new Set();
-    let totalCost = 0;
-
-    for (const ingredient of recipe.ingredients) {
-        const special = findBestSpecialMatch(ingredient.name, allSpecials);
-
-        if (special && !costedSpecials.has(special.ingredient_name)) {
-            totalCost += getSimplePrice(special.price);
-            costedSpecials.add(special.ingredient_name);
-        }
+    // 1. Handle "2 for $5.00" -> 5.00
+    const forMatch = priceString.match(/for\s*\$(\d+\.\d{2})/);
+    if (forMatch && forMatch[1]) {
+        return parseFloat(forMatch[1]);
     }
-    return totalCost;
+
+    // 2. Handle "$19.99/kg" or "$1.50" -> 19.99 or 1.50
+    const dollarMatch = priceString.match(/\$(\d+\.\d{2})/);
+    if (dollarMatch && dollarMatch[1]) {
+        return parseFloat(dollarMatch[1]);
+    }
+
+    // 3. Handle "$0.80" -> 0.80
+    const centMatch = priceString.match(/\$(\d+\.\d{1,2})/);
+        if (centMatch && centMatch[1]) {
+        return parseFloat(centMatch[1]);
+    }
+    
+    // 4. Handle "80c" -> 0.80
+        const centOnlyMatch = priceString.match(/(\d+)c/);
+        if (centOnlyMatch && centOnlyMatch[1]) {
+            return parseFloat(centOnlyMatch[1]) / 100;
+        }
+
+    // Fallback: try to find any number
+    const fallbackMatch = priceString.match(/(\d+\.\d{2})/);
+        if (fallbackMatch && fallbackMatch[1]) {
+        return parseFloat(fallbackMatch[1]);
+    }
+    
+    const simpleNumMatch = priceString.match(/(\d+)/);
+        if (simpleNumMatch && simpleNumMatch[1]) {
+            return parseFloat(simpleNumMatch[1]);
+        }
+
+    return null; // Could not parse
 };

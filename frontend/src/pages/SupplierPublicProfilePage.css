@@ -1,0 +1,93 @@
+/* src/pages/SupplierPublicProfilePage.css */
+
+.supplier-public-profile-page .profile-page-header {
+    border-bottom: 2px solid var(--color-accent);
+    padding-bottom: 1.5rem;
+    margin-bottom: 1.5rem;
+    align-items: flex-start; /* Align items to the top */
+}
+
+.supplier-public-profile-page .profile-page-header h1 {
+    font-size: 2rem;
+    margin: 0;
+}
+
+.supplier-public-profile-page .profile-page-header .supplier-logo {
+    width: 100px;
+    height: 100px;
+}
+
+/* --- NEW: Follow Button --- */
+.supplier-public-profile-page .profile-page-header .follow-btn {
+    margin-left: auto; /* Pushes button to the far right */
+    padding: 0.75rem 1.25rem;
+    font-size: 1rem;
+    min-width: 140px; /* Give it a consistent width */
+}
+/* --- END NEW --- */
+
+
+.supplier-profile-body {
+    background-color: #fff;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.supplier-profile-body .supplier-description {
+    font-size: 1.1rem;
+    line-height: 1.7;
+    text-align: center;
+    margin: 0.5rem 0 1.5rem 0;
+}
+
+.supplier-info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    border-top: 1px solid var(--color-border);
+    padding-top: 1.5rem;
+}
+
+.supplier-info-grid .supplier-info {
+    font-size: 1rem;
+}
+
+.supplier-specials-section h2 {
+    font-size: 1.5rem;
+    color: var(--color-primary-dark);
+    border-bottom: 2px solid var(--color-accent);
+    padding-bottom: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+/* On the profile page, we want a single column list */
+.profile-specials-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    max-width: 600px; /* Make list readable */
+}
+
+@media (max-width: 768px) {
+    .supplier-info-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .supplier-public-profile-page .profile-page-header {
+        flex-direction: column;
+        text-align: center;
+        align-items: center; /* Center items in column layout */
+        gap: 1rem;
+    }
+
+     .supplier-public-profile-page .profile-page-header .supplier-type {
+        align-self: center;
+     }
+
+     .supplier-public-profile-page .profile-page-header .follow-btn {
+        margin-left: 0; /* Remove auto margin */
+        width: 100%;
+    }
+}

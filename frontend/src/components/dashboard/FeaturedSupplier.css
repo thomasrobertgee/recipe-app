@@ -1,0 +1,63 @@
+/* src/components/dashboard/FeaturedSupplier.css */
+
+.featured-supplier-module {
+    background-color: var(--color-accent-light);
+    border: 1px solid var(--color-accent);
+}
+
+.featured-supplier-module h3 {
+    color: var(--color-primary-dark);
+    margin-top: 0;
+    border-bottom: 2px solid var(--color-accent);
+    padding-bottom: 0.5rem;
+}
+
+.featured-supplier-card {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+}
+
+.featured-supplier-logo {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--color-accent);
+    flex-shrink: 0;
+}
+
+.featured-supplier-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.featured-supplier-info h4 {
+    margin: 0;
+    font-size: 1.25rem;
+    color: var(--color-primary-dark);
+}
+
+.featured-supplier-info .supplier-type {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--color-secondary);
+    background-color: #fff;
+    border: 1px solid var(--color-border);
+    padding: 0.25rem 0.5rem;
+    border-radius: 5px;
+    align-self: flex-start;
+}
+
+.featured-supplier-info p {
+    font-size: 0.9rem;
+    color: var(--color-secondary);
+    margin: 0.25rem 0;
+    line-height: 1.5;
+}
+
+.featured-supplier-info .btn-secondary {
+    margin-top: 0.5rem;
+    align-self: flex-start;
+}
