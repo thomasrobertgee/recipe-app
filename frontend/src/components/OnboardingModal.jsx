@@ -16,7 +16,9 @@ const CUISINE_OPTIONS = [
 const SKILL_OPTIONS = ["Beginner", "Intermediate", "Advanced"];
 
 const OnboardingModal = ({ onClose }) => {
-  const { userProfile, fetchUserProfile } = useAuth();
+  // --- FIX: Use refreshUserProfile, which is what AuthContext provides ---
+  const { userProfile, refreshUserProfile } = useAuth();
+  // --- END FIX ---
   const [step, setStep] = useState(1);
   
   // --- State to hold all the data ---
@@ -145,7 +147,11 @@ const OnboardingModal = ({ onClose }) => {
     try {
       await axios.put('/users/me', payload);
       toast.success("Profile setup complete! Welcome!");
-      await fetchUserProfile(); // Re-fetch the user to get the new data
+      
+      // --- FIX: Call the correct function from AuthContext ---
+      await refreshUserProfile(); // Re-fetch the user to get the new data
+      // --- END FIX ---
+
       onClose(); // This will be passed from DashboardPage
     } catch (err) {
       console.error("Failed to save profile:", err);

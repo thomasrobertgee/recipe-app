@@ -15,20 +15,20 @@ The application consists of a Python backend that serves data from a database an
 - **Global Navbar Search:** A persistent search bar in the main navbar (for consumers) allows searching across recipes, ingredients, and today's specials. Displays a quick dropdown with top results and links to a full search results page.
 - **Dedicated Search Results Page:** A `/search` page displays all results for a query, organized into tabs for Recipes, Specials, and Ingredients, with clickable result tiles.
 - **Improved Dashboard:** A personalized hub featuring:
-    * **Quick Actions:** Buttons for core functions (generate recipes, scan items, navigate). Placed first for mobile visibility.
-    * **Notifications Preview:** Displays dismissible placeholder notifications (backend pending).
-    * **Meal Plan Preview:** Shows upcoming meals for today/tomorrow using full Recipe Cards.
-    * **Pantry Snapshot:** Lists a few items currently in the pantry.
-    * **Budget Summary:** Displays current shopping list cost vs budget tracker.
-    * **Recent Activity:** Shows recently saved recipes.
-    * **"My Favourite Shops" Module:** A new module showing active specials *only* from the user's followed suppliers.
-    * **"Featured Supplier" Module:** A module that highlights a specific featured supplier in the user's local area.
+  	* **Quick Actions:** Buttons for core functions (generate recipes, scan items, navigate). Placed first for mobile visibility.
+  	* **Notifications Preview:** Displays dismissible placeholder notifications (backend pending).
+  	* **Meal Plan Preview:** Shows upcoming meals for today/tomorrow using full Recipe Cards.
+  	* **Pantry Snapshot:** Lists a few items currently in the pantry.
+  	* **Budget Summary:** Displays current shopping list cost vs budget tracker.
+  	* **Recent Activity:** Shows recently saved recipes.
+  	* **"My Favourite Shops" Module:** A new module showing active specials *only* from the user's followed suppliers.
+  	* **"Featured Supplier" Module:** A module that highlights a specific featured supplier in the user's local area.
 - **Refocused "Local First" UI:** The `SpecialsPage` and `Dashboard` specials preview now default to a "Local Specials" tab, with supermarkets moved to a "Supermarket Comparison" tab.
 - **Robust Web Scraper:**
-    - Utilizes **ScrapingBee** to bypass bot detection and render JavaScript-heavy pages.
-    - Scrapes specific, high-value categories (e.g., "Meat & Seafood", "Fruit & Vegetables").
-    - **Dynamically handles pagination**, scraping all available pages for each category automatically.
-    - Extracts detailed price information, including unit prices (e.g., per kg).
+  	- Utilizes **ScrapingBee** to bypass bot detection and render JavaScript-heavy pages.
+  	- Scrapes specific, high-value categories (e.g., "Meat & Seafood", "Fruit & Vegetables").
+  	- **Dynamically handles pagination**, scraping all available pages for each category automatically.
+  	- Extracts detailed price information, including unit prices (e.g., per kg).
 - **AI-powered recipe generation** that uses a user's saved preferences and pantry items to create tailored recipes (Note: Recipes are now generated globally and not auto-saved to user profiles).
 - **AI-powered Recipe Modification:** Users can request modifications to any recipe (e.g., "make this vegan", "double the servings"), and the AI will generate a new, updated version.
 - **My Pantry Feature:** Users can add from a categorized list of staple ingredients to their personal pantry. Pantry state is managed globally via React Context.
@@ -36,26 +36,27 @@ The application consists of a Python backend that serves data from a database an
 - **Receipt Scanning (with Correction UI):** Users can upload or take a photo of a receipt. Google Cloud Vision OCR extracts text, and OpenAI API parses potential items. A modal displays these items, allowing the user to correct names, add missing items, or remove incorrect ones before adding them to their pantry.
 - **Recipe Ratings & Filtering:** Users can rate recipes and filter/sort them.
 - **Intelligent Shopping List:**
-    - A dynamic list that consolides ingredients, calculates costs, and tracks spending against a user's budget.
-    - **Now supports adding individual specials** directly to the list, separate from recipes.
-    * **Smart Pantry Sync:** Automatically cross-references ingredients with the user's pantry (managed via Context). Items already owned are moved to an "Already in pantry" section, allowing users to override and move items back to the main list if needed. Cost calculations exclude items marked as already in the pantry.
+  	- A dynamic list that consolides ingredients, calculates costs, and tracks spending against a user's budget.
+  	- **Now supports adding individual specials** directly to the list, separate from recipes.
+  	* **Smart Pantry Sync:** Automatically cross-references ingredients with the user's pantry (managed via Context). Items already owned are moved to an "Already in pantry" section, allowing users to override and move items back to the main list if needed. Cost calculations exclude items marked as already in the pantry.
 - **Interactive Cook Mode:** A persistent, step-by-step cooking interface with integrated, clickable timers to guide users while cooking.
 - **Meal Planner & Weekly Budgeting:**
-    - Dedicated "Meal Plan" page with a weekly layout featuring separate **Lunch** and **Dinner** drop zones for each day.
-    - Users can drag and drop saved recipes onto specific meal slots. Backend support added for `meal_type` and `use_for_leftovers` flags.
-    - Displays consolidated ingredients and estimated cost for the current plan, tracked against the user's weekly budget.
-    - Button to add all planned recipes to the main shopping list.
+  	- Dedicated "Meal Plan" page with a weekly layout featuring separate **Lunch** and **Dinner** drop zones for each day.
+  	- Users can drag and drop saved recipes onto specific meal slots. Backend support added for `meal_type` and `use_for_leftovers` flags.
+  	- Displays consolidated ingredients and estimated cost for the current plan, tracked against the user's weekly budget.
+  	- Button to add all planned recipes to the main shopping list.
 - **Full CRUD functionality** for recipes and specials.
-- **Recent Bug Fixes:** Addressed issues related to dashboard layout spacing, meal plan date filtering (timezone), receipt scanning database transactions, AI prompt formatting for instructions and receipt items, JSON serialization errors, recipe rating display updates, login redirection for suppliers, missing Link import, `pydantic` email validation dependency, and supplier auth page centering.
+- **Recent Bug Fixes:** Addressed issues related to dashboard layout spacing, meal plan date filtering (timezone), receipt scanning database transactions, AI prompt formatting for instructions and receipt items, JSON serialization errors, recipe rating display updates, login redirection for suppliers, missing Link import, `pydantic` email validation dependency, and supplier auth page centering. **Fixed post-registration flow by refactoring AuthContext with a `loginWithToken` function, resolving a 401 error on signup. Also fixed a 422 Unprocessable Content error on Google Login and a `TypeError` in the OnboardingModal by correcting function names.**
 
 ### Supplier Platform Features
 The app has been pivoted to a B2B2C platform centered on local suppliers.
 - **New Supplier Onboarding:** A dedicated supplier sign-up flow. **Registration now automatically logs suppliers in** and directs them to an onboarding modal on first login to create their business profile.
-- **Separate Auth Pages:** Separate, blue-themed login and sign-up pages for the supplier portal.
+- **Separate Auth Pages:** Separate, **blue-themed** login and sign-up pages for the supplier portal.
 - **Enhanced Supplier Profiles:** Suppliers have a "My Profile" tab to manage their "Digital Storefront," including `business_name`, `address`, `postcode`, `logo_url`, `business_type`, `description`, and `opening_hours`.
 - **Supplier Specials Management:** Dedicated portal for suppliers to log in and manage their own weekly specials (add/delete items and prices), including setting **expiry dates**.
 - **Supplier Analytics Dashboard:** A module on the supplier dashboard showing total `view_count` and `save_count` (list adds) for their specials.
 - **Supplier Quick-Add:** A retention feature on the supplier dashboard that lists previously added items, allowing them to pre-fill the "Add Special" form with one click.
+- **Consistent Theming:** The entire supplier-facing portal (Navbar, Dashboard, Modals) is now themed with a distinct blue color palette to differentiate it from the consumer-facing app.
 
 ### Consumer-Facing Supplier Features
 - **Local Supplier Discovery Page:** A new `/suppliers` page for consumers to find local suppliers, filtered by their postcode.
@@ -79,9 +80,9 @@ Here are some of the planned features to evolve the app from an MVP into a full-
 ### Existing Feature Improvements
 6.  **Smarter Shopping List (Sort by Aisle):** Automatically group items on the "Intelligent Shopping List" based on their ingredient category (e.g., "Fruit & Vegetables," "Meat & Seafood") to optimize the in-store shopping experience.
 7.  **Shopping List Completion:** When items are checked off in the shopping list, provide an "Add Checked Items to Pantry" button. Clicking this would:
-    * Add the corresponding ingredients to the user's pantry.
-    * Remove the checked items from the shopping list.
-    * (Optional) Log the purchase (items, date, cost) to a history section, potentially linked to the budget tracker.
+  	* Add the corresponding ingredients to the user's pantry.
+  	* Remove the checked items from the shopping list.
+  	* (Optional) Log the purchase (items, date, cost) to a history section, potentially linked to the budget tracker.
 8.  **Meal Planner "Leftovers" Integration:** Add a "Use for leftovers?" toggle when adding/viewing a recipe in the meal plan UI. Update shopping list logic to ignore ingredients from recipes marked as leftovers for the next day's lunch.
 9.  **Dynamic Cook Mode Scaling:** Add a dropdown (e.g., "0.5x", "1x", "2x") to the "Cook Mode" interface that dynamically updates all ingredient quantities within the step-by-step instructions.
 10. **Save Generated AI Recipes:** Add a "Save Recipe" button to the UI for AI-generated recipes, allowing users to save them to "My Saved Recipes" with one click.
@@ -111,20 +112,20 @@ A collection of ideas for improving the application's User Interface, primarily 
 ### Landing Page (First Impression)
 
 1.  **Hero Section Improvements:**
-    * **Stronger Headline:** Replace the generic "Welcome" with a benefit-driven headline like "Cook Smarter with AI-Powered Specials" or "Stop Overspending on Groceries."
-    * **Clearer Call to Action (CTA):** Change the "Get Started" button text to a more direct and low-friction CTA like "Sign Up for Free."
-    * **Better Visuals:** Replace the placeholder hero image with a high-quality, relevant photo. An idea is a split-screen image showing a supermarket receipt on one side and a delicious finished meal on the other, visually connecting the app's core concepts.
+  	* **Stronger Headline:** Replace the generic "Welcome" with a benefit-driven headline like "Cook Smarter with AI-Powered Specials" or "Stop Overspending on Groceries."
+  	* **Clearer Call to Action (CTA):** Change the "Get Started" button text to a more direct and low-friction CTA like "Sign Up for Free."
+  	* **Better Visuals:** Replace the placeholder hero image with a high-quality, relevant photo. An idea is a split-screen image showing a supermarket receipt on one side and a delicious finished meal on the other, visually connecting the app's core concepts.
 
 2.  **Features Section Improvements:**
-    * **"Show, Don't Tell":** Replace the generic icons in the features section with small, clean screenshots of the *actual* application. For example:
-        * "Save Money" -> Show a crop of the `SpecialsPage`.
-        * "AI Powered" -> Show an `RecipeCard` with its AI tags.
-        * "Reduce Waste" -> Show a snippet of the `My Pantry` page.
-    * This builds user trust by proving the features are real and tangible.
+  	* **"Show, Don't Tell":** Replace the generic icons in the features section with small, clean screenshots of the *actual* application. For example:
+  	 	* "Save Money" -> Show a crop of the `SpecialsPage`.
+  	 	* "AI Powered" -> Show an `RecipeCard` with its AI tags.
+  	 	* "Reduce Waste" -> Show a snippet of the `My Pantry` page.
+  	* This builds user trust by proving the features are real and tangible.
 
 3.  **Supplier Section & Navbar Flow:**
-    * **Visual Separation:** Give the "For Suppliers" section on the landing page a distinct background color (e.g., light grey) to visually separate it from the main consumer-focused features.
-    * **De-clutter Navbar:** Move the "For Suppliers" link out of the main homepage/navbar flow and place it in a new website footer. This keeps the homepage 99% focused on the primary user (the home cook), as suppliers will know to look in the footer for business-related links.
+  	* **Visual Separation:** Give the "For Suppliers" section on the landing page a distinct background color (e.g., light grey) to visually separate it from the main consumer-focused features.
+  	* **De-clutter Navbar:** Move the "For Suppliers" link out of the main homepage/navbar flow and place it in a new website footer. This keeps the homepage 99% focused on the primary user (the home cook), as suppliers will know to look in the footer for business-related links.
 
 ---
 
@@ -167,55 +168,55 @@ To get the application running locally, you will need to set up and run both the
 This project requires several API keys/credentials to function.
 
 1.  **Backend (`backend/.env`):**
-    ```
-    SECRET_KEY="YOUR_JWT_SECRET_KEY"
-    OPENAI_API_KEY="YOUR_OPENAI_API_KEY"
-    SCRAPINGBEE_API_KEY="YOUR_SCRAPINGBEE_API_KEY"
-    GOOGLE_CLIENT_ID="YOUR_GOOGLE_CLOUD_CLIENT_ID"
-    ```
+  	```
+  	SECRET_KEY="YOUR_JWT_SECRET_KEY"
+  	OPENAI_API_KEY="YOUR_OPENAI_API_KEY"
+  	SCRAPINGBEE_API_KEY="YOUR_SCRAPINGBEE_API_KEY"
+  	GOOGLE_CLIENT_ID="YOUR_GOOGLE_CLOUD_CLIENT_ID"
+  	```
 2.  **Backend (Environment Variable):** Set this in your terminal *before* running `uvicorn`:
-    ```bash
-    # Windows Command Prompt:
-    # set GOOGLE_APPLICATION_CREDENTIALS="C:\path\to\your\gcloud_keyfile.json"
-    # Git Bash / Linux / macOS:
-    export GOOGLE_APPLICATION_CREDENTIALS="/path/to/your/gcloud_keyfile.json"
-    ```
+  	```bash
+  	# Windows Command Prompt:
+  	# set GOOGLE_APPLICATION_CREDENTIALS="C:\path\to\your\gcloud_keyfile.json"
+  	# Git Bash / Linux / macOS:
+  	export GOOGLE_APPLICATION_CREDENTIALS="/path/to/your/gcloud_keyfile.json"
+  	```
 3.  **Frontend (`frontend/.env`):**
-    ```
-    VITE_GOOGLE_CLIENT_ID="YOUR_GOOGLE_CLOUD_CLIENT_ID"
+  	```
+  	VITE_GOOGLE_CLIENT_ID="YOUR_GOOGLE_CLOUD_CLIENT_ID"
 NT  ```
 
 ### Backend Setup
 1.  Navigate to the backend directory:
-    ```sh
-    cd recipe-app/backend
-    ```
+  	```sh
+  	cd recipe-app/backend
+  	```
 2.  Create and activate a virtual environment:
-    ```sh
-    # Create the environment
-    python -m venv venv
+  	```sh
+  	# Create the environment
+  	python -m venv venv
 
-    # Activate on Windows (Git Bash)
-    source venv/Scripts/activate
+  	# Activate on Windows (Git Bash)
+  	source venv/Scripts/activate
 
-    # Activate on macOS/Linux
-    # source venv/bin/activate
-    ```
+  	# Activate on macOS/Linux
+  	# source venv/bin/activate
+  	```
 3.  Install dependencies:
-    ```sh
-    pip install -r requirements.txt
-    ```
-    **Note:** The `requirements.txt` file now includes `email-validator` for Pydantic's `EmailStr` support.
+  	```sh
+  	pip install -r requirements.txt
+  	```
+  	**Note:** The `requirements.txt` file now includes `email-validator` for Pydantic's `EmailStr` support.
 
 ### Frontend Setup
 1.  In a separate terminal, navigate to the frontend directory:
-    ```sh
-    cd recipe-app/frontend
-    ```
+  	```sh
+  	cd recipe-app/frontend
+  	```
 2.  Install dependencies:
-    ```sh
-    npm install
-    ```
+  	```sh
+  	npm install
+  	```
 
 ### Seeding the Database (Optional)
 To populate your database with a large set of sample data, you can run the seeder script.
@@ -223,9 +224,9 @@ To populate your database with a large set of sample data, you can run the seede
 
 1.  Make sure your backend server is running.
 2.  In a second backend terminal (with the venv active), run:
-    ```sh
-    python seed.py
-    ```
+  	```sh
+  	python seed.py
+  	```
 This will create 26 test users (`a@a.com` to `z@z.com`, password: `1234567890`) and 150 specials from Coles, Woolworths, and Aldi.
 
 ---
@@ -234,18 +235,18 @@ This will create 26 test users (`a@a.com` to `z@z.com`, password: `1234567890`) 
 For the app to work, both servers must be running simultaneously.
 
 1.  **Start the Backend Server:**
-    In your backend terminal (`recipe-app/backend`), run:
-    ```sh
-    uvicorn main:app --reload
-    ```
-    The backend will be available at `http://127.0.0.1:8000`.
+  	In your backend terminal (`recipe-app/backend`), run:
+  	```sh
+  	uvicorn main:app --reload
+  	```
+  	The backend will be available at `http://127.0.0.1:8000`.
 
 2.  **Start the Frontend Server:**
-    In your frontend terminal (`recipe-app/frontend`), run:
-    ```sh
-    npm run dev
-    ```
-    The frontend will be available at `http://localhost:5173`.
+  	In your frontend terminal (`recipe-app/frontend`), run:
+  	```sh
+  	npm run dev
+  	```
+  	The frontend will be available at `http://localhost:5173`.
 
 ---
 
@@ -254,41 +255,41 @@ For the app to work, both servers must be running simultaneously.
 You can test the locally running application on your mobile phone if it's connected to the same Wi-Fi network as your development PC.
 
 1.  **Find your PC's Local IP Address:**
-    * **Windows:** Open Command Prompt (`cmd`) and run `ipconfig`. Look for the IPv4 address under your active Wi-Fi or Ethernet adapter (e.g., `192.168.1.100`).
-    * **Mac:** System Preferences > Network > Wi-Fi.
-    * **Linux:** Run `ip addr show` in a terminal.
+  	* **Windows:** Open Command Prompt (`cmd`) and run `ipconfig`. Look for the IPv4 address under your active Wi-Fi or Ethernet adapter (e.g., `192.168.1.100`).
+  	* **Mac:** System Preferences > Network > Wi-Fi.
+  	* **Linux:** Run `ip addr show` in a terminal.
 
 2.  **Configure Servers to Allow Network Access:**
-    * **Backend (Uvicorn):** Start the server with the `--host 0.0.0.0` flag:
-        ```sh
-        uvicorn main:app --reload --host 0.0.0.0
-        ```
-    * **Frontend (Vite):** Modify the `dev` script in `frontend/package.json` to include the `--host` flag:
-        ```json
-        "scripts": {
-          "dev": "vite --host",
-          // ... other scripts
-        },
-        ```
-        Then restart the frontend server (`npm run dev`).
-    * **Backend CORS:** Add your PC's network origin to the `origins` list in `backend/main.py`:
-        ```python
-        origins = [
-            "http://localhost:5173",
-            "http://<YOUR_PC_IP_ADDRESS>:5173" # e.g., "[http://192.168.1.100:5173](http://192.168.1.100:5173)"
-        ]
-        ```
-        Restart the backend server after this change.
+  	* **Backend (Uvicorn):** Start the server with the `--host 0.0.0.0` flag:
+  	 	```sh
+  	 	uvicorn main:app --reload --host 0.0.0.0
+  	 	```
+  	* **Frontend (Vite):** Modify the `dev` script in `frontend/package.json` to include the `--host` flag:
+  	 	```json
+  	 	"scripts": {
+  	 	 	"dev": "vite --host",
+  	 	 	// ... other scripts
+  	 	},
+  	 	```
+  	 	Then restart the frontend server (`npm run dev`).
+  	* **Backend CORS:** Add your PC's network origin to the `origins` list in `backend/main.py`:
+  	 	```python
+  	 	origins = [
+  	 	 	"http://localhost:5173",
+  	 	 	"http://<YOUR_PC_IP_ADDRESS>:5173" # e.g., "[http://192.168.1.100:5173](http://192.168.1.100:5173)"
+  	 	]
+  	 	```
+  	 	Restart the backend server after this change.
 
 3.  **Update Frontend API Base URL (Temporarily):**
-img   * In `frontend/src/context/AuthContext.jsx`, change `axios.defaults.baseURL` to use your PC's IP address and the **backend port (8000)**:
-        ```jsx
-        axios.defaults.baseURL = 'http://<YOUR_PC_IP_ADDRESS>:8000'; // e.g., '[http://192.168.1.100:8000](http://192.168.1.100:8000)'
-        ```
-    * Restart the frontend server.
+img 	* In `frontend/src/context/AuthContext.jsx`, change `axios.defaults.baseURL` to use your PC's IP address and the **backend port (8000)**:
+  	 	```jsx
+  	 	axios.defaults.baseURL = 'http://<YOUR_PC_IP_ADDRESS>:8000'; // e.g., '[http://192.168.1.100:8000](http://192.168.1.100:8000)'
+  	 	```
+  	* Restart the frontend server.
 
 4.  **Access on Mobile:**
-    * Open a browser on your phone and navigate to `http://<YOUR_PC_IP_ADDRESS>:5173`.
+  	* Open a browser on your phone and navigate to `http://<YOUR_PC_IP_ADDRESS>:5173`.
 
 **Notes:**
 * Ensure both devices are on the exact same Wi-Fi network.

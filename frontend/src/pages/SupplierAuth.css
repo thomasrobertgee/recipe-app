@@ -1,11 +1,8 @@
 /* src/pages/SupplierAuth.css */
 /* Standalone CSS for Supplier Auth pages (Blue Theme) */
 
-/* Define blue theme variables */
-:root {
-    --supplier-primary-color: #007bff; /* A standard blue */
-    --supplier-primary-hover: #0056b3; /* A darker blue for hover */
-}
+/* Note: The variables are now defined globally in index.css 
+*/
 
 /* Base layout styles (copied from AuthForm.css) */
 .supplier-auth-container {
@@ -37,19 +34,21 @@
 
 .supplier-auth-container .auth-form p {
     margin-bottom: 1.5rem;
-    color: #555;
+    color: var(--color-text-secondary);
 }
 
-/* Form Groups */
+/* Form Group */
 .supplier-auth-container .form-group {
-    margin-bottom: 1.25rem;
+    margin-bottom: 1rem;
     text-align: left;
 }
 
 .supplier-auth-container .form-group label {
     display: block;
     margin-bottom: 0.5rem;
-    font-weight: 600;
+    font-weight: 500;
+    font-size: 0.9rem;
+    color: var(--color-text-primary);
 }
 
 .supplier-auth-container .form-group input {
@@ -58,7 +57,7 @@
     border: 1px solid #ccc;
     border-radius: 5px;
     font-size: 1rem;
-    box-sizing: border-box; 
+    box-sizing: border-box; /* Important for padding to work with 100% width */
 }
 
 .supplier-auth-container .form-divider {
@@ -99,26 +98,25 @@
 }
 
 .supplier-auth-container .form-footer p {
-    margin: 0.5rem 0;
+    margin-bottom: 0.5rem;
 }
 
 .supplier-auth-container .form-footer a {
     color: var(--supplier-primary-color);
     text-decoration: none;
-    font-weight: 600;
+    font-weight: 500;
 }
-
 .supplier-auth-container .form-footer a:hover {
     text-decoration: underline;
 }
 
-/* Error Message (stays the same) */
+/* Error (Blue) */
 .supplier-auth-container .error-message {
-    background-color: #ffebee;
-    color: #c62828;
-    border: 1px solid #ef9a9a;
+    color: var(--color-danger);
+    background-color: #fdd;
+    border: 1px solid var(--color-danger);
     border-radius: 5px;
-    padding: 0.75rem 1rem;
-    margin-bottom: 1.5rem;
-    text-align: center;
+    padding: 0.75rem;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
 }

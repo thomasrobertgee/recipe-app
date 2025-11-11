@@ -24,7 +24,7 @@ This file just adds supplier-specific overrides.
 
 .supplier-onboarding-modal .modal-header h2 {
     margin: 0;
-    color: var(--supplier-primary-color, #007bff); /* Use blue theme */
+    color: var(--supplier-primary-color); /* Use blue theme */
 }
 
 .supplier-onboarding-modal .modal-header p {
@@ -67,8 +67,9 @@ This file just adds supplier-specific overrides.
 
 .supplier-onboarding-modal .modal-input:focus {
     outline: none;
-    border-color: var(--supplier-primary-color, #007bff);
-    box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+    border-color: var(--supplier-primary-color);
+    /* --- UPDATED: Use variable for box-shadow color --- */
+    box-shadow: 0 0 0 2px var(--supplier-primary-color-focus-ring, rgba(0,123,255,0.25));
 }
 
 /* Specific overrides for textarea */
@@ -98,7 +99,7 @@ This file just adds supplier-specific overrides.
 }
 
 .supplier-onboarding-modal .modal-btn.primary {
-    background-color: var(--supplier-primary-color, #007bff);
+    background-color: var(--supplier-primary-color);
     color: white;
 }
 

@@ -141,16 +141,14 @@ export const AuthProvider = ({ children }) => {
                 localStorage.removeItem('selectedSpecials'); // <-- NEW
                 delete axios.defaults.headers.common['Authorization'];
                 toast.info("Session expired. Please log in again.");
-                
-                // --- SMART REDIRECT FIX ---
-                // Check if we are on a supplier route
+
+                // --- SMART REDIRECT FIX (from previous step) ---
                 if (window.location.pathname.startsWith('/portal')) {
                     navigate('/portal/login');
                 } else {
                     navigate('/login');
                 }
                 // --- END FIX ---
-
             }
         } finally {
             setIsLoading(false);
@@ -174,9 +172,7 @@ export const AuthProvider = ({ children }) => {
 
     // --- REMOVED Notification polling useEffect ---
 
-    // --- *** NEW: loginWithToken *** ---
-    // This function is for post-registration or Google login
-    // It assumes you ALREADY have a valid token
+    // --- NEW: loginWithToken (Correct from last step) ---
     const loginWithToken = async (accessToken) => {
         setIsLoading(true);
         try {
@@ -189,7 +185,6 @@ export const AuthProvider = ({ children }) => {
             await fetchUserProfile(); // This fetches profile, recipes, pantry, etc.
 
             // 3. Re-fetch user profile *just* to get the role for navigation
-            // (This matches your existing logic in login() and loginWithGoogle())
             let fetchedUserRole = null;
             try {
                 const profileRes = await axios.get('/users/me');
@@ -209,13 +204,12 @@ export const AuthProvider = ({ children }) => {
 
         } catch (error) {
             console.error("Login with token error:", error);
-            // fetchUserProfile will handle the 401, but just in case:
             logout(); // Clear everything if something went wrong
         } finally {
             setIsLoading(false);
         }
     };
-    // --- *** END NEW *** ---
+    // --- END NEW ---
 
 
     const login = async (email, password) => {
@@ -232,40 +226,34 @@ export const AuthProvider = ({ children }) => {
 
             const newToken = res.data.access_token;
             
-            // --- UPDATED: Use loginWithToken to handle the rest ---
-            await loginWithToken(newToken);
-            // --- END UPDATE ---
+            await loginWithToken(newToken); // Use loginWithToken
 
         } catch (error) {
             console.error("Login error:", error);
             toast.error(error.response?.data?.detail || "Login failed");
             setIsLoading(false); // Manually set loading false on error
         }
-        // No finally block, loginWithToken handles its own loading state
     };
 
     const loginWithGoogle = async (credentialResponse) => {
-        // ... (loginWithGoogle function remains the same)
         setIsLoading(true);
         try {
             const res = await axios.post('/api/auth/google', {
-                // --- FIX: Pass the credential string, not the object ---
-                token: credentialResponse // <-- This was the bug from your file
-                // --- END FIX ---
+                // --- *** THE FIX *** ---
+                // We must pass the credential *string*, not the whole object
+                token: credentialResponse.credential 
+                // --- *** END FIX *** ---
             });
 
             const newToken = res.data.access_token;
             
-            // --- UPDATED: Use loginWithToken to handle the rest ---
-            await loginWithToken(newToken);
-            // --- END UPDATE ---
+            await loginWithToken(newToken); // Use loginWithToken
 
         } catch (error) {
             console.error("Google login error:", error);
             toast.error(error.response?.data?.detail || "Google login failed");
             setIsLoading(false); // Manually set loading false on error
         }
-        // No finally block, loginWithToken handles its own loading state
     };
 
     const logout = () => {
@@ -481,10 +469,9 @@ export const AuthProvider = ({ children }) => {
         <AuthContext.Provider value={{
             token, userProfile, user: userProfile, isLoading, loading: isLoading,
             login, loginWithGoogle, logout,
-            // --- *** ADDED NEW FUNCTION *** ---
-            loginWithToken,
-            // --- END ADD ---
             
+            loginWithToken, // <-- Function from last step
+
             // --- BUG FIX: Expose fetchUserProfile as refreshUserProfile ---
             refreshUserProfile: fetchUserProfile, // <--- THIS IS THE FIX
 

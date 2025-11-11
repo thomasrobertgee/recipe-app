@@ -21,7 +21,8 @@
 .dashboard-module h2,
 .dashboard-module h3 {
     margin-top: 0;
-    color: var(--color-primary-dark);
+    /* --- UPDATED: Use supplier blue --- */
+    color: var(--supplier-primary-color);
 }
 
 /* --- NEW: Tab Styles --- */
@@ -38,110 +39,189 @@
     border: none;
     font-size: 1rem;
     font-weight: 500;
-    color: var(--color-secondary);
-    border-bottom: 3px solid transparent;
-    transform: translateY(2px); /* Align with bottom border */
+    color: var(--color-text-muted);
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s ease;
 }
 .tab-btn.active {
-    color: var(--color-primary);
-    border-bottom-color: var(--color-primary);
+    /* --- UPDATED: Use supplier blue --- */
+    color: var(--supplier-primary-color);
+    border-bottom: 2px solid var(--supplier-primary-color);
+    font-weight: 600;
+}
+.tab-btn:hover {
+    background-color: var(--bg-color-light-hover);
+    /* --- UPDATED: Use supplier blue --- */
+    color: var(--supplier-primary-hover);
 }
 /* --- END NEW --- */
 
 
-/* --- NEW: Analytics Module Styles --- */
+/* --- NEW: Analytics Module --- */
 .analytics-module {
-    background-color: var(--color-primary-dark);
-    /* color: rgb(0, 0, 0); */
-}
-.analytics-module h2 {
-    /* color: white; */
-    border-bottom: 1px solid var(--color-accent);
-    padding-bottom: 0.5rem;
+    /* Styles inherited from .dashboard-module */
 }
 .analytics-grid {
-    display: flex;
-    gap: 2rem;
-    margin: 1.5rem 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    text-align: center;
 }
 .analytics-stat {
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
+    padding: 1rem;
+    background-color: var(--bg-color-light);
+    border-radius: 8px;
 }
 .analytics-value {
     font-size: 2.5rem;
-    font-weight: 700;
-    color: var(--color-accent);
-    line-height: 1.1;
+    font-weight: 600;
+    /* --- UPDATED: Use supplier blue --- */
+    color: var(--supplier-primary-color);
 }
 .analytics-label {
-    font-size: 1rem;
-    color: var(--color-light-grey);
+    font-size: 0.9rem;
+    color: var(--color-text-muted);
+    font-weight: 500;
 }
 .analytics-info {
-    font-size: 0.875rem;
-    color: var(--color-border);
-    margin: 0;
-    font-style: italic;
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+    margin-top: 1rem;
+    text-align: center;
 }
 /* --- END NEW --- */
 
 
-/* --- NEW: Specials Tab Layout --- */
+/* --- NEW: Main/Sidebar Layout for Specials Tab --- */
+.specials-tab-content {
+    /* No layout styles, just a container */
+}
 .supplier-specials-layout {
     display: grid;
-    grid-template-columns: 1fr 300px; /* Main column and sidebar */
+    grid-template-columns: 1fr; /* Default to single column */
     gap: 2rem;
 }
-.supplier-main-column {
-    display: flex;
-    flex-direction: column;
-    gap: 2rem;
-}
-.supplier-sidebar {
-    display: flex;
-    flex-direction: column;
-    gap: 2rem;
+@media (min-width: 992px) {
+    .supplier-specials-layout {
+        /* 2-column layout on larger screens */
+        grid-template-columns: 1fr 300px;
+    }
+    .supplier-main-column {
+        order: 1; /* Main content first */
+    }
+    .supplier-sidebar {
+        order: 2; /* Sidebar second */
+    }
 }
 /* --- END NEW --- */
 
 
-/* Special Form */
 .special-form {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
+    /* Styles inherited from .dashboard-module */
 }
-.form-row {
+.special-form .form-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 1.5rem;
+    gap: 1rem;
 }
-.form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
+.special-form .form-group {
+    margin-bottom: 1rem;
 }
-.form-group label {
-    font-weight: 600;
+.special-form label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
     font-size: 0.9rem;
 }
-.form-group input[type="text"],
-.form-group input[type="date"],
-.form-group textarea { /* --- NEW: Added textarea --- */
+.special-form input,
+.special-form textarea {
+    width: 100%;
     padding: 0.75rem;
     border: 1px solid var(--color-border);
     border-radius: 5px;
     font-size: 1rem;
-    font-family: inherit; /* --- NEW: Ensure consistency --- */
+    font-family: var(--font-family-body);
+    box-sizing: border-box;
 }
-.form-group small {
+.special-form small {
+    display: block;
     font-size: 0.8rem;
-    color: var(--color-secondary);
+    color: var(--color-text-muted);
+    margin-top: 0.25rem;
 }
 
-/* Supplier Specials List */
+/* --- NEW: Profile Form Styles --- */
+.profile-form {
+    /* Inherits from .dashboard-module */
+}
+.profile-form .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+.profile-form .form-group {
+    margin-bottom: 1rem;
+}
+.profile-form label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+.profile-form input,
+.profile-form textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--color-border);
+    border-radius: 5px;
+    font-size: 1rem;
+    font-family: var(--font-family-body);
+    box-sizing: border-box;
+}
+/* --- END NEW --- */
+
+
+/* --- NEW: Button (Blue) --- */
+/* This is a generic button for the dashboard */
+.supplier-dashboard .btn-primary {
+    padding: 0.8rem 1.25rem;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 5px;
+    border: none;
+    background-color: var(--supplier-primary-color);
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.supplier-dashboard .btn-primary:hover {
+    background-color: var(--supplier-primary-hover);
+}
+/* Apply to form buttons */
+.special-form button[type="submit"],
+.profile-form button[type="submit"] {
+    padding: 0.8rem 1.25rem;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 5px;
+    border: none;
+    background-color: var(--supplier-primary-color);
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.special-form button[type="submit"]:hover,
+.profile-form button[type="submit"]:hover {
+    background-color: var(--supplier-primary-hover);
+}
+/* --- END NEW --- */
+
+
+.specials-list-container {
+    /* Styles inherited from .dashboard-module */
+}
 .supplier-specials-list {
     list-style: none;
     padding: 0;
@@ -155,41 +235,47 @@
     justify-content: space-between;
     align-items: center;
     padding: 1rem;
-    background-color: var(--color-light-grey);
     border: 1px solid var(--color-border);
     border-radius: 5px;
+    background-color: var(--bg-color-light-hover);
 }
 .special-info {
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
-    flex-grow: 1;
 }
 .special-name {
     font-weight: 600;
-    font-size: 1.1rem;
+    font-size: 1.05rem;
+    color: var(--color-heading);
 }
 .special-price {
-    color: var(--color-success);
     font-weight: 500;
+    color: var(--color-danger); /* Keep price red */
 }
-.special-category, .special-expiry {
+.special-category {
     font-size: 0.85rem;
-    color: var(--color-secondary);
+    color: var(--color-text-muted);
+}
+.special-expiry {
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
     font-style: italic;
 }
+
 .delete-special-btn {
-    background-color: var(--color-danger-light);
-    color: var(--color-danger);
+    background: none;
     border: 1px solid var(--color-danger);
-    border-radius: 50%;
-    width: 30px;
+    color: var(--color-danger);
     height: 30px;
-    font-size: 1.2rem;
-    font-weight: 700;
-    line-height: 28px;
-    text-align: center;
+    width: 30px;
+    border-radius: 50%;
     cursor: pointer;
+    font-size: 1.2rem;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     transition: all 0.2s ease;
     padding: 0;
     margin-left: 1rem;
@@ -213,7 +299,7 @@
 }
 .quick-add-btn {
     padding: 0.75rem 1rem;
-    background-color: var(--color-light-grey);
+    background-color: var(--bg-color-light-hover);
     border: 1px solid var(--color-border);
     border-radius: 5px;
     cursor: pointer;
@@ -225,32 +311,31 @@
 .quick-add-btn:hover {
     background-color: var(--color-border);
     border-color: #ccc;
+    /* --- UPDATED: Add a blue hover hint --- */
+    border-left: 4px solid var(--supplier-primary-color);
+    padding-left: calc(1rem - 4px);
 }
 /* --- END NEW --- */
 
 
 /* Responsive */
-@media (max-width: 992px) { /* --- NEW: Wider breakpoint for sidebar --- */
+@media (max-width: 992px) { /* --- NEW: Wider breakpoint --- */
     .supplier-specials-layout {
-        grid-template-columns: 1fr; /* Stack main and sidebar */
+        grid-template-columns: 1fr; /* Stack on smaller screens */
+    }
+    .supplier-main-column {
+        order: 1;
     }
     .supplier-sidebar {
-        /* Re-order to appear on top on mobile? For now, stacks below */
+        order: 2; /* Sidebar below main content */
     }
-}
-
-@media (max-width: 768px) {
-    .form-row {
-        grid-template-columns: 1fr;
-        gap: 1rem;
+    .special-form .form-row {
+        grid-template-columns: 1fr; /* Stack form inputs */
     }
-
-    /* --- NEW: Responsive Analytics --- */
+    .profile-form .form-row {
+        grid-template-columns: 1fr; /* Stack form inputs */
+    }
     .analytics-grid {
-        flex-direction: column;
-        gap: 1.5rem;
-    }
-    .analytics-value {
-        font-size: 2rem;
+        grid-template-columns: 1fr; /* Stack analytics */
     }
 }

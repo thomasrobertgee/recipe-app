@@ -34,72 +34,59 @@
 
 .nav-links a.active,
 .nav-links a:hover {
-    color: #4caf50;
-    border-bottom: 2px solid #4caf50;
-    font-weight: bold; /* Added bold as requested */
-}
-
-.nav-links a:not(.active):hover {
+    color: var(--color-primary-dark);
+    border-bottom: 2px solid var(--color-primary);
     transform: translateY(-1px);
 }
 
-.nav-links a:active {
-    transform: translateY(1px);
-}
-
-
-.nav-separator {
-    color: #ccc;
-    font-size: 1.2rem;
-    font-weight: 300;
-}
-
-.nav-auth {
-    display: flex;
-    align-items: center;
-    /* --- UPDATED: Reduced gap slightly for button spacing --- */
+/* --- UPDATED: Separate Auth Links for finer control --- */
+.auth-links {
     gap: 1rem;
 }
-
-/* --- NEW: Secondary button style for Login --- */
-.login-button-nav {
-    background-color: transparent;
-    color: #4caf50 !important; /* Green text */
-    padding: 8px 16px;
-    border-radius: 50px; /* Rounded corners */
-    text-decoration: none;
-    font-size: 0.9rem; /* Match typical button size */
-    font-weight: bold;
-    transition: all 0.2s ease;
-    border: 2px solid #4caf50 !important; /* Green border, override NavLink */
-    line-height: 1.4; /* Adjust line-height for border */
+.auth-links .link-separator {
+    color: #ccc;
+    font-size: 1.2rem;
 }
-.login-button-nav:hover {
-    background-color: #e8f5e9; /* Light green background on hover */
+.auth-links a.supplier-link {
+    font-weight: 500;
+    color: #007bff; /* Make "For Suppliers" link blue */
+    border-bottom: 2px solid transparent; /* Reset border */
+}
+.auth-links a.supplier-link:hover {
+    color: #0056b3;
     transform: translateY(-1px);
-    border-color: #4caf50 !important; /* Ensure border stays */
 }
-.login-button-nav:active {
-    transform: translateY(1px);
-}
-/* Ensure active NavLink state doesn't add underline/border */
-.login-button-nav.active {
-    background-color: #e8f5e9; /* Keep hover style if active */
-    border-bottom: 2px solid #4caf50 !important; /* Override default active border */
-}
-/* --- END NEW --- */
+/* --- END UPDATED --- */
 
 
-/* --- UPDATED: Sign Up button to match primary style --- */
+.nav-left {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+}
+
+.nav-right {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.nav-search-container {
+    min-width: 300px; /* Give search bar space */
+}
+
+
+/* --- UPDATED: Signup Button (Green) --- */
 .signup-button {
-    background-color: #4caf50;
-    color: white !important; /* Ensure text is white */
+    background-color: var(--color-primary);
+    color: white;
     padding: 8px 16px;
-    border-radius: 50px; /* Rounded corners */
+    border-radius: 4px;
+    border: none; /* Remove border */
+    text-decoration: none;
+    cursor: pointer;
     transition: background-color 0.2s, transform 0.1s ease-in-out;
-    text-decoration: none; /* Ensure no underline from NavLink */
-    border: 2px solid transparent !important; /* Add transparent border to align height with login */
-    line-height: 1.4; /* Match login button */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     font-size: 0.9rem; /* Match login button */
     font-weight: bold; /* Match login button */
 }
@@ -141,22 +128,53 @@
 
 
 .sidebar-tab {
-    background-color: #e8f5e9;
-    color: #388e3c;
-    border: 1px solid #a5d6a7;
+    background-color: #e8f5e9; /* Light green */
+    color: var(--color-primary-dark); /* Dark green */
+    border: 1px solid var(--color-primary-light);
+    border-radius: 20px;
     padding: 8px 16px;
-    border-radius: 4px;
+    font-weight: 600;
     cursor: pointer;
-    font-weight: 500;
-    margin-right: 1.5rem;
-    transition: background-color 0.2s, transform 0.1s ease-in-out;
+    transition: all 0.2s ease-in-out;
 }
+.sidebar-tab.active,
 .sidebar-tab:hover {
-    background-color: #dcedc8;
-    transform: translateY(-1px);
-}
-.sidebar-tab:active {
-    transform: translateY(1px);
+    background-color: var(--color-primary);
+    color: white;
+    border-color: var(--color-primary);
 }
 
-/* --- REMOVED RULE FOR .nav-auth .global-search-container --- */
+
+/*
+=====================================
+NEW: SUPPLIER THEME OVERRIDES (BLUE)
+=====================================
+*/
+.navbar.supplier-theme {
+    /* No change to navbar bg, just links */
+}
+
+/* Override NavLink active/hover color */
+.navbar.supplier-theme .nav-links a.active,
+.navbar.supplier-theme .nav-links a:hover {
+    color: var(--supplier-primary-hover);
+    border-bottom: 2px solid var(--supplier-primary-color);
+}
+
+/* Override "My Profile" link */
+.navbar.supplier-theme .nav-links a[href="/profile"] {
+    /* This is fine, uses the rule above */
+}
+
+/* Override Logout button to be blue */
+.navbar.supplier-theme .logout-button {
+    background-color: var(--supplier-primary-color);
+    color: white;
+    border-color: var(--supplier-primary-color);
+    font-weight: 600;
+}
+.navbar.supplier-theme .logout-button:hover {
+    background-color: var(--supplier-primary-hover);
+    border-color: var(--supplier-primary-hover);
+    color: white;
+}
