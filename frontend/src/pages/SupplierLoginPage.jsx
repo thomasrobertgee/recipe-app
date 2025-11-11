@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { useAuth } from '../context/AuthContext';
-// --- UPDATED: Import the new supplier auth CSS ---
+// --- UPDATED: Import ONLY the new standalone CSS file ---
 import './SupplierAuth.css';
 
 const SupplierLoginPage = () => {
@@ -20,27 +20,20 @@ const SupplierLoginPage = () => {
         setIsLoading(true);
 
         try {
-            // The login function from AuthContext will handle the API call
-            // and role-based navigation.
             await login(email, password);
-            
-            // Note: The redirect is handled inside the AuthContext's login
-            // function, which will send suppliers to /portal/dashboard.
             toast.success("Logged in successfully!");
-
         } catch (err) {
             console.error("Supplier login error:", err);
             const errorMessage = err.response?.data?.detail || "Incorrect email or password.";
             setError(errorMessage);
             toast.error(errorMessage);
-            setIsLoading(false); // Only set to false on error
+            setIsLoading(false); 
         }
-        // No finally block, as loading should remain true during navigation
     };
 
     return (
-        // --- UPDATED: Add the new wrapper class ---
-        <div className="auth-form-container supplier-auth-container">
+        // --- UPDATED: Use ONLY the new container class ---
+        <div className="supplier-auth-container">
             <form className="auth-form" onSubmit={handleSubmit}>
                 <h2>Supplier Portal Login</h2>
                 <p>Welcome back! Manage your specials and view analytics.</p>

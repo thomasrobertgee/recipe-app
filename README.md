@@ -46,7 +46,7 @@ The application consists of a Python backend that serves data from a database an
     - Displays consolidated ingredients and estimated cost for the current plan, tracked against the user's weekly budget.
     - Button to add all planned recipes to the main shopping list.
 - **Full CRUD functionality** for recipes and specials.
-- **Recent Bug Fixes:** Addressed issues related to dashboard layout spacing, meal plan date filtering (timezone), receipt scanning database transactions, AI prompt formatting for instructions and receipt items, JSON serialization errors, recipe rating display updates, login redirection for suppliers, missing Link import, `pydantic` email validation dependency, and various frontend styling inconsistencies.
+- **Recent Bug Fixes:** Addressed issues related to dashboard layout spacing, meal plan date filtering (timezone), receipt scanning database transactions, AI prompt formatting for instructions and receipt items, JSON serialization errors, recipe rating display updates, login redirection for suppliers, missing Link import, `pydantic` email validation dependency, and supplier auth page centering.
 
 ### Supplier Platform Features
 The app has been pivoted to a B2B2C platform centered on local suppliers.
@@ -183,7 +183,7 @@ This project requires several API keys/credentials to function.
 3.  **Frontend (`frontend/.env`):**
     ```
     VITE_GOOGLE_CLIENT_ID="YOUR_GOOGLE_CLOUD_CLIENT_ID"
-    ```
+NT  ```
 
 ### Backend Setup
 1.  Navigate to the backend directory:
@@ -281,7 +281,7 @@ You can test the locally running application on your mobile phone if it's connec
         Restart the backend server after this change.
 
 3.  **Update Frontend API Base URL (Temporarily):**
-    * In `frontend/src/context/AuthContext.jsx`, change `axios.defaults.baseURL` to use your PC's IP address and the **backend port (8000)**:
+img   * In `frontend/src/context/AuthContext.jsx`, change `axios.defaults.baseURL` to use your PC's IP address and the **backend port (8000)**:
         ```jsx
         axios.defaults.baseURL = 'http://<YOUR_PC_IP_ADDRESS>:8000'; // e.g., '[http://192.168.1.100:8000](http://192.168.1.100:8000)'
         ```

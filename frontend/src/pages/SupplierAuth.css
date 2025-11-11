@@ -1,43 +1,124 @@
 /* src/pages/SupplierAuth.css */
-/* Overrides for the Supplier Portal Auth Theme (Blue) */
-
-/* Import the base styles */
-@import './AuthForm.css';
+/* Standalone CSS for Supplier Auth pages (Blue Theme) */
 
 /* Define blue theme variables */
 :root {
     --supplier-primary-color: #007bff; /* A standard blue */
     --supplier-primary-hover: #0056b3; /* A darker blue for hover */
-    --supplier-form-bg: #ffffff;
-    --supplier-text-color: #333;
-    --supplier-link-color: #007bff;
 }
 
-/*
-  Apply the overrides.
-  We use a more specific selector to ensure these rules
-  take precedence over the ones in AuthForm.css
-*/
+/* Base layout styles (copied from AuthForm.css) */
+.supplier-auth-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 80vh;
+    padding: 2rem 1rem;
+    background-color: var(--bg-color-light);
+}
+
+/* Form styles */
 .supplier-auth-container .auth-form {
-    background-color: var(--supplier-form-bg);
-    color: var(--supplier-text-color);
+    background-color: #ffffff;
+    padding: 2.5rem 2rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    width: 100%;
+    max-width: 450px;
+    text-align: center;
 }
 
-/* Override the button color */
-.supplier-auth-container .auth-form .btn-primary {
-    background-color: var(--supplier-primary-color);
+/* Header (Blue) */
+.supplier-auth-container .auth-form h2 {
+    margin-top: 0;
+    margin-bottom: 0.75rem;
+    color: var(--supplier-primary-color);
+}
+
+.supplier-auth-container .auth-form p {
+    margin-bottom: 1.5rem;
+    color: #555;
+}
+
+/* Form Groups */
+.supplier-auth-container .form-group {
+    margin-bottom: 1.25rem;
+    text-align: left;
+}
+
+.supplier-auth-container .form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+}
+
+.supplier-auth-container .form-group input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 1rem;
+    box-sizing: border-box; 
+}
+
+.supplier-auth-container .form-divider {
+    border: 0;
+    height: 1px;
+    background-color: #eee;
+    margin: 1.5rem 0;
+}
+
+/* Button (Blue) */
+.supplier-auth-container .btn-primary {
+    width: 100%;
+    padding: 0.8rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border-radius: 5px;
     border: none;
+    background-color: var(--supplier-primary-color);
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.2s;
 }
 
-.supplier-auth-container .auth-form .btn-primary:hover {
+.supplier-auth-container .btn-primary:hover {
     background-color: var(--supplier-primary-hover);
 }
 
-.supplier-auth-container .auth-form .btn-primary:disabled {
-    background-color: #a0cfff; /* Lighter blue when disabled */
+/* Disabled Button (Blue) */
+.supplier-auth-container .btn-primary:disabled {
+    background-color: #a0cfff;
+    cursor: not-allowed;
 }
 
-/* Override the link colors */
-.supplier-auth-container .auth-form .form-footer a {
-    color: var(--supplier-link-color);
+/* Footer (Blue) */
+.supplier-auth-container .form-footer {
+    margin-top: 1.5rem;
+    font-size: 0.9rem;
+}
+
+.supplier-auth-container .form-footer p {
+    margin: 0.5rem 0;
+}
+
+.supplier-auth-container .form-footer a {
+    color: var(--supplier-primary-color);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.supplier-auth-container .form-footer a:hover {
+    text-decoration: underline;
+}
+
+/* Error Message (stays the same) */
+.supplier-auth-container .error-message {
+    background-color: #ffebee;
+    color: #c62828;
+    border: 1px solid #ef9a9a;
+    border-radius: 5px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1.5rem;
+    text-align: center;
 }
