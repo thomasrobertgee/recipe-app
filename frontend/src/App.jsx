@@ -60,8 +60,20 @@ function App() {
       response => response,
       error => {
         if (error.response && error.response.status === 401) {
-          logout();
-          navigate('/login');
+          
+          // --- *** MODIFIED LOGIC *** ---
+          // Check if user is on a supplier route
+          const isSupplierRoute = window.location.pathname.startsWith('/portal');
+          
+          logout(); // Log out in either case
+          
+          if (isSupplierRoute) {
+            navigate('/portal/login'); // Go to supplier login
+          } else {
+            navigate('/login'); // Go to consumer login
+          }
+          // --- *** END MODIFIED LOGIC *** ---
+
           toast.info("Your session has expired. Please log in again.");
         }
         return Promise.reject(error);
@@ -71,7 +83,7 @@ function App() {
     return () => {
       axios.interceptors.response.eject(interceptor);
     };
-  }, [logout, navigate]);
+  }, [logout, navigate]); // <-- Dependency array is correct
 
 
   return (

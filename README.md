@@ -8,7 +8,7 @@ The application consists of a Python backend that serves data from a database an
 
 ## Current Features
 
-- **Full User Authentication:** Users can register, log in, and maintain a persistent session using JWTs.
+- **Full User Authentication:** Users can register, log in, and maintain a persistent session using JWTs. **Registration now automatically logs the user in**, redirecting them straight to their dashboard to begin onboarding (fixed double login).
 - **Google OAuth 2.0 Login:** Users can sign up or log in using their Google accounts.
 - **New User Onboarding:** A multi-step modal guides new users through setting up their profile preferences (household size, budget, dietary needs, cuisines, skill level, and **postcode**).
 - **Location-Based Filtering:** The app uses the consumer's postcode to filter and display specials from local suppliers in their area.
@@ -50,7 +50,7 @@ The application consists of a Python backend that serves data from a database an
 
 ### Supplier Platform Features
 The app has been pivoted to a B2B2C platform centered on local suppliers.
-- **New Supplier Onboarding:** A dedicated supplier sign-up flow that directs new suppliers to an onboarding modal on first login to create their business profile.
+- **New Supplier Onboarding:** A dedicated supplier sign-up flow. **Registration now automatically logs suppliers in** and directs them to an onboarding modal on first login to create their business profile.
 - **Separate Auth Pages:** Separate, blue-themed login and sign-up pages for the supplier portal.
 - **Enhanced Supplier Profiles:** Suppliers have a "My Profile" tab to manage their "Digital Storefront," including `business_name`, `address`, `postcode`, `logo_url`, `business_type`, `description`, and `opening_hours`.
 - **Supplier Specials Management:** Dedicated portal for suppliers to log in and manage their own weekly specials (add/delete items and prices), including setting **expiry dates**.

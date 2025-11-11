@@ -208,7 +208,8 @@ def _save_recipe_to_db(recipe_data: RecipeCreate, session: Session) -> Recipe:
         raise HTTPException(status_code=500, detail=f"Failed to save recipe: {e}")
 
 
-@app.post("/register", response_model=UserRead)
+# --- *** MODIFIED: Consumer registration to return Token *** ---
+@app.post("/register", response_model=Token) # <-- CHANGED response_model
 def create_user(user: UserCreate, session: Session = Depends(get_session)):
     existing_user = session.exec(select(User).where(User.email == user.email)).first()
     if existing_user:
@@ -225,11 +226,15 @@ def create_user(user: UserCreate, session: Session = Depends(get_session)):
     session.add(new_user)
     session.commit()
     session.refresh(new_user)
-    return new_user
+    
+    # --- NEW: Create and return token ---
+    access_token = create_access_token(data={"sub": new_user.email})
+    return Token(access_token=access_token, token_type="bearer")
+# --- *** END MODIFIED *** ---
 
 
-# --- *** UPDATED: SUPPLIER REGISTRATION with Onboarding Flag *** ---
-@app.post("/register/supplier", response_model=UserRead)
+# --- *** MODIFIED: SUPPLIER REGISTRATION to return Token *** ---
+@app.post("/register/supplier", response_model=Token) # <-- CHANGED response_model
 def create_supplier(request: SupplierRegistrationRequest, session: Session = Depends(get_session)):
     existing_user = session.exec(select(User).where(User.email == request.user.email)).first()
     if existing_user:
@@ -254,8 +259,10 @@ def create_supplier(request: SupplierRegistrationRequest, session: Session = Dep
         print(f"Error committing new supplier user: {e}")
         raise HTTPException(status_code=500, detail="Failed to save supplier user.")
 
-    return new_user
-# --- *** END UPDATED SUPPLIER REGISTRATION *** ---
+    # --- NEW: Create and return token ---
+    access_token = create_access_token(data={"sub": new_user.email})
+    return Token(access_token=access_token, token_type="bearer")
+# --- *** END MODIFIED SUPPLIER REGISTRATION *** ---
 
 
 @app.post("/token", response_model=Token)

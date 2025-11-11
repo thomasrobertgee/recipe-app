@@ -141,7 +141,16 @@ export const AuthProvider = ({ children }) => {
                 localStorage.removeItem('selectedSpecials'); // <-- NEW
                 delete axios.defaults.headers.common['Authorization'];
                 toast.info("Session expired. Please log in again.");
-                navigate('/login');
+                
+                // --- SMART REDIRECT FIX ---
+                // Check if we are on a supplier route
+                if (window.location.pathname.startsWith('/portal')) {
+                    navigate('/portal/login');
+                } else {
+                    navigate('/login');
+                }
+                // --- END FIX ---
+
             }
         } finally {
             setIsLoading(false);
@@ -165,6 +174,50 @@ export const AuthProvider = ({ children }) => {
 
     // --- REMOVED Notification polling useEffect ---
 
+    // --- *** NEW: loginWithToken *** ---
+    // This function is for post-registration or Google login
+    // It assumes you ALREADY have a valid token
+    const loginWithToken = async (accessToken) => {
+        setIsLoading(true);
+        try {
+            // 1. Set the token
+            setToken(accessToken);
+            localStorage.setItem('token', accessToken);
+            axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
+            
+            // 2. Fetch all user data
+            await fetchUserProfile(); // This fetches profile, recipes, pantry, etc.
+
+            // 3. Re-fetch user profile *just* to get the role for navigation
+            // (This matches your existing logic in login() and loginWithGoogle())
+            let fetchedUserRole = null;
+            try {
+                const profileRes = await axios.get('/users/me');
+                fetchedUserRole = profileRes.data.role;
+            } catch (profileError) {
+                console.error("Failed to fetch profile immediately after token login:", profileError);
+            }
+
+            // 4. Navigate based on role
+            if (fetchedUserRole === 'supplier') {
+                navigate('/portal/dashboard');
+                toast.success("Welcome, Supplier!");
+            } else {
+                navigate('/dashboard');
+                toast.success("Welcome!");
+            }
+
+        } catch (error) {
+            console.error("Login with token error:", error);
+            // fetchUserProfile will handle the 401, but just in case:
+            logout(); // Clear everything if something went wrong
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    // --- *** END NEW *** ---
+
+
     const login = async (email, password) => {
         // ... (login function remains the same)
         setIsLoading(true);
@@ -178,35 +231,17 @@ export const AuthProvider = ({ children }) => {
             });
 
             const newToken = res.data.access_token;
-            setToken(newToken);
-            localStorage.setItem('token', newToken);
-            axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
-
-            await fetchUserProfile();
-
-            // Use a temporary variable to check the role immediately after fetching
-            let fetchedUserRole = null;
-            try {
-                const profileRes = await axios.get('/users/me');
-                fetchedUserRole = profileRes.data.role;
-            } catch (profileError) {
-                console.error("Failed to fetch profile immediately after login:", profileError);
-            }
-
-            if (fetchedUserRole === 'supplier') {
-                navigate('/portal/dashboard');
-                toast.success("Supplier login successful!");
-            } else {
-                navigate('/dashboard');
-                toast.success("Login successful!");
-            }
+            
+            // --- UPDATED: Use loginWithToken to handle the rest ---
+            await loginWithToken(newToken);
+            // --- END UPDATE ---
 
         } catch (error) {
             console.error("Login error:", error);
             toast.error(error.response?.data?.detail || "Login failed");
-        } finally {
-            setIsLoading(false); // Ensure loading is stopped
+            setIsLoading(false); // Manually set loading false on error
         }
+        // No finally block, loginWithToken handles its own loading state
     };
 
     const loginWithGoogle = async (credentialResponse) => {
@@ -214,39 +249,23 @@ export const AuthProvider = ({ children }) => {
         setIsLoading(true);
         try {
             const res = await axios.post('/api/auth/google', {
-                token: credentialResponse.credential
+                // --- FIX: Pass the credential string, not the object ---
+                token: credentialResponse // <-- This was the bug from your file
+                // --- END FIX ---
             });
 
             const newToken = res.data.access_token;
-            setToken(newToken);
-            localStorage.setItem('token', newToken);
-            axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
-
-            await fetchUserProfile(); // Fetches profile, saved recipes, and pantry
-
-            // Use a temporary variable to check the role immediately after fetching
-            let fetchedUserRole = null;
-            try {
-                const profileRes = await axios.get('/users/me');
-                fetchedUserRole = profileRes.data.role;
-            } catch (profileError) {
-                console.error("Failed to fetch profile immediately after Google login:", profileError);
-            }
-
-            if (fetchedUserRole === 'supplier') {
-                navigate('/portal/dashboard');
-                toast.success("Supplier Google login successful!");
-            } else {
-                navigate('/dashboard');
-                toast.success("Google login successful!");
-            }
+            
+            // --- UPDATED: Use loginWithToken to handle the rest ---
+            await loginWithToken(newToken);
+            // --- END UPDATE ---
 
         } catch (error) {
             console.error("Google login error:", error);
             toast.error(error.response?.data?.detail || "Google login failed");
-        } finally {
-            setIsLoading(false);
+            setIsLoading(false); // Manually set loading false on error
         }
+        // No finally block, loginWithToken handles its own loading state
     };
 
     const logout = () => {
@@ -462,6 +481,10 @@ export const AuthProvider = ({ children }) => {
         <AuthContext.Provider value={{
             token, userProfile, user: userProfile, isLoading, loading: isLoading,
             login, loginWithGoogle, logout,
+            // --- *** ADDED NEW FUNCTION *** ---
+            loginWithToken,
+            // --- END ADD ---
+            
             // --- BUG FIX: Expose fetchUserProfile as refreshUserProfile ---
             refreshUserProfile: fetchUserProfile, // <--- THIS IS THE FIX
 

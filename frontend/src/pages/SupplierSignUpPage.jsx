@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-toastify';
-// --- UPDATED: Import ONLY the new standalone CSS file ---
+import { useAuth } from '../context/AuthContext'; // <-- Import useAuth
 import './SupplierAuth.css';
 
 const SupplierSignUpPage = () => {
@@ -13,7 +13,8 @@ const SupplierSignUpPage = () => {
     
     const [error, setError] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
-    const navigate = useNavigate();
+    const navigate = useNavigate(); // <-- Keep navigate for error cases if needed
+    const { loginWithToken } = useAuth(); // <-- Get loginWithToken
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -32,22 +33,26 @@ const SupplierSignUpPage = () => {
                 }
             };
             
-            await axios.post('/register/supplier', payload);
+            const res = await axios.post('/register/supplier', payload);
             
-            toast.success("Supplier account created! Please log in.");
-            navigate('/portal/login');
+            // --- UPDATED LOGIC ---
+            // Call the new function. It will handle saving the token,
+            // fetching the profile, and navigating to the correct dashboard.
+            await loginWithToken(res.data.access_token);
+            // toast.success is now handled inside loginWithToken
+            // navigate() is now handled inside loginWithToken
+            // --- END UPDATED LOGIC ---
 
         } catch (err) {
             console.error("Supplier signup error:", err);
             setError(err.response?.data?.detail || "An unknown error occurred.");
             toast.error(err.response?.data?.detail || "Signup failed.");
-        } finally {
-            setIsLoading(false);
+            setIsLoading(false); // Make sure to stop loading on error
         }
+        // No finally block, loginWithToken handles its own loading state
     };
 
     return (
-        // --- UPDATED: Use ONLY the new container class ---
         <div className="supplier-auth-container">
             <form className="auth-form" onSubmit={handleSubmit}>
                 <h2>Create Your Supplier Account</h2>

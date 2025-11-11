@@ -5,30 +5,19 @@ import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const SupplierProtectedRoute = () => {
-  const { token, user, loading } = useAuth();
+  const { userProfile, isLoading } = useAuth();
 
-  if (loading) {
-    // Wait until the user data is loaded before making a decision
-    return <div>Loading...</div>; // Or a proper spinner component
+  if (isLoading) {
+    return <div>Loading...</div>; // Handle loading state
   }
 
-  if (!token) {
-    // Not logged in at all
-    return <Navigate to="/login" replace />;
+  if (!userProfile || userProfile.role !== 'supplier') {
+    // Not a supplier, or profile not loaded
+    return <Navigate to="/portal/login" replace />; // <-- FIX: Was "/login"
   }
 
-  if (user && user.role !== 'supplier') {
-    // Logged in, but is a regular consumer
-    return <Navigate to="/dashboard" replace />; // Send consumers to their dashboard
-  }
-
-  if (user && user.role === 'supplier') {
-    // User is logged in AND is a supplier, allow access
-    return <Outlet />;
-  }
-
-  // Fallback, though should be covered by loading/token checks
-  return <Navigate to="/login" replace />;
+  // User is a supplier, render the protected route
+  return <Outlet />;
 };
 
 export default SupplierProtectedRoute;
