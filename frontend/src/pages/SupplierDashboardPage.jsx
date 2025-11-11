@@ -3,6 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import { useAuth } from '../context/AuthContext';
+import SupplierOnboardingModal from '../components/SupplierOnboardingModal'; // <-- NEW IMPORT
 import './Page.css';
 import './SupplierDashboardPage.css';
 
@@ -31,7 +32,7 @@ const SupplierDashboardPage = () => {
         opening_hours: '',
     });
     const [isProfileLoading, setIsProfileLoading] = useState(true);
-    
+
     // --- NEW: State for Quick-Add ---
     const [previousItems, setPreviousItems] = useState([]);
     const [isQuickAddLoading, setIsQuickAddLoading] = useState(true);
@@ -105,10 +106,10 @@ const SupplierDashboardPage = () => {
             const res = await axios.get('/api/supplier/previous-items');
             setPreviousItems(res.data);
         } catch (error) {
-             console.error("Error fetching previous items:", error);
-             if (!error.response || error.response.status !== 401) {
+            console.error("Error fetching previous items:", error);
+            if (!error.response || error.response.status !== 401) {
                 toast.error("Could not load previous items.");
-             }
+            }
         } finally {
             setIsQuickAddLoading(false);
         }
@@ -126,6 +127,30 @@ const SupplierDashboardPage = () => {
         }
     }, [activeTab, fetchSpecials, fetchProfile, fetchPreviousItems]); // <-- NEW: Added fetchPreviousItems
 
+    // --- NEW: ONBOARDING CHECK ---
+    // This must come AFTER all hooks (useState, useEffect, etc.)
+
+    // 1. Show loading screen while profile is being fetched
+    if (!userProfile) {
+        return (
+            <div className="app-container supplier-dashboard">
+                <div className="page-header">
+                    <h1>Supplier Dashboard</h1>
+                </div>
+                <p>Loading your profile...</p>
+            </div>
+        );
+    }
+
+    // 2. If profile is loaded and onboarding is not complete, show the modal
+    if (userProfile.has_completed_onboarding === false) {
+        // The modal will handle its own logic. On success, it refreshes
+        // the userProfile in context, which will cause this component
+        // to re-render, pass this check, and show the dashboard.
+        return <SupplierOnboardingModal onComplete={() => { }} />;
+    }
+    // --- END NEW ONBOARDING CHECK ---
+
     // --- Helper to get default expiry date (7 days from now) ---
     const getDefaultExpiryDate = () => {
         const date = new Date();
@@ -141,7 +166,7 @@ const SupplierDashboardPage = () => {
     };
     // --- END UPDATED ---
 
-     // --- Handle profile form input changes ---
+    // --- Handle profile form input changes ---
     const handleProfileFormChange = (e) => {
         const { name, value } = e.target;
         setProfileData(prev => ({ ...prev, [name]: value }));
@@ -167,19 +192,19 @@ const SupplierDashboardPage = () => {
                 category: specialFormData.category || 'Other', // Default category if empty
                 expiry_date: expiry // <-- NEW: Send expiry date
             });
-            
+
             // Check if item was updated or added
             const existingIndex = specials.findIndex(s => s.id === res.data.id);
             if (existingIndex > -1) {
-                 // Update existing item in state
-                 setSpecials(prev => prev.map(s => s.id === res.data.id ? res.data : s));
-                 toast.success(`"${res.data.ingredient_name}" price updated!`);
+                // Update existing item in state
+                setSpecials(prev => prev.map(s => s.id === res.data.id ? res.data : s));
+                toast.success(`"${res.data.ingredient_name}" price updated!`);
             } else {
                 // Add new item to state
                 setSpecials(prev => [res.data, ...prev]);
                 toast.success(`"${res.data.ingredient_name}" added to specials!`);
             }
-            
+
             // Clear form
             setSpecialFormData({
                 ingredient_name: '',
@@ -187,7 +212,7 @@ const SupplierDashboardPage = () => {
                 category: '',
                 expiry_date: ''
             });
-            
+
             // --- NEW: Refresh previous items list if a new item was added ---
             const isNew = !previousItems.some(item => item.name.toLowerCase() === res.data.ingredient_name.toLowerCase());
             if (isNew) {
@@ -205,16 +230,16 @@ const SupplierDashboardPage = () => {
     // --- Handle profile form submission ---
     const handleProfileFormSubmit = async (e) => {
         e.preventDefault();
-        
+
         // Filter out empty strings and send them as null
         const payload = {};
         for (const [key, value] of Object.entries(profileData)) {
             payload[key] = value.trim() === '' ? null : value.trim();
         }
-        
+
         if (!payload.business_name) {
-             toast.warn("Business name is required.");
-             return;
+            toast.warn("Business name is required.");
+            return;
         }
 
         const saveToast = toast.loading("Saving profile...");
@@ -232,8 +257,8 @@ const SupplierDashboardPage = () => {
             });
             toast.update(saveToast, { render: "Profile saved successfully!", type: "success", isLoading: false, autoClose: 3000 });
         } catch (error) {
-             console.error("Error saving profile:", error);
-             toast.update(saveToast, { render: error.response?.data?.detail || "Failed to save profile.", type: "error", isLoading: false, autoClose: 5000 });
+            console.error("Error saving profile:", error);
+            toast.update(saveToast, { render: error.response?.data?.detail || "Failed to save profile.", type: "error", isLoading: false, autoClose: 5000 });
         }
     };
     // --- END NEW ---
@@ -303,7 +328,7 @@ const SupplierDashboardPage = () => {
                             </div>
                         </div>
 
-                         <div className="form-group">
+                        <div className="form-group">
                             <label htmlFor="description">Short Description</label>
                             <textarea
                                 name="description"
@@ -327,7 +352,7 @@ const SupplierDashboardPage = () => {
                                     onChange={handleProfileFormChange}
                                 />
                             </div>
-                             <div className="form-group">
+                            <div className="form-group">
                                 <label htmlFor="postcode">Postcode</label>
                                 <input
                                     type="text"
@@ -363,7 +388,7 @@ const SupplierDashboardPage = () => {
                                 onChange={handleProfileFormChange}
                             />
                         </div>
-                        
+
                         <button type="submit" className="btn btn-primary">Save Profile</button>
                     </>
                 )}
@@ -374,9 +399,9 @@ const SupplierDashboardPage = () => {
 
     // --- UPDATED: Render Specials Tab Content ---
     const renderSpecialsTab = () => (
-         <div className="specials-tab-content">
+        <div className="specials-tab-content">
             {/* Analytics Module */}
-             <div className="analytics-module dashboard-module">
+            <div className="analytics-module dashboard-module">
                 <h2>Your Analytics</h2>
                 <div className="analytics-grid">
                     <div className="analytics-stat">
@@ -426,7 +451,7 @@ const SupplierDashboardPage = () => {
                             </div>
                         </div>
                         <div className="form-row">
-                                <div className="form-group">
+                            <div className="form-group">
                                 <label htmlFor="category">Category</label>
                                 <input
                                     type="text"
@@ -484,7 +509,7 @@ const SupplierDashboardPage = () => {
                         )}
                     </div>
                 </div>
-                
+
                 {/* --- NEW: Quick-Add Sidebar --- */}
                 <aside className="supplier-sidebar">
                     <div className="quick-add-module dashboard-module">
@@ -511,7 +536,7 @@ const SupplierDashboardPage = () => {
                 </aside>
                 {/* --- END NEW --- */}
             </div>
-         </div>
+        </div>
     );
     // --- END UPDATED ---
 

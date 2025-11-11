@@ -1,0 +1,84 @@
+/* src/components/SupplierOnboardingModal.css */
+
+/* We can re-use the backdrop and base modal content styles */
+@import './OnboardingModal.css';
+
+.supplier-onboarding-modal {
+    max-width: 600px; /* A bit wider for the form */
+    padding: 2rem;
+}
+
+.supplier-onboarding-modal .modal-header {
+    text-align: center;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.supplier-onboarding-modal .modal-header h2 {
+    margin: 0;
+    color: var(--supplier-primary-color, #007bff); /* Use blue theme */
+}
+
+.supplier-onboarding-modal .modal-header p {
+    font-size: 1.1rem;
+    color: #555;
+    margin-top: 0.5rem;
+}
+
+.supplier-onboarding-modal .modal-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    max-height: 60vh; /* Allow form to scroll on short screens */
+    overflow-y: auto;
+    padding-right: 1rem; /* Space for scrollbar */
+    margin-right: -1rem; /* Counteract padding */
+}
+
+.supplier-onboarding-modal .form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.supplier-onboarding-modal .form-group label {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: #333;
+}
+
+.supplier-onboarding-modal .form-group input,
+.supplier-onboarding-modal .form-group textarea,
+.supplier-onboarding-modal .form-group select {
+    padding: 0.75rem;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 1rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.supplier-onboarding-modal .form-group input:focus,
+.supplier-onboarding-modal .form-group textarea:focus,
+.supplier-onboarding-modal .form-group select:focus {
+    outline: none;
+    border-color: var(--supplier-primary-color, #007bff);
+    box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+}
+
+.supplier-onboarding-modal .modal-footer {
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid #eee;
+}
+
+.supplier-onboarding-modal .btn-primary {
+    /* Use the standard button styles from App.css */
+    width: 100%;
+    padding: 0.8rem;
+    font-size: 1.1rem;
+    background-color: var(--supplier-primary-color, #007bff);
+}
+
+.supplier-onboarding-modal .btn-primary:disabled {
+    background-color: #a0cfff;
+}

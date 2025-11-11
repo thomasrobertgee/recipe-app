@@ -39,7 +39,7 @@ from schemas import (
     PriceHistoryRead, RecipeRating, PantryItem, PantryItemCreate,
     RecipeModificationRequest, GoogleLoginRequest,
     BarcodeLookupResponse,
-    SupplierRegistrationRequest, SupplierProfileRead, # <-- NEW IMPORTS
+    SupplierRegistrationRequest, SupplierProfileRead, SupplierProfileCreate, # <-- ADDED SupplierProfileCreate
     # --- *** NEW MEAL PLAN IMPORTS ---
     MealPlanEntryCreate, MealPlanEntryRead,
     # --- NEW IMPORT ---
@@ -228,7 +228,7 @@ def create_user(user: UserCreate, session: Session = Depends(get_session)):
     return new_user
 
 
-# --- *** UPDATED: SUPPLIER REGISTRATION with Storefront Fields *** ---
+# --- *** UPDATED: SUPPLIER REGISTRATION with Onboarding Flag *** ---
 @app.post("/register/supplier", response_model=UserRead)
 def create_supplier(request: SupplierRegistrationRequest, session: Session = Depends(get_session)):
     existing_user = session.exec(select(User).where(User.email == request.user.email)).first()
@@ -239,40 +239,20 @@ def create_supplier(request: SupplierRegistrationRequest, session: Session = Dep
     new_user = User(
         email=request.user.email,
         hashed_password=hashed_password,
-        role="supplier",
-        has_completed_onboarding=True
+        role="supplier", # <-- SET ROLE
+        has_completed_onboarding=False # <-- SET ONBOARDING TO FALSE
     )
     session.add(new_user)
-    session.flush() # Get user ID
-    # session.refresh(new_user) # Refresh might not be needed before profile creation
+    
+    # --- REMOVED SupplierProfile creation logic ---
 
-    if new_user.id is None:
-        print("CRITICAL: User ID not generated after flush in supplier registration.")
-        session.rollback() # Rollback if user ID is missing
-        raise HTTPException(status_code=500, detail="Failed to create supplier user record.")
-
-
-    new_profile = SupplierProfile(
-        user_id=new_user.id,
-        business_name=request.profile.business_name,
-        address=request.profile.address,
-        postcode=request.profile.postcode,
-        # --- NEW: Save optional fields ---
-        logo_url=request.profile.logo_url,
-        business_type=request.profile.business_type,
-        description=request.profile.description,
-        opening_hours=request.profile.opening_hours
-        # --- END NEW ---
-    )
-    session.add(new_profile)
     try:
         session.commit()
-        session.refresh(new_user) # Refresh user AFTER commit to load profile relationship
-        # session.refresh(new_profile) # Refresh profile if needed
+        session.refresh(new_user) # Refresh user AFTER commit
     except Exception as e:
         session.rollback()
-        print(f"Error committing supplier profile: {e}")
-        raise HTTPException(status_code=500, detail="Failed to save supplier profile.")
+        print(f"Error committing new supplier user: {e}")
+        raise HTTPException(status_code=500, detail="Failed to save supplier user.")
 
     return new_user
 # --- *** END UPDATED SUPPLIER REGISTRATION *** ---
@@ -1022,6 +1002,53 @@ def remove_from_meal_plan(
 
 # --- *** NEW/UPDATED SUPPLIER PORTAL API *** ---
 
+# --- *** NEW: Create supplier's own profile (for onboarding) *** ---
+@app.post("/api/supplier/profile", response_model=SupplierProfileRead)
+def create_supplier_profile(
+    profile_data: SupplierProfileCreate,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Creates the supplier profile for the logged-in supplier.
+    This is used for the one-time onboarding.
+    """
+    if current_user.role != "supplier":
+        raise HTTPException(status_code=403, detail="Access forbidden: Not a supplier.")
+
+    # Check if a profile already exists for this user
+    existing_profile = session.exec(
+        select(SupplierProfile).where(SupplierProfile.user_id == current_user.id)
+    ).first()
+    
+    if existing_profile:
+        raise HTTPException(status_code=400, detail="Supplier profile already exists for this user.")
+
+    # Create new profile instance
+    new_profile = SupplierProfile(
+        user_id=current_user.id,
+        business_name=profile_data.business_name,
+        address=profile_data.address,
+        postcode=profile_data.postcode,
+        logo_url=profile_data.logo_url,
+        business_type=profile_data.business_type,
+        description=profile_data.description,
+        opening_hours=profile_data.opening_hours
+    )
+    
+    session.add(new_profile)
+    try:
+        session.commit()
+        session.refresh(new_profile)
+        print(f"Supplier profile created for user ID: {current_user.id}")
+    except Exception as e:
+        session.rollback()
+        print(f"Error creating supplier profile for user ID {current_user.id}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to save profile.")
+
+    return new_profile
+# --- *** END NEW *** ---
+
 # --- NEW: Get supplier's own profile ---
 @app.get("/api/supplier/profile", response_model=SupplierProfileRead)
 def get_supplier_profile(
@@ -1377,7 +1404,7 @@ def get_featured_suppliers(
     ).all()
     
     return featured_suppliers
-# --- *** END NEW *** ---
+# --- *** END NEW ---
 
 # --- *** END NEW/UPDATED SUPPLIER PORTAL API *** ---
 

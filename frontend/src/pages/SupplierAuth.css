@@ -1,0 +1,43 @@
+/* src/pages/SupplierAuth.css */
+/* Overrides for the Supplier Portal Auth Theme (Blue) */
+
+/* Import the base styles */
+@import './AuthForm.css';
+
+/* Define blue theme variables */
+:root {
+    --supplier-primary-color: #007bff; /* A standard blue */
+    --supplier-primary-hover: #0056b3; /* A darker blue for hover */
+    --supplier-form-bg: #ffffff;
+    --supplier-text-color: #333;
+    --supplier-link-color: #007bff;
+}
+
+/*
+  Apply the overrides.
+  We use a more specific selector to ensure these rules
+  take precedence over the ones in AuthForm.css
+*/
+.supplier-auth-container .auth-form {
+    background-color: var(--supplier-form-bg);
+    color: var(--supplier-text-color);
+}
+
+/* Override the button color */
+.supplier-auth-container .auth-form .btn-primary {
+    background-color: var(--supplier-primary-color);
+    border: none;
+}
+
+.supplier-auth-container .auth-form .btn-primary:hover {
+    background-color: var(--supplier-primary-hover);
+}
+
+.supplier-auth-container .auth-form .btn-primary:disabled {
+    background-color: #a0cfff; /* Lighter blue when disabled */
+}
+
+/* Override the link colors */
+.supplier-auth-container .auth-form .form-footer a {
+    color: var(--supplier-link-color);
+}

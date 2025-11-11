@@ -9,7 +9,7 @@ test.describe('Authentication Flow', () => {
   test('allows a new user to sign up, log out, and log back in', async ({ page }) => {
     // --- Step 1: Sign Up ---
     await page.goto('http://localhost:5173/signup');
-    await expect(page).toHaveTitle(/Recipe App/);
+    await expect(page).toHaveTitle(/The Local Catalogue/);
 
     await page.getByLabel('Email').fill(userEmail);
     await page.getByLabel('Password').fill(userPassword);

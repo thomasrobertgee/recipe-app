@@ -15,7 +15,7 @@ const LandingPage = () => {
                 </div>
                 <div className="hero-image">
                     {/* Placeholder for split-screen image */}
-                    <img src="https://via.placeholder.com/600x400?text=Receipt+->+Delicious+Meal" alt="Recipe App concept" />
+                    <img src="https://via.placeholder.com/600x400?text=Receipt+->+Delicious+Meal" alt="The Local Catalogue concept" />
                 </div>
             </header>
 

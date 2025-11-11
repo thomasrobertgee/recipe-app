@@ -1,4 +1,4 @@
-# Recipe App MVP
+# The Local Catalogue MVP
 
 This project is a full-stack Minimum Viable Product (MVP) of a recipe recommendation app. The goal is to help users save money by generating recipes based on supermarket specials, tailored to their personal preferences.
 

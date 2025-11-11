@@ -28,6 +28,8 @@ import './App.css';
 import SupplierProtectedRoute from './components/SupplierProtectedRoute';
 import SupplierDashboardPage from './pages/SupplierDashboardPage';
 import SupplierSignUpPage from './pages/SupplierSignUpPage';
+// --- *** NEW SUPPLIER LOGIN IMPORT *** ---
+import SupplierLoginPage from './pages/SupplierLoginPage';
 // --- *** NEW MEAL PLAN IMPORT *** ---
 import MealPlanPage from './pages/MealPlanPage';
 // --- *** NEW SEARCH PAGE IMPORT *** ---
@@ -90,6 +92,8 @@ function App() {
 
             {/* --- NEW Supplier Public Routes --- */}
             <Route path="/portal/signup" element={<SupplierSignUpPage />} />
+            {/* --- *** NEW SUPPLIER LOGIN ROUTE *** --- */}
+            <Route path="/portal/login" element={<SupplierLoginPage />} />
 
             {/* --- Consumer Protected Routes --- */}
             <Route element={<ProtectedRoute />}>

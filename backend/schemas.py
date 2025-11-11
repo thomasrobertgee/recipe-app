@@ -1,52 +1,171 @@
 # backend/schemas.py
 
-from sqlmodel import SQLModel, Field
-from typing import Optional, List, Dict
-# --- *** NEW: Import date *** ---
+from pydantic import BaseModel, EmailStr
+from typing import List, Optional, Any, Dict
 from datetime import date
-# Import validator if needed later
-# from pydantic import validator
-# import math
+from models import Recipe # Import Recipe for full response model
 
-class UserCreate(SQLModel):
-    email: str
+# --- *** NEW: Import SQLModel base for schema definitions *** ---
+# Using Pydantic's BaseModel for schemas is fine,
+# but if we wanted to share models (like SQLModel does), we'd import from sqlmodel.
+# Sticking with BaseModel as per original structure for non-db-models.
+
+# --- User Schemas ---
+class UserCreate(BaseModel):
+    email: EmailStr
     password: str
 
-class UserRead(SQLModel):
+class UserRead(BaseModel):
     id: int
-    email: str
+    email: EmailStr
     role: str # <-- NEW FIELD
+    # Profile preferences
     dietary_restrictions: Optional[str] = None
     preferred_cuisines: Optional[str] = None
-    cooking_skill: Optional[str] = None
-    # --- NEW FIELDS ---
-    adult_count: int
-    child_count: int
+    cooking_skill: Optional[str] = "beginner"
+    # --- NEW ONBOARDING FIELDS ---
+    adult_count: int = 1
+    child_count: int = 0
     weekly_budget: Optional[int] = None
     postcode: Optional[str] = None # <-- NEW FIELD
-    has_completed_onboarding: bool
+    has_completed_onboarding: bool = False
+    # --- END NEW ONBOARDING FIELDS ---
 
-class UserUpdate(SQLModel):
-    email: Optional[str] = None
+    class Config:
+        orm_mode = True
+
+class UserUpdate(BaseModel):
+    # --- Allow updating all onboarding fields ---
     dietary_restrictions: Optional[str] = None
     preferred_cuisines: Optional[str] = None
-    cooking_skill: Optional[str] = None
-    # --- NEW FIELDS ---
+    cooking_skill: Optional[str] = None # Use None to allow unsetting
     adult_count: Optional[int] = None
     child_count: Optional[int] = None
     weekly_budget: Optional[int] = None
-    postcode: Optional[str] = None # <-- NEW FIELD
+    postcode: Optional[str] = None
     has_completed_onboarding: Optional[bool] = None
 
-class Token(SQLModel):
+class Token(BaseModel):
     access_token: str
     token_type: str
 
-class GoogleLoginRequest(SQLModel):
+class GoogleLoginRequest(BaseModel):
     token: str
 
-# --- *** UPDATED SUPPLIER SCHEMAS *** ---
-class SupplierProfileBase(SQLModel):
+# --- Recipe Schemas ---
+class IngredientInRecipe(BaseModel):
+    ingredient_id: int
+    name: str
+    quantity: str
+    
+    class Config:
+        orm_mode = True
+
+class RecipeCreate(BaseModel):
+    title: str
+    description: str
+    instructions: str
+    ingredients: List[IngredientInRecipe] # Use the detailed schema
+    tags: Optional[List[str]] = []
+
+class RecipeResponse(BaseModel):
+    id: int
+    title: str
+    description: str
+    instructions: str
+    ingredients: List[IngredientInRecipe]
+    tags: List[str]
+    # --- Rating fields ---
+    total_rating: int
+    rating_count: int
+    average_rating: float # <-- NEW calculated field
+
+    class Config:
+        orm_mode = True
+
+class RecipeRating(BaseModel):
+    rating: float # Changed from int to float for 1-5 stars
+
+# --- Generate/Modify Schemas ---
+class GenerateRequest(BaseModel):
+    specials: List[str]
+    preferences: Dict[str, Any]
+    pantry_items: List[str]
+
+class RecipeModificationRequest(BaseModel):
+    original_recipe: RecipeCreate # Re-use RecipeCreate, as it has the full structure
+    modification_prompt: str
+
+
+# --- PriceHistory Schemas ---
+class PriceHistoryCreate(BaseModel):
+    ingredient_name: str
+    price: str
+    store: str
+    category: Optional[str] = None # Include category
+    expiry_date: Optional[date] = None # <-- NEW: Expiry date
+
+class PriceHistoryRead(BaseModel):
+    id: int
+    ingredient_id: int
+    date_recorded: str # Keep as string for simple JSON
+    price: str
+    store: str
+    ingredient_name: str # Add name for easier frontend use
+    category: Optional[str] = None # Add category
+    expiry_date: Optional[date] = None # <-- NEW: Expiry date
+    # --- NEW: Analytics ---
+    view_count: int
+    save_count: int
+    supplier_profile_id: Optional[int] = None # <-- NEW
+
+    class Config:
+        orm_mode = True
+
+# --- Pantry Schemas ---
+class PantryItem(BaseModel):
+    ingredient_id: int
+    name: str
+    category: Optional[str] = None
+
+    class Config:
+        orm_mode = True
+
+class PantryItemCreate(BaseModel):
+    ingredient_name: str # Frontend will send the name
+
+# --- Barcode Schema ---
+class BarcodeLookupResponse(BaseModel):
+    product_name: Optional[str] = None
+    error: Optional[str] = None
+
+# --- NEW: Receipt Scan Schema ---
+class ReceiptScanResponse(BaseModel):
+    message: str
+    detected_items: List[str] # List of potential item names (strings)
+
+# --- NEW IMPORTS (for Supplier Registration) ---
+class SupplierProfileCreate(BaseModel):
+    business_name: str
+    address: Optional[str] = None
+    postcode: str # <-- Require postcode on registration
+    # --- NEW: Optional Storefront Fields ---
+    logo_url: Optional[str] = None
+    business_type: Optional[str] = None # e.g., "Butcher"
+    description: Optional[str] = None
+    opening_hours: Optional[str] = None # Simple text for now
+    # --- END NEW ---
+
+# --- *** UPDATED: Simplified Supplier Registration Request *** ---
+class SupplierRegistrationRequest(BaseModel):
+    user: UserCreate
+    # profile: SupplierProfileCreate # <-- REMOVED
+# --- *** END UPDATE *** ---
+
+# --- *** NEW: Supplier Profile Read Schema *** ---
+class SupplierProfileRead(BaseModel):
+    id: int
+    user_id: int
     business_name: str
     address: Optional[str] = None
     postcode: Optional[str] = None
@@ -55,20 +174,15 @@ class SupplierProfileBase(SQLModel):
     business_type: Optional[str] = None
     description: Optional[str] = None
     opening_hours: Optional[str] = None
-    # --- NEW: Featured Flag (read-only for suppliers) ---
-    is_featured: bool = Field(default=False)
+    # --- END NEW ---
+    is_featured: bool # --- NEW ---
+    
+    class Config:
+        orm_mode = True
+# --- *** END NEW *** ---
 
-class SupplierProfileCreate(SupplierProfileBase):
-    pass # Inherits all fields
-
-class SupplierProfileRead(SupplierProfileBase):
-    id: int
-    user_id: int
-    # Make sure is_featured is included in the read model
-    is_featured: bool
-
-class SupplierProfileUpdate(SQLModel):
-    # All fields are optional for updates
+# --- *** NEW SUPPLIER PROFILE UPDATE IMPORT *** ---
+class SupplierProfileUpdate(BaseModel):
     business_name: Optional[str] = None
     address: Optional[str] = None
     postcode: Optional[str] = None
@@ -76,144 +190,40 @@ class SupplierProfileUpdate(SQLModel):
     business_type: Optional[str] = None
     description: Optional[str] = None
     opening_hours: Optional[str] = None
-    # Note: 'is_featured' is intentionally omitted.
-    # This should only be set by an admin (future feature).
-
-class SupplierRegistrationRequest(SQLModel):
-    user: UserCreate
-    profile: SupplierProfileCreate
-# --- *** END UPDATED SCHEMAS *** ---
-
-class IngredientInRecipe(SQLModel):
-    name: str
-    quantity: str
-    ingredient_id: Optional[int] = None # For frontend keying if needed
-
-class RecipeCreate(SQLModel):
-    title: str
-    description: str
-    instructions: str
-    ingredients: List[IngredientInRecipe]
-    tags: List[str] = []
-
-class RecipeResponse(SQLModel):
-    id: int
-    title: str
-    description: str
-    instructions: str
-    ingredients: List[IngredientInRecipe]
-    tags: List[str]
-    total_rating: int
-    rating_count: int
-    # --- *** FIX: Add average_rating field *** ---
-    average_rating: float = 0.0 # Default to 0.0, ensure it's a float
-    # --- *** END FIX --- ---
-
-    # --- Your existing from_orm method (no changes needed here now) ---
-    @classmethod
-    def from_orm(cls, recipe, **kwargs):
-        # Calculate average_rating
-        avg = 0.0 # Use float
-        if recipe.rating_count > 0:
-             # Ensure float division
-            avg = round(float(recipe.total_rating) / float(recipe.rating_count), 1)
-
-        # Merge calculated fields with model fields
-        data = recipe.model_dump()
-        # Add calculated avg to data before creating instance
-        data['average_rating'] = avg
-
-        # Allow overriding with kwargs
-        data.update(kwargs)
-
-        # Create the response model
-        return cls(**data)
+# --- *** END NEW *** ---
 
 
-class PriceHistoryCreate(SQLModel):
-    ingredient_name: str
-    price: str
-    store: str
-    category: Optional[str] = None
-    # --- NEW: Expiry date for suppliers ---
-    expiry_date: Optional[date] = None
-
-class PriceHistoryRead(SQLModel):
-    id: int
-    ingredient_id: int
-    date_recorded: str # Keep as string for consistent API response
-    price: str
-    store: str
-    ingredient_name: Optional[str] = None
-    category: Optional[str] = None
-    # --- NEW: Expiry date for suppliers ---
-    expiry_date: Optional[date] = None
-    # --- NEW: Analytics Fields ---
-    view_count: int = 0
-    save_count: int = 0
-    # --- NEW: Supplier FK ---
-    supplier_profile_id: Optional[int] = None
-    # --- END NEW ---
-
-
-class GenerateRequest(SQLModel):
-    specials: List[PriceHistoryRead]
-    preferences: UserRead
-    pantry_items: List[Dict] # List of PantryItem objects
-
-
-class RecipeRating(SQLModel):
-    rating: float = Field(ge=1, le=5)
-
-class PantryItem(SQLModel):
-    ingredient_id: int
-    name: str
-    category: Optional[str] = None
-
-class PantryItemCreate(SQLModel):
-    ingredient_name: str
-
-class RecipeModificationRequest(SQLModel):
-    original_recipe: RecipeCreate # AI-generated, so it follows RecipeCreate schema
-    modification_prompt: str
-
-# --- NEW SCHEMA ---
-class BarcodeLookupResponse(SQLModel):
-    product_name: Optional[str] = None
-    error: Optional[str] = None
-
-
-# --- *** UPDATED MEAL PLAN SCHEMAS *** ---
-class MealPlanEntryCreate(SQLModel):
+# --- *** NEW MEAL PLAN SCHEMAS *** ---
+class MealPlanEntryCreate(BaseModel):
     recipe_id: int
-    plan_date: date # Expects a date object or string in "YYYY-MM-DD" format
-    meal_type: str # NEW: Expect "Lunch" or "Dinner"
-    use_for_leftovers: Optional[bool] = False # NEW: Optional, defaults to False
+    plan_date: date
+    meal_type: str = "Dinner" # Default to Dinner
+    use_for_leftovers: bool = False # Default to False
 
-class MealPlanEntryRead(SQLModel):
+class MealPlanEntryRead(BaseModel):
     id: int
     user_id: int
     recipe_id: int
     plan_date: date
-    meal_type: str # NEW
-    use_for_leftovers: bool # NEW
-    recipe: RecipeResponse # Nest the full recipe details
-# --- *** END UPDATED MEAL PLAN SCHEMAS *** ---
+    meal_type: str # <-- NEW
+    use_for_leftovers: bool # <-- NEW
+    recipe: RecipeResponse # Embed the full recipe details
 
-# --- NEW: Response schema for receipt scanning ---
-class ReceiptScanResponse(SQLModel):
-    message: str
-    detected_items: List[str]
-# --- END NEW ---
+    class Config:
+        orm_mode = True
+# --- *** END NEW MEAL PLAN SCHEMAS *** ---
 
-# --- *** UPDATED: Schemas for Global Search ---
-class RecipeSearchResult(SQLModel):
+# --- *** NEW SEARCH SCHEMAS *** ---
+class RecipeSearchResult(BaseModel):
     id: int
     title: str
 
-class GlobalSearchResponse(SQLModel):
+# Note: We re-use PantryItem for ingredient results
+# Note: We re-use PriceHistoryRead for specials results
+
+class GlobalSearchResponse(BaseModel):
     recipes: List[RecipeSearchResult]
-    ingredients: List[PantryItem] # <-- *** FIX: Was PType, now PantryItem ***
+    ingredients: List[PantryItem]
     specials: List[PriceHistoryRead]
-    has_more: bool = False # --- NEW FIELD ---
-# --- *** END UPDATED SCHEMAS *** ---
+    has_more: bool # Flag if results were truncated by the limit
+# --- *** END NEW SEARCH SCHEMAS *** ---
