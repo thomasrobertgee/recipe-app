@@ -13,7 +13,6 @@ const AuthContext = createContext();
 axios.defaults.baseURL = 'http://192.168.1.102:8000'; // Your current setting
 
 export const useAuth = () => useContext(AuthContext);
-
 export const AuthProvider = ({ children }) => {
     const [token, setToken] = useState(localStorage.getItem('token'));
     const [userProfile, setUserProfile] = useState(null);
@@ -30,7 +29,7 @@ export const AuthProvider = ({ children }) => {
     });
 
     const [selectedSpecials, setSelectedSpecials] = useState(() => {
-         try {
+        try {
             const saved = localStorage.getItem('selectedSpecials');
             return saved ? JSON.parse(saved) : [];
         } catch (error) {
@@ -38,7 +37,6 @@ export const AuthProvider = ({ children }) => {
             return [];
         }
     });
-
 
     const [savedRecipes, setSavedRecipes] = useState([]);
     const [pantryItems, setPantryItems] = useState([]);
@@ -58,7 +56,6 @@ export const AuthProvider = ({ children }) => {
     useEffect(() => {
         localStorage.setItem('selectedSpecials', JSON.stringify(selectedSpecials));
     }, [selectedSpecials]);
-
 
     const savedRecipeIds = useMemo(() => {
         return new Set(savedRecipes.map(recipe => recipe.id));
@@ -111,7 +108,7 @@ export const AuthProvider = ({ children }) => {
             console.error("Error fetching followed suppliers:", error);
             // --- FIX: Removed toast notification ---
             // if (error.response?.status !== 401) {
-            //     toast.error("Could not load followed suppliers.");
+            //     toast.error("Could not load followed suppliers.");
             // }
             // --- END FIX ---
             setFollowedSupplierIds(new Set());
@@ -125,9 +122,9 @@ export const AuthProvider = ({ children }) => {
             const res = await axios.get('/users/me');
             setUserProfile(res.data);
             if (res.data) {
-                 await fetchSavedRecipes();
-                 await fetchPantryItems();
-                 await fetchFollowedSuppliers(); // <-- Called here
+                await fetchSavedRecipes();
+                await fetchPantryItems();
+                await fetchFollowedSuppliers(); // <-- Called here
             }
         } catch (error) {
             console.error("Error fetching user profile:", error);
@@ -137,7 +134,7 @@ export const AuthProvider = ({ children }) => {
                 setSavedRecipes([]);
                 setSelectedRecipes([]);
                 setPantryItems([]);
-                setSelectedSpecials([]); 
+                setSelectedSpecials([]);
                 setFollowedSupplierIds(new Set()); // <-- NEW
                 localStorage.removeItem('token');
                 localStorage.removeItem('selectedRecipes');
@@ -161,7 +158,7 @@ export const AuthProvider = ({ children }) => {
             setSavedRecipes([]);
             setUserProfile(null);
             setPantryItems([]);
-            setSelectedSpecials([]); 
+            setSelectedSpecials([]);
             setFollowedSupplierIds(new Set()); // <-- NEW
         }
     }, [token, fetchUserProfile]);
@@ -189,13 +186,12 @@ export const AuthProvider = ({ children }) => {
 
             // Use a temporary variable to check the role immediately after fetching
             let fetchedUserRole = null;
-             try {
-                 const profileRes = await axios.get('/users/me');
-                 fetchedUserRole = profileRes.data.role;
-             } catch (profileError) {
-                 console.error("Failed to fetch profile immediately after login:", profileError);
-             }
-
+            try {
+                const profileRes = await axios.get('/users/me');
+                fetchedUserRole = profileRes.data.role;
+            } catch (profileError) {
+                console.error("Failed to fetch profile immediately after login:", profileError);
+            }
 
             if (fetchedUserRole === 'supplier') {
                 navigate('/portal/dashboard');
@@ -209,7 +205,7 @@ export const AuthProvider = ({ children }) => {
             console.error("Login error:", error);
             toast.error(error.response?.data?.detail || "Login failed");
         } finally {
-             setIsLoading(false); // Ensure loading is stopped
+            setIsLoading(false); // Ensure loading is stopped
         }
     };
 
@@ -228,15 +224,14 @@ export const AuthProvider = ({ children }) => {
 
             await fetchUserProfile(); // Fetches profile, saved recipes, and pantry
 
-             // Use a temporary variable to check the role immediately after fetching
-             let fetchedUserRole = null;
-             try {
-                 const profileRes = await axios.get('/users/me');
-                 fetchedUserRole = profileRes.data.role;
-             } catch (profileError) {
-                 console.error("Failed to fetch profile immediately after Google login:", profileError);
-             }
-
+            // Use a temporary variable to check the role immediately after fetching
+            let fetchedUserRole = null;
+            try {
+                const profileRes = await axios.get('/users/me');
+                fetchedUserRole = profileRes.data.role;
+            } catch (profileError) {
+                console.error("Failed to fetch profile immediately after Google login:", profileError);
+            }
 
             if (fetchedUserRole === 'supplier') {
                 navigate('/portal/dashboard');
@@ -261,11 +256,11 @@ export const AuthProvider = ({ children }) => {
         setSavedRecipes([]);
         setSelectedRecipes([]);
         setPantryItems([]);
-        setSelectedSpecials([]); 
+        setSelectedSpecials([]);
         setFollowedSupplierIds(new Set()); // <-- NEW
         localStorage.removeItem('token');
         localStorage.removeItem('selectedRecipes');
-        localStorage.removeItem('selectedSpecials'); 
+        localStorage.removeItem('selectedSpecials');
         delete axios.defaults.headers.common['Authorization'];
         navigate('/');
         toast.info("You have been logged out.");
@@ -273,35 +268,35 @@ export const AuthProvider = ({ children }) => {
 
     const handleSelectRecipe = (recipe) => {
         // ... (handleSelectRecipe function remains the same)
-         setSelectedRecipes(prevSelected => {
-             const existingIndex = prevSelected.findIndex(item => item.recipe.id === recipe.id);
-             if (existingIndex > -1) {
-                 return prevSelected.filter(item => item.recipe.id !== recipe.id);
-             } else {
-                 openSidebar();
-                 return [...prevSelected, { recipe: recipe, quantity: 1 }];
-             }
-         });
-     };
+        setSelectedRecipes(prevSelected => {
+            const existingIndex = prevSelected.findIndex(item => item.recipe.id === recipe.id);
+            if (existingIndex > -1) {
+                return prevSelected.filter(item => item.recipe.id !== recipe.id);
+            } else {
+                openSidebar();
+                return [...prevSelected, { recipe: recipe, quantity: 1 }];
+            }
+        });
+    };
 
-     const handleSelectSpecial = (special) => {
+    const handleSelectSpecial = (special) => {
         // ... (handleSelectSpecial function remains the same)
         if (!special || typeof special.id === 'undefined') {
             console.error("Invalid special object passed to handleSelectSpecial:", special);
             toast.error("Could not add item to list.");
             return;
         }
-        
+
         setSelectedSpecials(prevSelected => {
             const existingIndex = prevSelected.findIndex(item => item.id === special.id);
-            
+
             if (existingIndex > -1) {
                 // Item exists, so remove it
                 return prevSelected.filter(item => item.id !== special.id);
             } else {
                 // Item does not exist, so add it
                 openSidebar(); // Open sidebar when adding
-                
+
                 // Check if it's a supplier special (store is not Coles, Woolworths, Aldi)
                 const supermarkets = ["Coles", "Woolworths", "Aldi"];
                 if (!supermarkets.includes(special.store)) {
@@ -310,46 +305,45 @@ export const AuthProvider = ({ children }) => {
                         .then(() => console.log(`Tracked save for supplier special: ${special.id}`))
                         .catch(err => console.error(`Failed to track save for special ${special.id}:`, err));
                 }
-                
+
                 // Add the special to the list
                 return [...prevSelected, special];
             }
         });
-     };
+    };
 
-
-      const incrementRecipeQuantity = (recipeId) => {
+    const incrementRecipeQuantity = (recipeId) => {
         // ... (increment function remains the same)
-          setSelectedRecipes(prevSelected =>
-              prevSelected.map(item =>
-                  item.recipe.id === recipeId
-                      ? { ...item, quantity: item.quantity + 1 }
-                      : item
-              )
-          );
-      };
+        setSelectedRecipes(prevSelected =>
+            prevSelected.map(item =>
+                item.recipe.id === recipeId
+                    ? { ...item, quantity: item.quantity + 1 }
+                    : item
+            )
+        );
+    };
 
-      const decrementRecipeQuantity = (recipeId) => {
+    const decrementRecipeQuantity = (recipeId) => {
         // ... (decrement function remains the same)
-          setSelectedRecipes(prevSelected => {
-              const itemToUpdate = prevSelected.find(item => item.recipe.id === recipeId);
-              if (itemToUpdate && itemToUpdate.quantity > 1) {
-                  return prevSelected.map(item =>
-                      item.recipe.id === recipeId
-                          ? { ...item, quantity: item.quantity - 1 }
-                          : item
-                  );
-              } else {
-                  return prevSelected.filter(item => item.recipe.id !== recipeId);
-              }
-          });
-      };
+        setSelectedRecipes(prevSelected => {
+            const itemToUpdate = prevSelected.find(item => item.recipe.id === recipeId);
+            if (itemToUpdate && itemToUpdate.quantity > 1) {
+                return prevSelected.map(item =>
+                    item.recipe.id === recipeId
+                        ? { ...item, quantity: item.quantity - 1 }
+                        : item
+                );
+            } else {
+                return prevSelected.filter(item => item.recipe.id !== recipeId);
+            }
+        });
+    };
 
     const saveRecipe = async (recipe) => {
         // ... (saveRecipe function remains the same)
         if (savedRecipeIds.has(recipe.id)) {
-             toast.info("Recipe already saved.");
-             return;
+            toast.info("Recipe already saved.");
+            return;
         }
         try {
             await axios.post(`/api/users/me/saved-recipes/${recipe.id}`);
@@ -401,11 +395,10 @@ export const AuthProvider = ({ children }) => {
     }, []);
     // --- END NEW ---
 
-
     const clearShoppingList = () => {
         // ... (clearShoppingList function remains the same)
         setSelectedRecipes([]);
-        setSelectedSpecials([]); 
+        setSelectedSpecials([]);
     };
 
     const removeIngredientFromList = (ingredientIdToRemove) => {
@@ -419,9 +412,9 @@ export const AuthProvider = ({ children }) => {
             });
 
             if (recipesToRemove.size > 0) {
-                 const updatedList = prev.filter(selection => !recipesToRemove.has(selection.recipe.id));
-                 toast.info(`Removed recipes containing the ingredient from the shopping list.`);
-                 return updatedList;
+                const updatedList = prev.filter(selection => !recipesToRemove.has(selection.recipe.id));
+                toast.info(`Removed recipes containing the ingredient from the shopping list.`);
+                return updatedList;
             }
             return prev;
         });
@@ -468,10 +461,12 @@ export const AuthProvider = ({ children }) => {
     return (
         <AuthContext.Provider value={{
             token, userProfile, user: userProfile, isLoading, loading: isLoading,
-            login, loginWithGoogle, logout, fetchUserProfile,
-            
+            login, loginWithGoogle, logout,
+            // --- BUG FIX: Expose fetchUserProfile as refreshUserProfile ---
+            refreshUserProfile: fetchUserProfile, // <--- THIS IS THE FIX
+
             selectedRecipes, handleSelectRecipe, incrementRecipeQuantity, decrementRecipeQuantity,
-            
+
             selectedSpecials, handleSelectSpecial,
 
             savedRecipes, savedRecipeIds, saveRecipe, unsaveRecipe, fetchSavedRecipes,

@@ -1,9 +1,16 @@
 /* src/components/SupplierOnboardingModal.css */
 
-/* We can re-use the backdrop and base modal content styles */
-@import './OnboardingModal.css';
+/*
+We re-use the base classes .modal-overlay and .modal-content
+from OnboardingModal.css to get the blur backdrop and base card.
+This file just adds supplier-specific overrides.
+*/
 
 .supplier-onboarding-modal {
+    /* --- STYLING FIX: Add white background --- */
+    background-color: #fff;
+    /* --- END FIX --- */
+
     max-width: 600px; /* A bit wider for the form */
     padding: 2rem;
 }
@@ -47,22 +54,27 @@
     color: #333;
 }
 
-.supplier-onboarding-modal .form-group input,
-.supplier-onboarding-modal .form-group textarea,
-.supplier-onboarding-modal .form-group select {
+/* Use the shared .modal-input class from OnboardingModal.css */
+.supplier-onboarding-modal .modal-input {
     padding: 0.75rem;
     border: 1px solid #ccc;
     border-radius: 5px;
     font-size: 1rem;
     transition: border-color 0.2s, box-shadow 0.2s;
+    width: 100%; /* Ensure inputs fill the space */
+    box-sizing: border-box; /* Include padding in width */
 }
 
-.supplier-onboarding-modal .form-group input:focus,
-.supplier-onboarding-modal .form-group textarea:focus,
-.supplier-onboarding-modal .form-group select:focus {
+.supplier-onboarding-modal .modal-input:focus {
     outline: none;
     border-color: var(--supplier-primary-color, #007bff);
     box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+}
+
+/* Specific overrides for textarea */
+.supplier-onboarding-modal textarea.modal-input {
+    resize: vertical;
+    min-height: 80px;
 }
 
 .supplier-onboarding-modal .modal-footer {
@@ -71,14 +83,39 @@
     border-top: 1px solid #eee;
 }
 
-.supplier-onboarding-modal .btn-primary {
-    /* Use the standard button styles from App.css */
-    width: 100%;
-    padding: 0.8rem;
-    font-size: 1.1rem;
-    background-color: var(--supplier-primary-color, #007bff);
+/* Use the shared .modal-nav and .modal-btn classes */
+.supplier-onboarding-modal .modal-nav {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid #eee;
 }
 
-.supplier-onboarding-modal .btn-primary:disabled {
+.supplier-onboarding-modal .modal-btn {
+    background-color: #f0f0f0;
+    color: #333;
+}
+
+.supplier-onboarding-modal .modal-btn.primary {
+    background-color: var(--supplier-primary-color, #007bff);
+    color: white;
+}
+
+.supplier-onboarding-modal .modal-btn:disabled {
+    background-color: #e0e0e0;
+    cursor: not-allowed;
+}
+
+.supplier-onboarding-modal .modal-btn.primary:disabled {
     background-color: #a0cfff;
+}
+
+.supplier-onboarding-modal .modal-error {
+    color: #c62828;
+    background-color: #ffebee;
+    border: 1px solid #ef9a9a;
+    border-radius: 5px;
+    padding: 0.75rem 1rem;
+    text-align: center;
 }

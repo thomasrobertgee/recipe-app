@@ -52,10 +52,10 @@
 /* --- NEW: Analytics Module Styles --- */
 .analytics-module {
     background-color: var(--color-primary-dark);
-    color: white;
+    /* color: rgb(0, 0, 0); */
 }
 .analytics-module h2 {
-    color: white;
+    /* color: white; */
     border-bottom: 1px solid var(--color-accent);
     padding-bottom: 0.5rem;
 }
