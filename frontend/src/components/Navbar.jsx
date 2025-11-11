@@ -26,10 +26,21 @@ const Navbar = () => {
     // --- Helper function for NavLink className ---
     const getNavLinkClass = ({ isActive }) => (isActive ? 'active' : '');
 
+    // --- BUG FIX: Determine the correct destination for the logo ---
+    let logoDestination = '/'; // Default for logged-out users
+    if (token && userProfile) {
+        if (userProfile.role === 'supplier') {
+            logoDestination = '/portal/dashboard';
+        } else if (userProfile.role === 'consumer') {
+            logoDestination = '/dashboard';
+        }
+    }
+    // --- END BUG FIX ---
+
     return (
         <nav className="navbar">
-            {/* --- Used your "Recipe Saver" logo text --- */}
-            <NavLink to="/" className="nav-logo">The Local Catalogue</NavLink>
+            {/* --- UPDATED: Use the dynamic logoDestination --- */}
+            <NavLink to={logoDestination} className="nav-logo">The Local Catalogue</NavLink>
 
             {/* --- Main Navigation Links --- */}
             <div className="nav-links">
